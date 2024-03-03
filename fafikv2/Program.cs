@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 using Fafikv2.Config;
 using Fafikv2.Commands;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Net;
+using DSharpPlus.Lavalink;
+using fafikv2.Commands;
 
 namespace Fafikv2
 {
@@ -48,10 +51,26 @@ namespace Fafikv2
 
             Commands = Client.UseCommandsNext(commandsConfig);
             Commands.RegisterCommands<Commandstest>();
+            Commands.RegisterCommands<MusicCommands>();
 
+            var endpoint = new ConnectionEndpoint
+            {
+                Hostname = "127.0.0.1",
+                Port = 2333
+            };
 
+            var lavalinkConfig = new LavalinkConfiguration
+            {
+                Password = "youshallnotpass",
+                RestEndpoint = endpoint,
+                SocketEndpoint = endpoint
+            };
+
+            var lavalink = Client.UseLavalink();
 
             await Client.ConnectAsync();
+
+            await lavalink.ConnectAsync(lavalinkConfig);
             
 
             await Task.Delay(-1);

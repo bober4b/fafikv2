@@ -8,9 +8,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="application.yml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="DSharpPlus" Version="4.4.6" />
     <PackageReference Include="DSharpPlus.CommandsNext" Version="4.4.6" />
     <PackageReference Include="DSharpPlus.Interactivity" Version="4.4.6" />
+    <PackageReference Include="DSharpPlus.Lavalink" Version="4.4.6" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
