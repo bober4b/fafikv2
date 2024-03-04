@@ -41,6 +41,36 @@ namespace Fafikv2.Commands
         {
             await _musicService.PlayAsync(ctx, search);
         }
+
+        [Command]
+        public async Task Pause(CommandContext ctx)
+        {
+            await _musicService.PauseAsync(ctx);
+        }
+
+        [Command]
+        public async Task Resume(CommandContext ctx)
+        {
+            await _musicService.ResumeAsync(ctx);
+        }
+
+        [Command]
+        public async Task Skip(CommandContext ctx)
+        {
+            await _musicService.SkipAsync(ctx);
+        }
+
+        [Command]
+        public async Task Queue(CommandContext ctx)
+        {
+            await _musicService.QueueAsync(ctx);
+        }
+
+        [Command]
+        public async Task Volume(CommandContext ctx, int vol)
+        {
+            await _musicService.VolumeAsync(ctx, vol);
+        }
         
 
 

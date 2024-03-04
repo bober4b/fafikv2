@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
@@ -58,6 +59,7 @@ namespace Fafikv2.Services
             {
                 node.PlaybackFinished += Node_PlaybackFinished;
                 node.GuildConnectionRemoved += Node_disconnected;
+                
 
             }
 
@@ -204,11 +206,215 @@ namespace Fafikv2.Services
             }
             else
             {
+                
+                List<TimeSpan> time_left_all = queue.Select(track => track.Length).ToList();
+
+                TimeSpan time_left= new();
+
+                
+
+                foreach ( var song_time in time_left_all)
+                {
+                    time_left += song_time;
+                }
                 queue.Add(track);
-                await ctx.RespondAsync($"Added {track.Title} to the queue!");
+                await ctx.RespondAsync($"Added {track.Title} to the queue!\n" +
+                                       $"Song will be played in: {time_left}");
             }
         }
 
+        public async Task PauseAsync(CommandContext ctx)
+        {
+            if (ctx.Member.VoiceState == null || ctx.Member.VoiceState.Channel == null)
+            {
+                await ctx.RespondAsync("You are not in a voice channel.");
+                return;
+            }
+
+            var lava = ctx.Client.GetLavalink();
+            var node = lava.ConnectedNodes.Values.First();
+            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
+
+            if (conn == null)
+            {
+                await ctx.RespondAsync("Lavalink is not connected.");
+                return;
+            }
+
+            if (conn.CurrentState.CurrentTrack == null)
+            {
+                await ctx.RespondAsync("there are no track loaded.");
+                return;
+            }
+
+            await conn.PauseAsync();
+            await ctx.RespondAsync("music is paused.");
+
+
+        }
+
+        public async Task ResumeAsync(CommandContext ctx)
+        {
+            if (ctx.Member.VoiceState == null || ctx.Member.VoiceState.Channel == null)
+            {
+                await ctx.RespondAsync("You are not in a voice channel.");
+                return;
+            }
+
+            var lava = ctx.Client.GetLavalink();
+            var node = lava.ConnectedNodes.Values.First();
+            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
+
+            if (conn == null)
+            {
+                await ctx.RespondAsync("Lavalink is not connected.");
+                return;
+            }
+
+            if (conn.CurrentState.CurrentTrack == null)
+            {
+                await ctx.RespondAsync("there are no track loaded.");
+                return;
+            }
+
+            await conn.ResumeAsync();
+            await ctx.RespondAsync("music is playing again.");
+        }
+
+
+
+        public async Task SkipAsync(CommandContext ctx)
+        {
+            
+
+            if (ctx.Member.VoiceState == null || ctx.Member.VoiceState.Channel == null)
+            {
+                await ctx.RespondAsync("You are not in a voice channel.");
+                return;
+            }
+
+            var guildId = ctx.Channel.Guild.Id;
+            var lava = ctx.Client.GetLavalink();
+            var node = lava.ConnectedNodes.Values.First();
+            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
+
+            if (conn == null)
+            {
+                await ctx.RespondAsync("Lavalink is not connected.");
+                return;
+            }
+
+            if (conn.CurrentState.CurrentTrack == null)
+            {
+                await ctx.RespondAsync("there are no track loaded.");
+                return;
+            }
+
+            if (_queue.TryGetValue(guildId, out var queue) && queue.Count > 0)
+            {
+                var finishedTrack = queue.First();
+                queue.RemoveAt(0);
+
+                var nextTrackMessage = "";
+                if (queue.Count > 0)
+                {
+                    var nextTrack = queue.First();
+                    nextTrackMessage = $"Next track: {nextTrack.Title}";
+                    await conn.PlayAsync(nextTrack);
+                }
+
+                if (queue.Count == 0)
+                {
+                    await conn.StopAsync();
+                    var textChannelend = ctx.Guild.SystemChannel;
+                    await textChannelend.SendMessageAsync("there is no more songs.");
+                    return;
+                }
+
+                var finishedTrackMessage = $"Finished playing: {finishedTrack.Title}";
+                var message = $"{finishedTrackMessage}\n{nextTrackMessage}";
+
+                // Wysyłanie wiadomości do kanału tekstu (można zmienić na inną metodę wysyłania wiadomości)
+                var textChannel = ctx.Guild.SystemChannel;
+                await textChannel.SendMessageAsync(message);
+            }
+        }
+
+        public async Task QueueAsync(CommandContext ctx)
+        {
+
+
+            var guildId = ctx.Channel.Guild.Id;
+            var lava = ctx.Client.GetLavalink();
+            var node = lava.ConnectedNodes.Values.First();
+            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
+
+            if (conn == null)
+            {
+                await ctx.RespondAsync("Lavalink is not connected.");
+                return;
+            }
+
+            if (conn.CurrentState.CurrentTrack == null)
+            {
+                await ctx.RespondAsync("there are no track loaded.");
+                return;
+            }
+
+            if (_queue.TryGetValue(guildId, out var queue) && queue.Count > 0)
+            {
+                List<string> song_Titles = queue.Select(track => track.Title).ToList();
+                string titles = "Songs QueueAsync: \n";
+                int i = 0;
+                foreach (var song in song_Titles)
+                {
+                    titles += $"{i}. {song}\n";
+                    i++;
+                }
+
+                var textChannel = ctx.Guild.SystemChannel;
+                await textChannel.SendMessageAsync(titles);
+            }
+
+               
+
+            
+        }
+
+        public async Task VolumeAsync(CommandContext ctx, int vol)
+        {
+            
+
+            var lava = ctx.Client.GetLavalink();
+
+            if (!lava.ConnectedNodes.Any())
+            {
+                await ctx.RespondAsync("The Lavalink connection is not established");
+                return;
+            }
+
+            var voiceState = ctx.Guild.CurrentMember?.VoiceState;
+
+            var node = lava.ConnectedNodes.Values.First();
+            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
+
+           
+
+            if (conn == null)
+            {
+                await ctx.RespondAsync("Lavalink is not connected.");
+                return;
+            }
+
+            if (vol < 0 || vol > 100)
+            {
+                await ctx.RespondAsync("volume must be between 0 and 100");
+                return;
+            }
+
+            await conn.SetVolumeAsync(vol);
+            ctx.RespondAsync($"Volume changed to: {vol}");
+        }
 
 
 
