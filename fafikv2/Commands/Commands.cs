@@ -11,13 +11,13 @@ namespace Fafikv2.Commands
     public class Commandstest : BaseCommandModule
     {
         [Command("ping")]
-        public async Task ping(CommandContext ctx)
+        public async Task Ping(CommandContext ctx)
         {
             await ctx.Channel.SendMessageAsync("pong");
             Console.WriteLine("xDDDD");
         }
         [Command("benc")]
-        public async Task benc(CommandContext ctx, int benc1, int benc2)
+        public async Task Benc(CommandContext ctx, int benc1, int benc2)
         {
             await ctx.Channel.SendMessageAsync($"elo benc:{benc1+benc2*3.14} benc elo");
         }

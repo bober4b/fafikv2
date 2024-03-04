@@ -393,8 +393,6 @@ namespace Fafikv2.Services
                 return;
             }
 
-            var voiceState = ctx.Guild.CurrentMember?.VoiceState;
-
             var node = lava.ConnectedNodes.Values.First();
             var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
 

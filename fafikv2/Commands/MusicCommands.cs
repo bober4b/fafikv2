@@ -10,7 +10,6 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using DSharpPlus.Lavalink;
 using DSharpPlus.Lavalink.EventArgs;
 using Fafikv2.Services;
 
@@ -18,8 +17,7 @@ namespace Fafikv2.Commands
 {
     internal class MusicCommands : BaseCommandModule
     {
-        private readonly Dictionary<ulong, List<LavalinkTrack>> _queue = new();
-        private MusicService _musicService=new();
+        private readonly MusicService _musicService=new();
         
 
         [Command]

@@ -20,11 +20,8 @@ namespace Fafikv2
     public class Program
     {
 
-        static async Task Main(string[] args)
+        static async Task Main()
         {
-
-
-
 
             await new BotClient().Initialize();
         }
