@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Fafikv2.Commands
 {
-    public class Commandstest : BaseCommandModule
+    public class Base_Commands : BaseCommandModule
     {
         [Command("ping")]
         public async Task Ping(CommandContext ctx)

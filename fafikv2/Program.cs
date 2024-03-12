@@ -1,18 +1,8 @@
-﻿using DSharpPlus;
-using DSharpPlus.CommandsNext;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using Fafikv2.Config;
-using Fafikv2.Commands;
-using DSharpPlus.EventArgs;
-using DSharpPlus.Net;
-using DSharpPlus.Lavalink;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Fafikv2.BotConfig;
-
+using Microsoft.EntityFrameworkCore;
+using Fafikv2.Data.DataContext;
+using Fafikv2.Data.Models;
 
 namespace Fafikv2
 {
@@ -22,10 +12,11 @@ namespace Fafikv2
 
         static async Task Main()
         {
+            
 
             await new BotClient().Initialize();
         }
-            
-        
+
+
     }
 }

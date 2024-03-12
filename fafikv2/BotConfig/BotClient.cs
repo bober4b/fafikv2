@@ -48,7 +48,7 @@ namespace Fafikv2.BotConfig
             };
 
             Commands = Client.UseCommandsNext(commandsConfig);
-            Commands.RegisterCommands<Commandstest>();
+            Commands.RegisterCommands<Base_Commands>();
             Commands.RegisterCommands<MusicCommands>();
 
             var endpoint = new ConnectionEndpoint
