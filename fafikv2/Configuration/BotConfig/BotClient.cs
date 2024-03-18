@@ -10,6 +10,7 @@ using DSharpPlus.EventArgs;
 using DSharpPlus.Net;
 using DSharpPlus.Lavalink;
 using Fafikv2.Commands;
+using Fafikv2.Configuration.BotConfig;
 using Fafikv2.Configuration.ConfigJSON;
 using Fafikv2.Data.Models;
 using Fafikv2.Services.dbSevices.Interfaces;
@@ -23,10 +24,12 @@ namespace Fafikv2.BotConfig
         private static CommandsNextExtension Commands { get; set; }
 
         private readonly IUserService _userService;
+        private readonly TaskQueue _taskQueue;
 
         public BotClient(IUserService userService)
         {
             _userService= userService;
+            _taskQueue = new TaskQueue();
         }
 
        
@@ -84,7 +87,25 @@ namespace Fafikv2.BotConfig
             await lavalink.ConnectAsync(lavalinkConfig);
 
 
-            await Task.Delay(-1);
+            Task.Run(async () =>
+            {
+                while (true)
+                {
+                    var task = await _taskQueue.DequeueAsync(CancellationToken.None);
+                    if (task != null)
+                    {
+                        await task();
+                    }
+                    else
+                    {
+                        
+                        await Task.Delay(5000);
+                    }
+                }
+            });
+
+
+            await Task.Delay(-1).ConfigureAwait(false);
         }
 
         private async Task Client_GuildAvailable(DiscordClient sender, GuildCreateEventArgs args)
@@ -97,20 +118,23 @@ namespace Fafikv2.BotConfig
             {
                 if (!user.IsBot)
                 {
-                    ulong value = user.Id;
-                    string formatedguid = $"{value:X32}";
-                    User useradd=new User
-                    {
-                        Name = user.Username,
-                        DisplayName = user.DisplayName,
-                        Id = Guid.Parse(formatedguid)
+                    await _taskQueue.Enqueue(async () =>
+                    { 
+                        ulong value = user.Id;
+                        string formatedguid = $"{value:X32}";
+                        var useradd = new User
+                        {
+                            Name = user.Username,
+                            DisplayName = user.DisplayName,
+                            Id = Guid.Parse(formatedguid)
 
-                    };
-                    await Task.Run(async () =>
-                    {
+                        };
                         await _userService.AddUser(useradd);
+                        Console.WriteLine("xDDDDDD");
+
                     });
-                    Console.WriteLine($"{user.Username}");
+
+                Console.WriteLine($"{user.Username}");
                     
 
                 }
