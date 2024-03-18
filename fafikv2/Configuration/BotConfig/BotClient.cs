@@ -6,11 +6,11 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using Fafikv2.Config;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Net;
 using DSharpPlus.Lavalink;
 using Fafikv2.Commands;
+using Fafikv2.Configuration.ConfigJSON;
 
 namespace Fafikv2.BotConfig
 {
@@ -18,6 +18,8 @@ namespace Fafikv2.BotConfig
     {
         private static DiscordClient Client { get; set; }
         private static CommandsNextExtension Commands { get; set; }
+
+        private 
 
         public async Task Initialize()
         {
@@ -38,6 +40,7 @@ namespace Fafikv2.BotConfig
 
             Client.Ready += Client_Ready;
             Client.MessageCreated += Client_MessageCreated;
+            Client.GuildAvailable += Client_GuildAvailable;
 
             var commandsConfig = new CommandsNextConfiguration()
             {
@@ -72,6 +75,20 @@ namespace Fafikv2.BotConfig
 
 
             await Task.Delay(-1);
+        }
+
+        private async Task Client_GuildAvailable(DiscordClient sender, GuildCreateEventArgs args)
+        {
+            var users = await args.Guild.GetAllMembersAsync();
+
+            foreach (var user in users)
+            {
+                if (!user.IsBot)
+                {
+
+                }
+            }
+
         }
 
         private static Task Client_Ready(DiscordClient sender, ReadyEventArgs args)

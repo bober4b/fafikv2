@@ -7,9 +7,9 @@ namespace Fafikv2.Data.DataContext
 {
     public class DiscordBotDbContext : DbContext,IDisposable
     {
-        private readonly string conectionstring =
+        private readonly string _conectionstring =
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog = DiscordBotDB; Integrated Security = True; Connect Timeout = 30; Encrypt=False;Trust Server Certificate=False;Application Intent = ReadWrite; Multi Subnet Failover=False";
-
+        public DbSet<User> Users { get; set; }
         public DiscordBotDbContext()
         {
 
@@ -18,12 +18,12 @@ namespace Fafikv2.Data.DataContext
         public DiscordBotDbContext(DbContextOptions options) : base(options) { }
 
 
-        public DbSet<User> Users { get; set; }
+        
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(conectionstring);
+            optionsBuilder.UseSqlServer(_conectionstring);
         }
 
         

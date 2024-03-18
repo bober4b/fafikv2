@@ -7,10 +7,13 @@
         public string Name { get; set; }
         public string DisplayName { get; set; }
 
-        //BotData
+        //BotData karma
 
         public float ServerKarma { get; set; }
         public float AllKarma { get; set; }
+
+        //BotData stats
+
 
 
 

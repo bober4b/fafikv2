@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Fafikv2.Config
+namespace Fafikv2.Configuration.ConfigJSON
 {
     internal class JSONReader
     {
@@ -18,8 +18,8 @@ namespace Fafikv2.Config
                 string json = await sr.ReadToEndAsync();
                 JSONStructure data = JsonConvert.DeserializeObject<JSONStructure>(json);
 
-                this.token = data.token; 
-                this.prefix = data.prefix;
+                token = data.token;
+                prefix = data.prefix;
             }
         }
     }
