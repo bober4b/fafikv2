@@ -7,6 +7,7 @@ namespace Fafikv2.Repositories.Interfaces
 
         public Task UpdateUser(User user);
         public Task DeleteUser(User user);
+        public IEnumerable<User> GetAll();
 
     }
 }

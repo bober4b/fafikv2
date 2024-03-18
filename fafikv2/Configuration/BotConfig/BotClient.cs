@@ -11,6 +11,9 @@ using DSharpPlus.Net;
 using DSharpPlus.Lavalink;
 using Fafikv2.Commands;
 using Fafikv2.Configuration.ConfigJSON;
+using Fafikv2.Data.Models;
+using Fafikv2.Services.dbSevices.Interfaces;
+using Fafikv2.Services.dbSevices;
 
 namespace Fafikv2.BotConfig
 {
@@ -19,7 +22,14 @@ namespace Fafikv2.BotConfig
         private static DiscordClient Client { get; set; }
         private static CommandsNextExtension Commands { get; set; }
 
-        private 
+        private readonly IUserService _userService;
+
+        public BotClient(IUserService userService)
+        {
+            _userService= userService;
+        }
+
+       
 
         public async Task Initialize()
         {
@@ -81,10 +91,27 @@ namespace Fafikv2.BotConfig
         {
             var users = await args.Guild.GetAllMembersAsync();
 
+            
+
             foreach (var user in users)
             {
                 if (!user.IsBot)
                 {
+                    ulong value = user.Id;
+                    string formatedguid = $"{value:X32}";
+                    User useradd=new User
+                    {
+                        Name = user.Username,
+                        DisplayName = user.DisplayName,
+                        Id = Guid.Parse(formatedguid)
+
+                    };
+                    await Task.Run(async () =>
+                    {
+                        await _userService.AddUser(useradd);
+                    });
+                    Console.WriteLine($"{user.Username}");
+                    
 
                 }
             }

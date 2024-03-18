@@ -6,9 +6,7 @@ using Fafikv2.Data.Models;
 using Fafikv2.Repositories.Interfaces;
 using Fafikv2.Repositories;
 using Fafikv2.Configuration.DependencyConfiguration;
-
-
-
+using Fafikv2.Services.dbSevices.Interfaces;
 
 
 namespace Fafikv2
@@ -23,14 +21,25 @@ namespace Fafikv2
             var servicesProvider = new ServiceCollection()
                 .AddDbContext<DiscordBotDbContext>()
                 .AddRepositories()
+                .AddServices()
                 .BuildServiceProvider();
-                
 
-                
+            await initializeDatabase(servicesProvider);
 
-                await new BotClient().Initialize();
+            await new BotClient(servicesProvider.GetRequiredService(typeof(IUserService)) as IUserService).Initialize();
         }
 
 
+
+
+        static async Task initializeDatabase(IServiceProvider servicesProvider)
+        {
+            using (var scope = servicesProvider.CreateScope())
+            {
+                var database = scope.ServiceProvider.GetRequiredService<DiscordBotDbContext>();
+                await database.Database.MigrateAsync();
+                await Task.Delay(1000);
+            }
+        }
     }
 }

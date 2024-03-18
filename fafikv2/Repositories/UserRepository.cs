@@ -1,21 +1,24 @@
 ﻿using Fafikv2.Data.Models;
 using Fafikv2.Data.DataContext;
 using Fafikv2.Repositories.Interfaces;
+using Fafikv2.Data.DataContext;
 
 namespace Fafikv2.Repositories
 {
     public class UserRepository : IUserRepository
     {
-        public DiscordBotDbContext _Context;
+        private readonly DiscordBotDbContext _Context;
 
         public UserRepository(DiscordBotDbContext context)
         {
-            context = _Context;
+            _Context=context;
         }
 
-        public Task AddUser(User user)
+        public async Task AddUser(User user)
         {
-            throw new NotImplementedException();
+            _Context.Users.Add(user);
+            _Context.SaveChanges();
+            
         }
 
         public Task DeleteUser(User user)
@@ -26,6 +29,12 @@ namespace Fafikv2.Repositories
         public Task UpdateUser(User user)
         {
             throw new NotImplementedException();
+        }
+
+        public IEnumerable<User> GetAll()
+        {
+            var result = _Context.Users;
+            return result;
         }
 
     }

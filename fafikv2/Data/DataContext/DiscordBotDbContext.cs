@@ -10,15 +10,15 @@ namespace Fafikv2.Data.DataContext
         private readonly string _conectionstring =
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog = DiscordBotDB; Integrated Security = True; Connect Timeout = 30; Encrypt=False;Trust Server Certificate=False;Application Intent = ReadWrite; Multi Subnet Failover=False";
         public DbSet<User> Users { get; set; }
-        public DiscordBotDbContext()
+       
+
+        public DiscordBotDbContext(DbContextOptions<DiscordBotDbContext> options) : base(options) { }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(DiscordBotDbContext).Assembly);
         }
-
-        public DiscordBotDbContext(DbContextOptions options) : base(options) { }
-
-
-        
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
