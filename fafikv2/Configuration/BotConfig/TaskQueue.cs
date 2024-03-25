@@ -15,12 +15,7 @@ namespace Fafikv2.Configuration.BotConfig
         public async Task Enqueue(Func<Task> task)
         {
 
-            _TaskQueue.Enqueue(async() =>
-            {
-                await task();
-                _signal.Release();
-                await DequeueAsync(CancellationToken.None);
-            });
+            _TaskQueue.Enqueue(task);
             _signal.Release();
 
         }

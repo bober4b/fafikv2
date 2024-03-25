@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Net;
 using DSharpPlus.Lavalink;
@@ -99,47 +100,50 @@ namespace Fafikv2.BotConfig
                     else
                     {
                         
-                        await Task.Delay(5000);
+                        await Task.Delay(1000);
                     }
                 }
             });
 
 
-            await Task.Delay(-1).ConfigureAwait(false);
+            await Task.Delay(-1);
         }
 
         private async Task Client_GuildAvailable(DiscordClient sender, GuildCreateEventArgs args)
         {
             var users = await args.Guild.GetAllMembersAsync();
 
-            
 
+
+
+            await _taskQueue.Enqueue( async () => await UpdateUsersOnConnect(users));
+
+
+
+        }
+
+        public async Task UpdateUsersOnConnect(IReadOnlyCollection<DiscordMember> users)
+        {
+            //Console.WriteLine("uopdate halo");
             foreach (var user in users)
             {
                 if (!user.IsBot)
                 {
-                    await _taskQueue.Enqueue(async () =>
-                    { 
-                        ulong value = user.Id;
-                        string formatedguid = $"{value:X32}";
-                        var useradd = new User
-                        {
-                            Name = user.Username,
-                            DisplayName = user.DisplayName,
-                            Id = Guid.Parse(formatedguid)
+                    ulong value = user.Id;
+                    string formatedguid = $"{value:X32}";
+                    var useradd = new User
+                    {
+                        Name = user.Username,
+                        DisplayName = user.DisplayName,
+                        Id = Guid.Parse(formatedguid)
 
-                        };
-                        await _userService.AddUser(useradd);
-                        Console.WriteLine("xDDDDDD");
-
-                    });
-
-                Console.WriteLine($"{user.Username}");
-                    
-
+                    };
+                    await _userService.AddUser(useradd);
+                    Console.WriteLine($"dodano: {user.Username}");
                 }
             }
 
+            
         }
 
         private static Task Client_Ready(DiscordClient sender, ReadyEventArgs args)

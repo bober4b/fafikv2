@@ -24,7 +24,7 @@ namespace Fafikv2
                 .AddServices()
                 .BuildServiceProvider();
 
-            await initializeDatabase(servicesProvider);
+            //await initializeDatabase(servicesProvider);
 
             await new BotClient(servicesProvider.GetRequiredService(typeof(IUserService)) as IUserService).Initialize();
         }
@@ -37,8 +37,8 @@ namespace Fafikv2
             using (var scope = servicesProvider.CreateScope())
             {
                 var database = scope.ServiceProvider.GetRequiredService<DiscordBotDbContext>();
-                await database.Database.MigrateAsync();
-                await Task.Delay(1000);
+                //await database.Database.MigrateAsync();
+                //await Task.Delay(1000);
             }
         }
     }
