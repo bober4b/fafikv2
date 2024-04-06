@@ -4,6 +4,7 @@ using Fafikv2.Data.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fafikv2.Migrations
 {
     [DbContext(typeof(DiscordBotDbContext))]
-    partial class DiscordBotDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240406153601_init8")]
+    partial class init8
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -28,7 +31,7 @@ namespace Fafikv2.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("ConfigId")
+                    b.Property<Guid>("ConfigId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Name")
@@ -61,7 +64,10 @@ namespace Fafikv2.Migrations
                     b.Property<Guid>("ServerId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("UserServerStatsId")
+                    b.Property<Guid>("ServerUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserServerStatsId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("UserId", "ServerId");
@@ -81,6 +87,10 @@ namespace Fafikv2.Migrations
 
                     b.Property<int>("BotInteractionGlobal")
                         .HasColumnType("int");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<float>("GlobalKarma")
                         .HasColumnType("real");
@@ -109,10 +119,6 @@ namespace Fafikv2.Migrations
                     b.Property<int>("BotInteractionServer")
                         .HasColumnType("int");
 
-                    b.Property<string>("DisplayName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("MessagesCountServer")
                         .HasColumnType("int");
 
@@ -128,7 +134,9 @@ namespace Fafikv2.Migrations
                 {
                     b.HasOne("Fafikv2.Data.Models.ServerConfig", "Config")
                         .WithMany()
-                        .HasForeignKey("ConfigId");
+                        .HasForeignKey("ConfigId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Config");
                 });
@@ -149,7 +157,9 @@ namespace Fafikv2.Migrations
 
                     b.HasOne("Fafikv2.Data.Models.UserServerStats", "UserServerStats")
                         .WithMany()
-                        .HasForeignKey("UserServerStatsId");
+                        .HasForeignKey("UserServerStatsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Server");
 

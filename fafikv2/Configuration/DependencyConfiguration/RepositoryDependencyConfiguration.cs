@@ -6,13 +6,13 @@ namespace Fafikv2.Configuration.DependencyConfiguration
 {
     public static class RepositoryDependencyConfiguration
     {
-        public static IServiceCollection AddRepositories(this IServiceCollection Services)
+        public static IServiceCollection AddRepositories(this IServiceCollection services)
         {
-            Services.AddScoped<IUserRepository, UserRepository>();
-            Services.AddScoped<IServerRepository, ServerRepository>();
-            Services.AddScoped<IServerUsersRepository, ServerUsersRepository>();
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IServerRepository, ServerRepository>();
+            services.AddScoped<IServerUsersRepository, ServerUsersRepository>();
 
-            return Services;
+            return services;
         }
     }
 }

@@ -7,17 +7,17 @@ namespace Fafikv2.Repositories
 {
     public class UserRepository : IUserRepository
     {
-        private readonly DiscordBotDbContext _Context;
+        private readonly DiscordBotDbContext _context;
 
         public UserRepository(DiscordBotDbContext context)
         {
-            _Context=context;
+            _context=context;
         }
 
         public Task AddUser(User user)
         {
-            _Context.Users.Add(user);
-            _Context.SaveChanges();
+            _context.Users.Add(user);
+            _context.SaveChanges();
             return Task.CompletedTask;
 
         }
@@ -34,7 +34,7 @@ namespace Fafikv2.Repositories
 
         public IEnumerable<User> GetAll()
         {
-            var result = _Context.Users;
+            var result = _context.Users;
             return result;
         }
 

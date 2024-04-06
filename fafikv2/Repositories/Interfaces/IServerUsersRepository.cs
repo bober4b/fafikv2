@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Fafikv2.Data.Models;
 
 namespace Fafikv2.Repositories.Interfaces
 {
-    internal interface IServerUsersRepository
+    public interface IServerUsersRepository
     {
+        public Task AddServerUser(ServerUsers serverUsers);
+        public IEnumerable<ServerUsers> GetAll();
     }
 }

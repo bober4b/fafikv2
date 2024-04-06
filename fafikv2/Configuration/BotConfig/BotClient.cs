@@ -1,23 +1,15 @@
 ﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using DSharpPlus.Net;
 using DSharpPlus.Lavalink;
+using DSharpPlus.Net;
 using Fafikv2.Commands;
-using Fafikv2.Configuration.BotConfig;
 using Fafikv2.Configuration.ConfigJSON;
 using Fafikv2.Data.Models;
 using Fafikv2.Services.dbSevices.Interfaces;
-using Fafikv2.Services.dbSevices;
 
-namespace Fafikv2.BotConfig
+namespace Fafikv2.Configuration.BotConfig
 {
     public class BotClient
     {
@@ -25,11 +17,18 @@ namespace Fafikv2.BotConfig
         private static CommandsNextExtension Commands { get; set; }
 
         private readonly IUserService _userService;
+        private readonly IServerService _serverService;
+        private readonly IServerUsersService _serverUsersService;
+
+
+
         private readonly OnStartUpdateDatabaseQueue _onStartUpdateDatabaseQueue;
 
-        public BotClient(IUserService userService)
+        public BotClient(IUserService userService, IServerService serverService, IServerUsersService serverUsersService)
         {
             _userService= userService;
+            _serverService= serverService;
+            _serverUsersService= serverUsersService;
             _onStartUpdateDatabaseQueue = new OnStartUpdateDatabaseQueue();
         }
 
@@ -112,36 +111,48 @@ namespace Fafikv2.BotConfig
         private async Task Client_GuildAvailable(DiscordClient sender, GuildCreateEventArgs args)
         {
             var users = await args.Guild.GetAllMembersAsync();
-
-            //var server = await sender.
-
+            var server =  args.Guild;
 
 
 
-            await _onStartUpdateDatabaseQueue.Enqueue( async () => await UpdateUsersOnConnect(users));
+            await _onStartUpdateDatabaseQueue.Enqueue( async () => await UpdateDatabaseOnConnect(users, server));
 
 
 
         }
 
-        public async Task UpdateUsersOnConnect(IReadOnlyCollection<DiscordMember> users)
+        public async Task UpdateDatabaseOnConnect(IReadOnlyCollection<DiscordMember> users, DiscordGuild server)
         {
-            
+            var serverGuidToFormat = server.Id;
+            var toFormatted = $"{serverGuidToFormat:X32}";
+            var server1 = new Server
+            {
+                Name = server.Name,
+                Id = Guid.Parse(toFormatted)
+            };
+
+            await _serverService.AddServer(server1);
             foreach (var user in users)
             {
                 if (!user.IsBot)
                 {
-                    ulong value = user.Id;
-                    string formatedguid = $"{value:X32}";
+                    var value = user.Id;
+                    var formatted = $"{value:X32}";
                     var useradd = new User
                     {
                         Name = user.Username,
-                        DisplayName = user.DisplayName,
-                        Id = Guid.Parse(formatedguid)
+                        Id = Guid.Parse(formatted)
 
                     };
                     await _userService.AddUser(useradd);
                     Console.WriteLine($"dodano: {user.Username}");
+
+                    var serverUser = new ServerUsers
+                    {
+                        ServerId = server1.Id,
+                        UserId = useradd.Id
+                    };
+                    await _serverUsersService.AddServerUsers(serverUser);
                 }
             }
 

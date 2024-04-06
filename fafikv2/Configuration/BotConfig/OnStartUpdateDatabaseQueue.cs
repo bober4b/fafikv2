@@ -9,13 +9,13 @@ namespace Fafikv2.Configuration.BotConfig
 {
     public class OnStartUpdateDatabaseQueue
     {
-        private readonly ConcurrentQueue<Func<Task>> _TaskQueue = new ConcurrentQueue<Func<Task>>();
-        private readonly SemaphoreSlim _signal=new SemaphoreSlim(0);
+        private readonly ConcurrentQueue<Func<Task>> _taskQueue = new();
+        private readonly SemaphoreSlim _signal=new(0);
 
         public async Task Enqueue(Func<Task> task)
         {
 
-            _TaskQueue.Enqueue(task);
+            _taskQueue.Enqueue(task);
             _signal.Release();
 
         }
@@ -23,7 +23,7 @@ namespace Fafikv2.Configuration.BotConfig
         public async Task<Func<Task>> DequeueAsync(CancellationToken cancellationToken)
         {
             await _signal.WaitAsync(cancellationToken);
-            _TaskQueue.TryDequeue(out var task);
+            _taskQueue.TryDequeue(out var task);
             return task;
         }
     }

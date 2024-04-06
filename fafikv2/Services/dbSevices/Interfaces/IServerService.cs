@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿using Fafikv2.Data.Models;
 namespace Fafikv2.Services.dbSevices.Interfaces
 {
-    internal interface IServerService
+    public interface IServerService
     {
+        public Task AddServer(Server server);
+        public Task UpdateServer(Server server);
     }
 }

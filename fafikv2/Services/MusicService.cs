@@ -70,7 +70,7 @@ namespace Fafikv2.Services
 
         private async Task Node_PlaybackFinished(LavalinkGuildConnection sender, TrackFinishEventArgs args)
         {
-            TrackEndReason reason = args.Reason;
+            var reason = args.Reason;
 
             if (reason == TrackEndReason.Finished)
             {
@@ -105,7 +105,7 @@ namespace Fafikv2.Services
             }
         }
 
-        private async Task Node_disconnected(LavalinkGuildConnection sender, GuildConnectionRemovedEventArgs args)
+        private Task Node_disconnected(LavalinkGuildConnection sender, GuildConnectionRemovedEventArgs args)
         {
             var guildid = sender.Guild.Id;
 
@@ -114,6 +114,7 @@ namespace Fafikv2.Services
                 queue.Clear();
             }
 
+            return Task.CompletedTask;
         }
 
 
@@ -179,8 +180,7 @@ namespace Fafikv2.Services
 
             var loadResult = await node.Rest.GetTracksAsync(search);
 
-            if (loadResult.LoadResultType == LavalinkLoadResultType.LoadFailed ||
-                loadResult.LoadResultType == LavalinkLoadResultType.NoMatches)
+            if (loadResult.LoadResultType is LavalinkLoadResultType.LoadFailed or LavalinkLoadResultType.NoMatches)
             {
                 await ctx.RespondAsync($"Track search failed for {search}.");
                 return;
@@ -207,7 +207,7 @@ namespace Fafikv2.Services
             else
             {
                 
-                List<TimeSpan> time_left_all = queue.Select(track => track.Length).ToList();
+                var time_left_all = queue.Select(track => track.Length).ToList();
 
                 TimeSpan time_left= new();
 
@@ -404,7 +404,7 @@ namespace Fafikv2.Services
                 return;
             }
 
-            if (vol < 0 || vol > 100)
+            if (vol is < 0 or > 100)
             {
                 await ctx.RespondAsync("volume must be between 0 and 100");
                 return;

@@ -1,7 +1,5 @@
 ﻿using Fafikv2.Data.Models;
 using Microsoft.EntityFrameworkCore;
-using static System.Net.Mime.MediaTypeNames;
-using System;
 
 namespace Fafikv2.Data.DataContext
 {
