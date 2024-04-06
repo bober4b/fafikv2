@@ -32,14 +32,6 @@ namespace Fafikv2
 
 
 
-        static async Task initializeDatabase(IServiceProvider servicesProvider)
-        {
-            using (var scope = servicesProvider.CreateScope())
-            {
-                var database = scope.ServiceProvider.GetRequiredService<DiscordBotDbContext>();
-                //await database.Database.MigrateAsync();
-                //await Task.Delay(1000);
-            }
-        }
+        
     }
 }

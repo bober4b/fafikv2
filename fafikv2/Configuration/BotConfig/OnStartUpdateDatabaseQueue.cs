@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Fafikv2.Configuration.BotConfig
 {
-    public class TaskQueue
+    public class OnStartUpdateDatabaseQueue
     {
         private readonly ConcurrentQueue<Func<Task>> _TaskQueue = new ConcurrentQueue<Func<Task>>();
         private readonly SemaphoreSlim _signal=new SemaphoreSlim(0);

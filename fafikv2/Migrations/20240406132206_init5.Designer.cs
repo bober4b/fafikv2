@@ -4,6 +4,7 @@ using Fafikv2.Data.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fafikv2.Migrations
 {
     [DbContext(typeof(DiscordBotDbContext))]
-    partial class DiscordBotDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240406132206_init5")]
+    partial class init5
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -85,6 +88,9 @@ namespace Fafikv2.Migrations
                     b.Property<int>("BotInteractionGlobal")
                         .HasColumnType("int");
 
+                    b.Property<int>("BotInteractionServer")
+                        .HasColumnType("int");
+
                     b.Property<string>("DisplayName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -95,9 +101,15 @@ namespace Fafikv2.Migrations
                     b.Property<int>("MessagesCountGlobal")
                         .HasColumnType("int");
 
+                    b.Property<int>("MessagesCountServer")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<float>("ServerKarma")
+                        .HasColumnType("real");
 
                     b.Property<int>("UserLevel")
                         .HasColumnType("int");

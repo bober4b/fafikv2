@@ -25,12 +25,12 @@ namespace Fafikv2.BotConfig
         private static CommandsNextExtension Commands { get; set; }
 
         private readonly IUserService _userService;
-        private readonly TaskQueue _taskQueue;
+        private readonly OnStartUpdateDatabaseQueue _onStartUpdateDatabaseQueue;
 
         public BotClient(IUserService userService)
         {
             _userService= userService;
-            _taskQueue = new TaskQueue();
+            _onStartUpdateDatabaseQueue = new OnStartUpdateDatabaseQueue();
         }
 
        
@@ -92,7 +92,7 @@ namespace Fafikv2.BotConfig
             {
                 while (true)
                 {
-                    var task = await _taskQueue.DequeueAsync(CancellationToken.None);
+                    var task = await _onStartUpdateDatabaseQueue.DequeueAsync(CancellationToken.None);
                     if (task != null)
                     {
                         await task();
@@ -116,7 +116,7 @@ namespace Fafikv2.BotConfig
 
 
 
-            await _taskQueue.Enqueue( async () => await UpdateUsersOnConnect(users));
+            await _onStartUpdateDatabaseQueue.Enqueue( async () => await UpdateUsersOnConnect(users));
 
 
 
