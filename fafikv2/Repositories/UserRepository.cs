@@ -1,7 +1,7 @@
 ﻿using Fafikv2.Data.Models;
 using Fafikv2.Data.DataContext;
 using Fafikv2.Repositories.Interfaces;
-using Fafikv2.Data.DataContext;
+
 
 namespace Fafikv2.Repositories
 {
@@ -14,11 +14,12 @@ namespace Fafikv2.Repositories
             _Context=context;
         }
 
-        public async Task AddUser(User user)
+        public Task AddUser(User user)
         {
             _Context.Users.Add(user);
             _Context.SaveChanges();
-            
+            return Task.CompletedTask;
+
         }
 
         public Task DeleteUser(User user)

@@ -113,6 +113,8 @@ namespace Fafikv2.BotConfig
         {
             var users = await args.Guild.GetAllMembersAsync();
 
+            //var server = await sender.
+
 
 
 
@@ -124,7 +126,7 @@ namespace Fafikv2.BotConfig
 
         public async Task UpdateUsersOnConnect(IReadOnlyCollection<DiscordMember> users)
         {
-            //Console.WriteLine("uopdate halo");
+            
             foreach (var user in users)
             {
                 if (!user.IsBot)

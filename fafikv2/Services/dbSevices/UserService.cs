@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using Fafikv2.Data.Models;
+﻿using Fafikv2.Data.Models;
 using Fafikv2.Repositories.Interfaces;
 using Fafikv2.Services.dbSevices.Interfaces;
 
@@ -19,7 +18,9 @@ namespace Fafikv2.Services.dbSevices
         {
             
             
-                var newuser = _userRepository.GetAll().FirstOrDefault(x => x.Id == user.Id);
+                var newuser = _userRepository
+                    .GetAll()
+                    .FirstOrDefault(x => x.Id == user.Id);
                 if (newuser != null)
                 {
                     return;

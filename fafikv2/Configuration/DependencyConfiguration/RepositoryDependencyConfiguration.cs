@@ -9,7 +9,8 @@ namespace Fafikv2.Configuration.DependencyConfiguration
         public static IServiceCollection AddRepositories(this IServiceCollection Services)
         {
             Services.AddScoped<IUserRepository, UserRepository>();
-
+            Services.AddScoped<IServerRepository, ServerRepository>();
+            Services.AddScoped<IServerUsersRepository, ServerUsersRepository>();
 
             return Services;
         }
