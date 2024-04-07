@@ -141,7 +141,11 @@ namespace Fafikv2.Configuration.BotConfig
                     var useradd = new User
                     {
                         Name = user.Username,
-                        Id = Guid.Parse(formatted)
+                        Id = Guid.Parse(formatted),
+                        BotInteractionGlobal = 0,
+                        GlobalKarma = 0,
+                        MessagesCountGlobal = 0,
+                        UserLevel = 0
 
                     };
                     await _userService.AddUser(useradd);

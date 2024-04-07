@@ -16,16 +16,14 @@ namespace Fafikv2.Services.dbSevices
 
         public async Task AddUser(User user)
         {
-            
-            
-                var newuser = _userRepository
-                    .GetAll()
-                    .FirstOrDefault(x => x.Id == user.Id);
-                if (newuser != null)
-                {
-                    return;
-                }
-                _userRepository.AddUser(user);
+            var newuser = _userRepository
+                .GetAll()
+                .FirstOrDefault(x => x.Id == user.Id);
+            if (newuser != null)
+            {
+                return;
+            }
+            _userRepository.AddUser(user);
             
 
             await Task.CompletedTask;
