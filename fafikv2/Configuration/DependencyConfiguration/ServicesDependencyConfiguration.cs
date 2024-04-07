@@ -11,6 +11,8 @@ namespace Fafikv2.Configuration.DependencyConfiguration
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IServerService, ServerService>();
             services.AddScoped<IServerUsersService, ServerUsersService>();
+            services.AddScoped<IServerConfigService, ServerConfigService>();
+            services.AddScoped<IUserServerStatsService, UserServerStatsService>();
 
 
             return services;

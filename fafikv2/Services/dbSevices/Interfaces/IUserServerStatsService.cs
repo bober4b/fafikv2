@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Fafikv2.Data.Models;
 
 namespace Fafikv2.Services.dbSevices.Interfaces
 {
-    internal interface IUserServerStatsService
+    public interface IUserServerStatsService
     {
+        public Task AddUserServerStats(UserServerStats userServerStats);
+        public Task UpdateUserServerStats(UserServerStats userServerStats);
+
     }
 }

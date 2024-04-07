@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿using Fafikv2.Data.Models;
 namespace Fafikv2.Repositories.Interfaces
 {
-    internal class IServerConfigRepository
+    public interface IServerConfigRepository
     {
+        public Task AddServerConfig(ServerConfig serverConfig);
+        public Task UpdateServerConfig(ServerConfig serverConfig);
+        public Task DeleteServerConfig(ServerConfig serverConfig);
+        public IEnumerable<ServerConfig> GetAll();
+
     }
 }

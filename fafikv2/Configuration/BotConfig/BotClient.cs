@@ -19,16 +19,20 @@ namespace Fafikv2.Configuration.BotConfig
         private readonly IUserService _userService;
         private readonly IServerService _serverService;
         private readonly IServerUsersService _serverUsersService;
+        private readonly IServerConfigService _serverConfigService;
+        private readonly IUserServerStatsService _userServerStatsService;
 
 
 
         private readonly OnStartUpdateDatabaseQueue _onStartUpdateDatabaseQueue;
 
-        public BotClient(IUserService userService, IServerService serverService, IServerUsersService serverUsersService)
+        public BotClient(IUserService userService, IServerService serverService, IServerUsersService serverUsersService, IServerConfigService serverConfigService, IUserServerStatsService userServerStatsService)
         {
             _userService= userService;
             _serverService= serverService;
             _serverUsersService= serverUsersService;
+            _serverConfigService= serverConfigService;
+            _userServerStatsService= userServerStatsService;
             _onStartUpdateDatabaseQueue = new OnStartUpdateDatabaseQueue();
         }
 
@@ -125,12 +129,18 @@ namespace Fafikv2.Configuration.BotConfig
         {
             var serverGuidToFormat = server.Id;
             var toFormatted = $"{serverGuidToFormat:X32}";
+            var sConfig = new ServerConfig
+            {
+                Id = Guid.NewGuid()
+            };
+
             var server1 = new Server
             {
                 Name = server.Name,
-                Id = Guid.Parse(toFormatted)
+                Id = Guid.Parse(toFormatted),
+                ConfigId = sConfig.Id
             };
-
+            await _serverConfigService.AddServerConfig(sConfig);
             await _serverService.AddServer(server1);
             foreach (var user in users)
             {
@@ -151,12 +161,25 @@ namespace Fafikv2.Configuration.BotConfig
                     await _userService.AddUser(useradd);
                     Console.WriteLine($"dodano: {user.Username}");
 
+                    var userStats = new UserServerStats
+                    {
+                        Id = Guid.NewGuid(),
+                        ServerKarma = 0,
+                        MessagesCountServer = 0,
+                        BotInteractionServer = 0,
+                        DisplayName = user.DisplayName
+                    };
+
+                    await _userServerStatsService.AddUserServerStats(userStats);
+
                     var serverUser = new ServerUsers
                     {
                         ServerId = server1.Id,
-                        UserId = useradd.Id
+                        UserId = useradd.Id,
+                        UserServerStatsId = userStats.Id
                     };
                     await _serverUsersService.AddServerUsers(serverUser);
+                    Console.WriteLine($"dodano do serwera: {server.Name} użytkownika: {user.Username}");
                 }
             }
 

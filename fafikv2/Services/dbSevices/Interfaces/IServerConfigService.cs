@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Fafikv2.Data.Models;
 
 namespace Fafikv2.Services.dbSevices.Interfaces
 {
-    internal interface IServerConfigService
+    public interface IServerConfigService
     {
+        public Task AddServerConfig(ServerConfig serverConfig);
+        public Task RemoveServerConfig(ServerConfig serverConfig);
+        public Task UpdateServerConfig(ServerConfig serverConfig);
     }
 }
