@@ -200,7 +200,15 @@ namespace Fafikv2.Services
 
             if (queue.Count == 0)
             {
-                await conn.PlayAsync(track);
+                try
+                {
+                    await conn.PlayAsync(track);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"{e.InnerException.Message}");
+                }
+                //await conn.PlayAsync(track);
                 queue.Add(track);
                 await ctx.RespondAsync($"now playing {track.Title}!");
             }

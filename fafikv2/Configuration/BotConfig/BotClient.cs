@@ -1,4 +1,5 @@
-﻿using DSharpPlus;
+﻿using System.Diagnostics.CodeAnalysis;
+using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
@@ -26,7 +27,11 @@ namespace Fafikv2.Configuration.BotConfig
 
         private readonly OnStartUpdateDatabaseQueue _onStartUpdateDatabaseQueue;
 
-        public BotClient(IUserService userService, IServerService serverService, IServerUsersService serverUsersService, IServerConfigService serverConfigService, IUserServerStatsService userServerStatsService)
+        public BotClient(IUserService userService, 
+            IServerService serverService, 
+            IServerUsersService serverUsersService, 
+            IServerConfigService serverConfigService, 
+            IUserServerStatsService userServerStatsService)
         {
             _userService= userService;
             _serverService= serverService;
@@ -38,6 +43,7 @@ namespace Fafikv2.Configuration.BotConfig
 
        
 
+        
         public async Task Initialize()
         {
 
@@ -58,6 +64,9 @@ namespace Fafikv2.Configuration.BotConfig
             Client.Ready += Client_Ready;
             Client.MessageCreated += Client_MessageCreated;
             Client.GuildAvailable += Client_GuildAvailable;
+            Client.GuildMemberAdded += Client_GuildMemberAdded;
+            Client.UnknownEvent += Client_UnknownEvent;
+            
 
             var commandsConfig = new CommandsNextConfiguration()
             {
@@ -110,6 +119,18 @@ namespace Fafikv2.Configuration.BotConfig
 
 
             await Task.Delay(-1);
+        }
+
+        private static Task Client_UnknownEvent(DiscordClient sender, UnknownEventArgs args)
+        {
+            Console.WriteLine("xD");
+            return Task.CompletedTask;
+        }
+
+        private static Task Client_GuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs args)
+        {
+            Console.WriteLine($"{args.Member.Username}");
+            return Task.CompletedTask;
         }
 
         private async Task Client_GuildAvailable(DiscordClient sender, GuildCreateEventArgs args)

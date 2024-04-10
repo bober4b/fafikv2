@@ -5,13 +5,10 @@ using Fafikv2.Configuration.DependencyConfiguration;
 using Fafikv2.Services.dbSevices.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace Fafikv2
 {
-
     public class Program
     {
-
         static async Task Main()
         {
 
@@ -30,7 +27,6 @@ namespace Fafikv2
                     servicesProvider.GetRequiredService(typeof(IUserServerStatsService)) as IUserServerStatsService)
                 .Initialize();
         }
-
         private static async Task initializeDatabase(ServiceProvider servicesProvider)
         {
             using (var scope = servicesProvider.CreateScope())
