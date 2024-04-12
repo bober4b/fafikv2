@@ -203,6 +203,7 @@ namespace Fafikv2.Services
                 try
                 {
                     await conn.PlayAsync(track);
+                    Console.WriteLine( $"XDDDDDDDDDDDDDDDDD: {conn.CurrentState.CurrentTrack.Title}");
                 }
                 catch (Exception e)
                 {
@@ -225,6 +226,7 @@ namespace Fafikv2.Services
                 {
                     time_left += song_time;
                 }
+                Console.WriteLine($"XDDDDDDDDDDDDDDDDD111: {conn.CurrentState.CurrentTrack.Title}");
                 queue.Add(track);
                 await ctx.RespondAsync($"Added {track.Title} to the queue!\n" +
                                        $"Song will be played in: {time_left}");
@@ -355,7 +357,7 @@ namespace Fafikv2.Services
             var guildId = ctx.Channel.Guild.Id;
             var lava = ctx.Client.GetLavalink();
             var node = lava.ConnectedNodes.Values.First();
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
+            /*var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
 
             if (conn == null)
             {
@@ -367,7 +369,7 @@ namespace Fafikv2.Services
             {
                 await ctx.RespondAsync("there are no track loaded.");
                 return;
-            }
+            }*/
 
             if (_queue.TryGetValue(guildId, out var queue) && queue.Count > 0)
             {
