@@ -1,6 +1,7 @@
 ﻿using Fafikv2.Data.Models;
 using Fafikv2.Data.DataContext;
 using Fafikv2.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace Fafikv2.Repositories
@@ -27,9 +28,30 @@ namespace Fafikv2.Repositories
             throw new NotImplementedException();
         }
 
-        public Task UpdateUser(User user)
+        public async Task<User?> GetUserById(Guid userId)
         {
-            throw new NotImplementedException();
+            
+            return await _context
+                .Users
+                .FirstOrDefaultAsync(x => x.Id == userId).ConfigureAwait(false);
+            
+        }
+
+        public async Task UpdateUser(User user)
+        {
+            var existingUser = _context.Users.FirstOrDefault(x => x.Id == user.Id) ?? throw new InvalidOperationException("user not found");
+            
+            
+            var properties = typeof(User)
+                .GetProperties()
+                .Where(p => p.GetValue(user) != null);
+
+            foreach (var property in properties)
+            {
+                property.SetValue(existingUser, property.GetValue(user));
+            }
+
+            await _context.SaveChangesAsync().ConfigureAwait(false);
         }
 
         public IEnumerable<User> GetAll()
@@ -38,5 +60,9 @@ namespace Fafikv2.Repositories
             return result;
         }
 
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync().ConfigureAwait(false);
+        }
     }
 }

@@ -23,15 +23,38 @@ namespace Fafikv2.Services.dbSevices
             {
                 return;
             }
-            _userRepository.AddUser(user);
+            await _userRepository.AddUser(user).ConfigureAwait(false);
             
 
-            await Task.CompletedTask;
+            await Task.CompletedTask.ConfigureAwait(false);
         }
 
         public Task UpdateUser(User user)
         {
             return Task.CompletedTask;
+        }
+
+        public async Task UpdateUserMessageCount(Guid userId)
+        {
+            var user = await _userRepository.GetUserById(userId).ConfigureAwait(false) 
+                       ?? throw new InvalidOperationException("user not found");
+
+            user.MessagesCountGlobal++;
+
+            await _userRepository.SaveChangesAsync().ConfigureAwait(false);
+
+
+
+        }
+
+        public async Task UpdateUSerBotInteractionsCount(Guid userId)
+        {
+            var user = await _userRepository.GetUserById(userId).ConfigureAwait(false)
+                       ?? throw new InvalidOperationException("user not found");
+
+            user.BotInteractionGlobal++;
+
+            await _userRepository.SaveChangesAsync().ConfigureAwait(false);
         }
     }
 }

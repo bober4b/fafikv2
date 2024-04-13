@@ -180,7 +180,7 @@ namespace Fafikv2.Configuration.BotConfig
 
                     };
                     await _userService.AddUser(useradd);
-                    Console.WriteLine($"dodano: {user.Username}");
+                    Console.WriteLine($"dodano: {user.Username} {user.Id} {server.Name}");
 
                     var userStats = new UserServerStats
                     {
@@ -200,7 +200,7 @@ namespace Fafikv2.Configuration.BotConfig
                         UserServerStatsId = userStats.Id
                     };
                     await _serverUsersService.AddServerUsers(serverUser);
-                    Console.WriteLine($"dodano do serwera: {server.Name} użytkownika: {user.Username}");
+                    //Console.WriteLine($"dodano do serwera: {server.Name} użytkownika: {user.Username}");
                 }
             }
 
@@ -212,10 +212,24 @@ namespace Fafikv2.Configuration.BotConfig
             return Task.CompletedTask;
         }
 
-        private static Task Client_MessageCreated(DiscordClient sender, MessageCreateEventArgs args)
+        private async Task Client_MessageCreated(DiscordClient sender, MessageCreateEventArgs args)
         {
             Console.WriteLine($"[{args.Message.CreationTimestamp}] {args.Message.Author.Username}: {args.Message.Content}");
-            return Task.CompletedTask;
+            if (args.Message.Content.StartsWith("!"))
+            {
+                var userid=args.Author.Id;
+                var formatted = $"{userid:X32}";
+                await _userService.UpdateUSerBotInteractionsCount(Guid.Parse(formatted));
+
+                await _userService.UpdateUserMessageCount(Guid.Parse(formatted));
+            }
+            else
+            {
+                var userid = args.Author.Id;
+                var formatted = $"{userid:X32}";
+                _userService.UpdateUserMessageCount(Guid.Parse(formatted));
+            }
+            //return Task.CompletedTask;
         }
     }
 }
