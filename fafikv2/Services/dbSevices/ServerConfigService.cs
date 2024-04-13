@@ -17,11 +17,12 @@ namespace Fafikv2.Services.dbSevices
         {
             var newConfig = _serverConfigRepository
                 .GetAll()
-                .FirstOrDefault(x => x.Id == serverConfig.Id);
+                .FirstOrDefault(x => x.Id == serverConfig.Id || x.ServerId == serverConfig.ServerId);
             if (newConfig != null)
             {
                 return;
             }
+
 
             _serverConfigRepository.AddServerConfig(serverConfig);
 

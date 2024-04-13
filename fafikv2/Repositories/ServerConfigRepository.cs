@@ -17,7 +17,15 @@ namespace Fafikv2.Repositories
         public Task AddServerConfig(ServerConfig serverConfig)
         {
             _context.ServerConfigs.Add(serverConfig);
-            _context.SaveChanges();
+            try
+            {
+                _context.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.InnerException.Message);
+            }
+           // _context.SaveChanges();
             return Task.CompletedTask;
         }
 

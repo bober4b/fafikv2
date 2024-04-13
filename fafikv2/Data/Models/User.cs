@@ -4,11 +4,11 @@
     {
 
         //DB info
-        public virtual ICollection<ServerUsers> Servers { get; set; }
+        public virtual ICollection<ServerUsers>? Servers { get; set; }
 
         //DiscordData
         public Guid Id { get; set; }
-        public string Name { get; set; }
+        public string? Name { get; set; }
         
 
         //BotData karma

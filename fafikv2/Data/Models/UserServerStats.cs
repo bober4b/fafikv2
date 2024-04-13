@@ -10,6 +10,6 @@
         public int BotInteractionServer { get; set; }
 
         //server info
-        public string DisplayName { get; set; }
+        public string? DisplayName { get; set; }
     }
 }

@@ -152,7 +152,8 @@ namespace Fafikv2.Configuration.BotConfig
             var toFormatted = $"{serverGuidToFormat:X32}";
             var sConfig = new ServerConfig
             {
-                Id = Guid.NewGuid()
+                Id = Guid.NewGuid(),
+                ServerId = Guid.Parse(toFormatted)
             };
 
             var server1 = new Server
@@ -161,8 +162,9 @@ namespace Fafikv2.Configuration.BotConfig
                 Id = Guid.Parse(toFormatted),
                 ConfigId = sConfig.Id
             };
-            await _serverConfigService.AddServerConfig(sConfig);
+            //await _serverConfigService.AddServerConfig(sConfig);
             await _serverService.AddServer(server1);
+            await _serverConfigService.AddServerConfig(sConfig);
             foreach (var user in users)
             {
                 if (!user.IsBot)
@@ -227,7 +229,7 @@ namespace Fafikv2.Configuration.BotConfig
             {
                 var userid = args.Author.Id;
                 var formatted = $"{userid:X32}";
-                _userService.UpdateUserMessageCount(Guid.Parse(formatted));
+               await _userService.UpdateUserMessageCount(Guid.Parse(formatted));
             }
             //return Task.CompletedTask;
         }

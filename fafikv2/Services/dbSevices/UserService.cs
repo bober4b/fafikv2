@@ -39,6 +39,7 @@ namespace Fafikv2.Services.dbSevices
             var user = await _userRepository.GetUserById(userId).ConfigureAwait(false) 
                        ?? throw new InvalidOperationException("user not found");
 
+            
             user.MessagesCountGlobal++;
 
             await _userRepository.SaveChangesAsync().ConfigureAwait(false);
