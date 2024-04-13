@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-using DSharpPlus;
+﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.Lavalink;
@@ -355,21 +348,8 @@ namespace Fafikv2.Services
 
 
             var guildId = ctx.Channel.Guild.Id;
-            var lava = ctx.Client.GetLavalink();
-            var node = lava.ConnectedNodes.Values.First();
-            /*var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
-
-            if (conn == null)
-            {
-                await ctx.RespondAsync("Lavalink is not connected.");
-                return;
-            }
-
-            if (conn.CurrentState.CurrentTrack == null)
-            {
-                await ctx.RespondAsync("there are no track loaded.");
-                return;
-            }*/
+            
+            
 
             if (_queue.TryGetValue(guildId, out var queue) && queue.Count > 0)
             {
@@ -404,9 +384,16 @@ namespace Fafikv2.Services
             }
 
             var node = lava.ConnectedNodes.Values.First();
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
+            
 
-           
+            var voiceState = ctx.Member?.VoiceState;
+            if (voiceState?.Channel == null)
+            {
+                Console.WriteLine($"{ctx.Member.VoiceState?.Channel}");
+                await ctx.RespondAsync("You need to be in a voice channel to use this command.");
+                return;
+            }
+            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
 
             if (conn == null)
             {
