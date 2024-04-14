@@ -171,6 +171,7 @@ namespace Fafikv2.Configuration.BotConfig
                 {
                     var value = user.Id;
                     var formatted = $"{value:X32}";
+                    var statsId = Guid.NewGuid();
                     var useradd = new User
                     {
                         Name = user.Username,
@@ -183,25 +184,46 @@ namespace Fafikv2.Configuration.BotConfig
                     };
                     await _userService.AddUser(useradd);
                     Console.WriteLine($"dodano: {user.Username} {user.Id} {server.Name}");
-
-                    var userStats = new UserServerStats
-                    {
-                        Id = Guid.NewGuid(),
-                        ServerKarma = 0,
-                        MessagesCountServer = 0,
-                        BotInteractionServer = 0,
-                        DisplayName = user.DisplayName
-                    };
-
-                    await _userServerStatsService.AddUserServerStats(userStats);
+                   
+                    
 
                     var serverUser = new ServerUsers
                     {
                         ServerId = server1.Id,
                         UserId = useradd.Id,
-                        UserServerStatsId = userStats.Id
+                        UserServerStatsId = statsId,
+                        Id = Guid.NewGuid(),
+
+
                     };
+
+
+                    var userStats = new UserServerStats
+                    {
+                        Id = statsId,
+                        ServerKarma = 0,
+                        MessagesCountServer = 0,
+                        BotInteractionServer = 0,
+                        DisplayName = user.DisplayName,
+                        ServerUsers = serverUser
+
+
+                    };
+
+                    userStats.ServerUserId=serverUser.Id;
                     await _serverUsersService.AddServerUsers(serverUser);
+
+
+                    await _userServerStatsService.AddUserServerStats(userStats);
+                    //await _serverUsersService.AddServerUsers(serverUser);
+
+                    //await _userServerStatsService.AddUserServerStats(userStats);
+
+                    
+                    //await _userServerStatsService.AddUserServerStats(userStats);
+
+                   
+                    //await _serverUsersService.AddServerUsers(serverUser);
                     //Console.WriteLine($"dodano do serwera: {server.Name} użytkownika: {user.Username}");
                 }
             }
@@ -217,20 +239,40 @@ namespace Fafikv2.Configuration.BotConfig
         private async Task Client_MessageCreated(DiscordClient sender, MessageCreateEventArgs args)
         {
             Console.WriteLine($"[{args.Message.CreationTimestamp}] {args.Message.Author.Username}: {args.Message.Content}");
-            if (args.Message.Content.StartsWith("!"))
-            {
-                var userid=args.Author.Id;
-                var formatted = $"{userid:X32}";
-                await _userService.UpdateUSerBotInteractionsCount(Guid.Parse(formatted));
 
-                await _userService.UpdateUserMessageCount(Guid.Parse(formatted));
-            }
-            else
+            await _onStartUpdateDatabaseQueue.Enqueue(async () =>
             {
-                var userid = args.Author.Id;
-                var formatted = $"{userid:X32}";
-               await _userService.UpdateUserMessageCount(Guid.Parse(formatted));
-            }
+                if (args.Message.Content.StartsWith("!"))
+                {
+                    var userid = args.Author.Id;
+                    var formatted = $"{userid:X32}";
+
+                    var serverId = args.Guild.Id;
+                    var sformatted = $"{serverId:X32}";
+
+                    await _userService.UpdateUserBotInteractionsCount(Guid.Parse(formatted)).ConfigureAwait(false);
+                    await _userServerStatsService.UpdateUserMessageServerCount(Guid.Parse(formatted), Guid.Parse(sformatted))
+                        .ConfigureAwait(false);
+
+                    await _userService.UpdateUserMessageCount(Guid.Parse(formatted)).ConfigureAwait(false);
+                    await _userServerStatsService.UpdateUserBotInteractionsServerCount(Guid.Parse(formatted),
+                        Guid.Parse(sformatted)).ConfigureAwait(false);
+                }
+                else
+                {
+                    var userid = args.Author.Id;
+                    var formatted = $"{userid:X32}";
+
+                    var serverId = args.Guild.Id;
+                    var sformatted = $"{serverId:X32}";
+                    await _userService.UpdateUserMessageCount(Guid.Parse(formatted)).ConfigureAwait(false);
+
+                    await _userServerStatsService.UpdateUserMessageServerCount(Guid.Parse(formatted), Guid.Parse(sformatted))
+                        .ConfigureAwait(false);
+                }
+            });
+            
+            
             //return Task.CompletedTask;
         }
     }

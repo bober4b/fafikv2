@@ -48,7 +48,7 @@ namespace Fafikv2.Services.dbSevices
 
         }
 
-        public async Task UpdateUSerBotInteractionsCount(Guid userId)
+        public async Task UpdateUserBotInteractionsCount(Guid userId)
         {
             var user = await _userRepository.GetUserById(userId).ConfigureAwait(false)
                        ?? throw new InvalidOperationException("user not found");

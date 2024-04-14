@@ -17,7 +17,16 @@ namespace Fafikv2.Repositories
         public Task AddServerUser(ServerUsers serverUsers)
         {
             _context.ServerUsers.Add(serverUsers);
-            _context.SaveChanges();
+            try
+            {
+                _context.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.InnerException.Message+ " xDDDDDDDD21312DDDDDDDDD");
+            }
+            //_context.SaveChanges();
+
             return Task.CompletedTask;
         }
 

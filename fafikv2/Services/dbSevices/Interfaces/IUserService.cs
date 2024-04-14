@@ -7,7 +7,7 @@ namespace Fafikv2.Services.dbSevices.Interfaces
         public Task AddUser(User  user);
         public Task UpdateUser(User user);
         public Task UpdateUserMessageCount(Guid userId);
-        public Task UpdateUSerBotInteractionsCount(Guid userId);
+        public Task UpdateUserBotInteractionsCount(Guid userId);
         
 
     }

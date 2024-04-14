@@ -6,7 +6,10 @@ namespace Fafikv2.Repositories.Interfaces
         public Task AddUserServerStats(UserServerStats userServerStats);
         public Task UpdateUserServerStats(UserServerStats userServerStats);
         public Task DeleteUserServerStats(UserServerStats userServerStats);
+        public Task<UserServerStats?> GetUserstatsByUserAndServerId(Guid userId, Guid ServerId);
 
         public IEnumerable<UserServerStats> GetAll();
+
+        public Task SaveChangesAsync();
     }
 }

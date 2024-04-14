@@ -4,6 +4,9 @@
     {
         public Guid Id { get; set; }
 
+        public Guid? ServerUserId { get; set; }
+        public virtual ServerUsers? ServerUsers { get; set; }
+
         //server stats
         public float ServerKarma { get; set; } 
         public int MessagesCountServer { get; set; } 

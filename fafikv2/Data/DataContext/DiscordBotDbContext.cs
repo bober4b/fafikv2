@@ -22,11 +22,19 @@ namespace Fafikv2.Data.DataContext
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<ServerUsers>()
-                .HasKey(su => new { su.UserId, su.ServerId });
+                .HasOne(s => s.UserServerStats)
+                .WithOne(su=>su.ServerUsers)
+                .HasForeignKey<UserServerStats>(uss=>uss.ServerUserId);
+                
+                
+
+
             modelBuilder.Entity<Server>()
                 .HasOne(s => s.Config)
                 .WithOne(c => c.Server)
                 .HasForeignKey<ServerConfig>(c => c.ServerId);
+
+            
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

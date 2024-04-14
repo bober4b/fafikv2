@@ -4,6 +4,7 @@ using Fafikv2.Data.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fafikv2.Migrations
 {
     [DbContext(typeof(DiscordBotDbContext))]
-    partial class DiscordBotDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240413161102_ServerStatasUpdate3")]
+    partial class ServerStatasUpdate3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,24 +63,25 @@ namespace Fafikv2.Migrations
 
             modelBuilder.Entity("Fafikv2.Data.Models.ServerUsers", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("ServerId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("UserServerStatsId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserId", "ServerId");
 
                     b.HasIndex("ServerId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserServerStatsId")
+                        .IsUnique()
+                        .HasFilter("[UserServerStatsId] IS NOT NULL");
 
                     b.ToTable("ServerUsers");
                 });
@@ -126,14 +130,10 @@ namespace Fafikv2.Migrations
                     b.Property<float>("ServerKarma")
                         .HasColumnType("real");
 
-                    b.Property<Guid?>("ServerUserId")
+                    b.Property<Guid>("ServerUserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ServerUserId")
-                        .IsUnique()
-                        .HasFilter("[ServerUserId] IS NOT NULL");
 
                     b.ToTable("ServerUsersStats");
                 });
@@ -161,18 +161,15 @@ namespace Fafikv2.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Fafikv2.Data.Models.UserServerStats", "UserServerStats")
+                        .WithOne("ServerUsers")
+                        .HasForeignKey("Fafikv2.Data.Models.ServerUsers", "UserServerStatsId");
+
                     b.Navigation("Server");
 
                     b.Navigation("User");
-                });
 
-            modelBuilder.Entity("Fafikv2.Data.Models.UserServerStats", b =>
-                {
-                    b.HasOne("Fafikv2.Data.Models.ServerUsers", "ServerUsers")
-                        .WithOne("UserServerStats")
-                        .HasForeignKey("Fafikv2.Data.Models.UserServerStats", "ServerUserId");
-
-                    b.Navigation("ServerUsers");
+                    b.Navigation("UserServerStats");
                 });
 
             modelBuilder.Entity("Fafikv2.Data.Models.Server", b =>
@@ -182,14 +179,14 @@ namespace Fafikv2.Migrations
                     b.Navigation("Users");
                 });
 
-            modelBuilder.Entity("Fafikv2.Data.Models.ServerUsers", b =>
-                {
-                    b.Navigation("UserServerStats");
-                });
-
             modelBuilder.Entity("Fafikv2.Data.Models.User", b =>
                 {
                     b.Navigation("Servers");
+                });
+
+            modelBuilder.Entity("Fafikv2.Data.Models.UserServerStats", b =>
+                {
+                    b.Navigation("ServerUsers");
                 });
 #pragma warning restore 612, 618
         }
