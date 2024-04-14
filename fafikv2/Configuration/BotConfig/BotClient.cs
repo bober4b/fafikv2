@@ -205,12 +205,10 @@ namespace Fafikv2.Configuration.BotConfig
                         MessagesCountServer = 0,
                         BotInteractionServer = 0,
                         DisplayName = user.DisplayName,
-                        ServerUsers = serverUser
-
-
+                        ServerUsers = serverUser,
+                        ServerUserId = serverUser.Id
                     };
 
-                    userStats.ServerUserId=serverUser.Id;
                     await _serverUsersService.AddServerUsers(serverUser);
 
 
