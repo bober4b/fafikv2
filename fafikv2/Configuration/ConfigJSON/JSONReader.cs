@@ -7,27 +7,27 @@ using System.Threading.Tasks;
 
 namespace Fafikv2.Configuration.ConfigJSON
 {
-    internal class JSONReader
+    internal class JsonReader
     {
-        public string token { get; set; }
-        public string prefix { get; set; }
-        public async Task ReadJSON()
+        public string Token { get; set; }
+        public string Prefix { get; set; }
+        public async Task ReadJson()
         {
             using (StreamReader sr = new StreamReader("config.json"))
             {
                 string json = await sr.ReadToEndAsync();
-                JSONStructure data = JsonConvert.DeserializeObject<JSONStructure>(json);
+                JsonStructure data = JsonConvert.DeserializeObject<JsonStructure>(json);
 
-                token = data.token;
-                prefix = data.prefix;
+                Token = data.Token;
+                Prefix = data.Prefix;
             }
         }
     }
 
-    internal sealed class JSONStructure
+    internal sealed class JsonStructure
     {
-        public string token { get; set; }
-        public string prefix { get; set; }
+        public string Token { get; set; }
+        public string Prefix { get; set; }
     }
 
 }

@@ -1,6 +1,6 @@
 ﻿using Fafikv2.Data.Models;
 
-namespace Fafikv2.Services.dbSevices.Interfaces
+namespace Fafikv2.Services.dbServices.Interfaces
 {
     public interface IUserService
     {
@@ -8,6 +8,7 @@ namespace Fafikv2.Services.dbSevices.Interfaces
         public Task UpdateUser(User user);
         public Task UpdateUserMessageCount(Guid userId);
         public Task UpdateUserBotInteractionsCount(Guid userId);
+        public Task<User?> GetUser(Guid userId);
         
 
     }

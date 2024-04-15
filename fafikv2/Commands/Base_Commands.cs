@@ -1,15 +1,14 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Fafikv2.Services.CommandService;
+using Fafikv2.Services.dbServices.Interfaces;
 
 namespace Fafikv2.Commands
 {
-    public class Base_Commands : BaseCommandModule
+    public class BaseCommands : BaseCommandModule
     {
+        
+
         [Command("ping")]
         public async Task Ping(CommandContext ctx)
         {
@@ -20,6 +19,12 @@ namespace Fafikv2.Commands
         public async Task Benc(CommandContext ctx, int benc1, int benc2)
         {
             await ctx.Channel.SendMessageAsync($"elo benc:{benc1+benc2*3.14} benc elo");
+        }
+
+        [Command("stats")]
+        public async Task Stats(Command ctx)
+        {
+            
         }
 
     }

@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using DSharpPlus;
+﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
@@ -8,7 +7,7 @@ using DSharpPlus.Net;
 using Fafikv2.Commands;
 using Fafikv2.Configuration.ConfigJSON;
 using Fafikv2.Data.Models;
-using Fafikv2.Services.dbSevices.Interfaces;
+using Fafikv2.Services.dbServices.Interfaces;
 
 namespace Fafikv2.Configuration.BotConfig
 {
@@ -17,21 +16,21 @@ namespace Fafikv2.Configuration.BotConfig
         private static DiscordClient Client { get; set; }
         private static CommandsNextExtension Commands { get; set; }
 
-        private readonly IUserService _userService;
-        private readonly IServerService _serverService;
-        private readonly IServerUsersService _serverUsersService;
-        private readonly IServerConfigService _serverConfigService;
-        private readonly IUserServerStatsService _userServerStatsService;
+        private readonly IUserService? _userService;
+        private readonly IServerService? _serverService;
+        private readonly IServerUsersService? _serverUsersService;
+        private readonly IServerConfigService? _serverConfigService;
+        private readonly IUserServerStatsService? _userServerStatsService;
 
 
 
         private readonly OnStartUpdateDatabaseQueue _onStartUpdateDatabaseQueue;
 
-        public BotClient(IUserService userService, 
-            IServerService serverService, 
-            IServerUsersService serverUsersService, 
-            IServerConfigService serverConfigService, 
-            IUserServerStatsService userServerStatsService)
+        public BotClient(IUserService? userService, 
+            IServerService? serverService, 
+            IServerUsersService? serverUsersService, 
+            IServerConfigService? serverConfigService, 
+            IUserServerStatsService? userServerStatsService)
         {
             _userService= userService;
             _serverService= serverService;
@@ -47,14 +46,14 @@ namespace Fafikv2.Configuration.BotConfig
         public async Task Initialize()
         {
 
-            var jsonReader = new JSONReader();
-            await jsonReader.ReadJSON();
+            var jsonReader = new JsonReader();
+            await jsonReader.ReadJson();
 
 
             var discordConfig = new DiscordConfiguration()
             {
                 Intents = DiscordIntents.All,
-                Token = jsonReader.token,
+                Token = jsonReader.Token,
                 TokenType = TokenType.Bot,
                 AutoReconnect = true
             };
@@ -70,14 +69,14 @@ namespace Fafikv2.Configuration.BotConfig
 
             var commandsConfig = new CommandsNextConfiguration()
             {
-                StringPrefixes = new string[] { jsonReader.prefix },
+                StringPrefixes = new[] { jsonReader.Prefix },
                 EnableMentionPrefix = true,
                 EnableDms = true,
                 EnableDefaultHelp = false
             };
 
             Commands = Client.UseCommandsNext(commandsConfig);
-            Commands.RegisterCommands<Base_Commands>();
+            Commands.RegisterCommands<BaseCommands>();
             Commands.RegisterCommands<MusicCommands>();
 
             var endpoint = new ConnectionEndpoint
@@ -162,7 +161,7 @@ namespace Fafikv2.Configuration.BotConfig
                 Id = Guid.Parse(toFormatted),
                 ConfigId = sConfig.Id
             };
-            //await _serverConfigService.AddServerConfig(sConfig);
+            
             await _serverService.AddServer(server1);
             await _serverConfigService.AddServerConfig(sConfig);
             foreach (var user in users)
@@ -213,16 +212,7 @@ namespace Fafikv2.Configuration.BotConfig
 
 
                     await _userServerStatsService.AddUserServerStats(userStats);
-                    //await _serverUsersService.AddServerUsers(serverUser);
-
-                    //await _userServerStatsService.AddUserServerStats(userStats);
-
                     
-                    //await _userServerStatsService.AddUserServerStats(userStats);
-
-                   
-                    //await _serverUsersService.AddServerUsers(serverUser);
-                    //Console.WriteLine($"dodano do serwera: {server.Name} użytkownika: {user.Username}");
                 }
             }
 
@@ -271,7 +261,7 @@ namespace Fafikv2.Configuration.BotConfig
             });
             
             
-            //return Task.CompletedTask;
+            
         }
     }
 }

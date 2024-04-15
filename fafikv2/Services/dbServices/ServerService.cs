@@ -1,17 +1,17 @@
 ﻿using Fafikv2.Data.Models;
 using Fafikv2.Repositories.Interfaces;
-using Fafikv2.Services.dbSevices.Interfaces;
+using Fafikv2.Services.dbServices.Interfaces;
 
-namespace Fafikv2.Services.dbSevices
+namespace Fafikv2.Services.dbServices
 {
     internal class ServerService : IServerService
     {
         private readonly IServerRepository _serverRepository;
 
 
-        public ServerService(IServerRepository ServerRepository)
+        public ServerService(IServerRepository serverRepository)
         {
-            _serverRepository = ServerRepository;
+            _serverRepository = serverRepository;
         }
 
         public async Task AddServer(Server server)

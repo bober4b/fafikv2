@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Fafikv2.karmaSys
+namespace Fafikv2.CountSystem
 {
-    internal class Karma
+    public class Karma
     {
 
     }

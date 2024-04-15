@@ -1,6 +1,6 @@
 ﻿using Fafikv2.Data.Models;
 
-namespace Fafikv2.Services.dbSevices.Interfaces
+namespace Fafikv2.Services.dbServices.Interfaces
 {
     public interface IServerUsersService
     {

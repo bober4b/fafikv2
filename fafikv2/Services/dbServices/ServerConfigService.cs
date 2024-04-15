@@ -1,8 +1,8 @@
 ﻿using Fafikv2.Data.Models;
 using Fafikv2.Repositories.Interfaces;
-using Fafikv2.Services.dbSevices.Interfaces;
+using Fafikv2.Services.dbServices.Interfaces;
 
-namespace Fafikv2.Services.dbSevices
+namespace Fafikv2.Services.dbServices
 {
     public class ServerConfigService : IServerConfigService
     {

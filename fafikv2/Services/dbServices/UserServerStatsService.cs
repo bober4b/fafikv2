@@ -1,9 +1,8 @@
 ﻿using Fafikv2.Data.Models;
-using Fafikv2.Repositories;
 using Fafikv2.Repositories.Interfaces;
-using Fafikv2.Services.dbSevices.Interfaces;
+using Fafikv2.Services.dbServices.Interfaces;
 
-namespace Fafikv2.Services.dbSevices
+namespace Fafikv2.Services.dbServices
 {
     public class UserServerStatsService : IUserServerStatsService
     {
@@ -19,19 +18,19 @@ namespace Fafikv2.Services.dbSevices
             if (userServerStats.ServerUsers != null)
             {
                 var newstats = await _userServerRepository.GetUserstatsByUserAndServerId(userServerStats.ServerUsers.UserId,
-                    userServerStats.ServerUsers.ServerId);
+                    userServerStats.ServerUsers.ServerId).ConfigureAwait(false);
                 
 
                 if (newstats != null)
                 {
                     return;
                 }
-                _userServerRepository.AddUserServerStats(userServerStats);
+                await _userServerRepository.AddUserServerStats(userServerStats).ConfigureAwait(false);
             }
 
-            //_userServerRepository.AddUserServerStats(userServerStats);
+            
 
-            await Task.CompletedTask;
+            await Task.CompletedTask.ConfigureAwait(false);
         }
 
         public Task UpdateUserServerStats(UserServerStats userServerStats)
@@ -58,6 +57,11 @@ namespace Fafikv2.Services.dbSevices
             user.BotInteractionServer++;
 
             await _userServerRepository.SaveChangesAsync().ConfigureAwait(false);
+        }
+
+        public async Task<UserServerStats?> GetUserStats(Guid userId, Guid serverId)
+        {
+           return await _userServerRepository.GetUserstatsByUserAndServerId(userId, serverId).ConfigureAwait(false);
         }
     }
 }

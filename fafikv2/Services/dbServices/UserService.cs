@@ -1,8 +1,8 @@
 ﻿using Fafikv2.Data.Models;
 using Fafikv2.Repositories.Interfaces;
-using Fafikv2.Services.dbSevices.Interfaces;
+using Fafikv2.Services.dbServices.Interfaces;
 
-namespace Fafikv2.Services.dbSevices
+namespace Fafikv2.Services.dbServices
 {
     internal class UserService : IUserService
     {
@@ -56,6 +56,11 @@ namespace Fafikv2.Services.dbSevices
             user.BotInteractionGlobal++;
 
             await _userRepository.SaveChangesAsync().ConfigureAwait(false);
+        }
+
+        public Task<User?> GetUser(Guid userId)
+        {
+            return _userRepository.GetUserById(userId);
         }
     }
 }
