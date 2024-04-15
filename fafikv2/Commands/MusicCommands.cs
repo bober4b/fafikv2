@@ -1,5 +1,4 @@
-﻿
-using DSharpPlus.CommandsNext;
+﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using Fafikv2.Services.CommandService;
