@@ -103,10 +103,12 @@ namespace Fafikv2.Configuration.BotConfig
             {
                 while (true)
                 {
-                    var task = await _onStartUpdateDatabaseQueue.DequeueAsync(CancellationToken.None);
+                    var task = await _onStartUpdateDatabaseQueue.DequeueAsync(CancellationToken.None).ConfigureAwait(false);
                     if (task != null)
                     {
+
                         await task();
+                        _onStartUpdateDatabaseQueue.FuncNumberInQueue();
                     }
                     else
                     {
@@ -227,7 +229,7 @@ namespace Fafikv2.Configuration.BotConfig
         private async Task Client_MessageCreated(DiscordClient sender, MessageCreateEventArgs args)
         {
             Console.WriteLine($"[{args.Message.CreationTimestamp}] {args.Message.Author.Username}: {args.Message.Content}");
-
+            if(!args.Author.IsBot)
             await _onStartUpdateDatabaseQueue.Enqueue(async () =>
             {
                 if (args.Message.Content.StartsWith("!"))
@@ -239,12 +241,13 @@ namespace Fafikv2.Configuration.BotConfig
                     var sformatted = $"{serverId:X32}";
 
                     await _userService.UpdateUserBotInteractionsCount(Guid.Parse(formatted)).ConfigureAwait(false);
-                    await _userServerStatsService.UpdateUserMessageServerCount(Guid.Parse(formatted), Guid.Parse(sformatted))
-                        .ConfigureAwait(false);
+                    await _userServerStatsService.UpdateUserMessageServerCount(Guid.Parse(formatted), Guid.Parse(sformatted)).ConfigureAwait(false);
 
                     await _userService.UpdateUserMessageCount(Guid.Parse(formatted)).ConfigureAwait(false);
                     await _userServerStatsService.UpdateUserBotInteractionsServerCount(Guid.Parse(formatted),
                         Guid.Parse(sformatted)).ConfigureAwait(false);
+                    //Console.WriteLine("elo beenc");
+                     
                 }
                 else
                 {

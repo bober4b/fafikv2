@@ -25,7 +25,7 @@ namespace Fafikv2
                     servicesProvider.GetRequiredService(typeof(IServerUsersService)) as IServerUsersService,
                     servicesProvider.GetRequiredService(typeof(IServerConfigService)) as IServerConfigService, 
                     servicesProvider.GetRequiredService(typeof(IUserServerStatsService)) as IUserServerStatsService)
-                .Initialize().ConfigureAwait(false);
+                    .Initialize().ConfigureAwait(false);
         }
         private static async Task InitializeDatabase(IServiceProvider servicesProvider)
         {

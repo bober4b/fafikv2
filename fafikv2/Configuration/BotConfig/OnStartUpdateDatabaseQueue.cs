@@ -26,5 +26,10 @@ namespace Fafikv2.Configuration.BotConfig
             _taskQueue.TryDequeue(out var task);
             return task;
         }
+
+        public void FuncNumberInQueue()
+        {
+            Console.WriteLine("Liczba tasków w kolejce: "+_taskQueue.Count());
+        }
     }
 }

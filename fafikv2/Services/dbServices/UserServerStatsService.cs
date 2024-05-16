@@ -47,6 +47,7 @@ namespace Fafikv2.Services.dbServices
             user.MessagesCountServer++;
 
             await _userServerRepository.SaveChangesAsync().ConfigureAwait(false);
+            Console.WriteLine(user.DisplayName + " stats: " + user.BotInteractionServer + " " + user.MessagesCountServer);
         }
 
         public async Task UpdateUserBotInteractionsServerCount(Guid userId, Guid serverId)
@@ -57,6 +58,7 @@ namespace Fafikv2.Services.dbServices
             user.BotInteractionServer++;
 
             await _userServerRepository.SaveChangesAsync().ConfigureAwait(false);
+            Console.WriteLine(user.DisplayName+" stats: "+user.BotInteractionServer+" "+user.MessagesCountServer);
         }
 
         public async Task<UserServerStats?> GetUserStats(Guid userId, Guid serverId)
