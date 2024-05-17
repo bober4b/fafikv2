@@ -1,8 +1,7 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using Fafikv2.Services.CommandService;
-using Fafikv2.Services.dbServices.Interfaces;
-using Microsoft.Extensions.DependencyInjection;
+
 
 namespace Fafikv2.Commands
 {
@@ -12,8 +11,7 @@ namespace Fafikv2.Commands
 
         public override async Task BeforeExecutionAsync(CommandContext ctx)
         {
-            _baseCommandService = new BaseCommandService(ctx.Services.GetService<IUserService>(),
-                ctx.Services.GetService<IUserServerStatsService>());
+            _baseCommandService ??= new BaseCommandService(ctx.Services);
 
             await base.BeforeExecutionAsync(ctx).ConfigureAwait(false);
         }

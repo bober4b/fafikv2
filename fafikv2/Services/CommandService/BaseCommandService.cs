@@ -1,6 +1,8 @@
 ﻿using Fafikv2.Services.dbServices.Interfaces;
 using DSharpPlus.CommandsNext;
 using Fafikv2.CountSystem;
+using Fafikv2.Services.OtherServices.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 
 namespace Fafikv2.Services.CommandService
@@ -10,10 +12,12 @@ namespace Fafikv2.Services.CommandService
         private readonly IUserService? _userService;
         private readonly IUserServerStatsService? _userServerStatsService;
         private readonly LevelSys _levelSys;
-        public BaseCommandService(IUserService? userService, IUserServerStatsService? userServerStatsService)
+        private readonly IDatabaseContextQueueService _databaseContextQueueService;
+        public BaseCommandService(IServiceProvider serviceProvider)
         {
-            _userService = userService;
-            _userServerStatsService = userServerStatsService;
+            _userService = serviceProvider.GetRequiredService<IUserService>();
+            _userServerStatsService = serviceProvider.GetRequiredService<IUserServerStatsService>();
+            _databaseContextQueueService = serviceProvider.GetRequiredService<IDatabaseContextQueueService>();
             _levelSys = new();
         }
 
@@ -21,14 +25,21 @@ namespace Fafikv2.Services.CommandService
         {
             if (_userService != null && _userServerStatsService != null)
             {
-                var user = await _userService.GetUser(Guid.Parse($"{ctx.User.Id:X32}")).ConfigureAwait(false);
-                var userStats = await _userServerStatsService.GetUserStats(Guid.Parse($"{ctx.User.Id:X32}"), Guid.Parse($"{ctx.Guild.Id:X32}")).ConfigureAwait(false);
-                if (user !=null && userStats !=null)
+                await _databaseContextQueueService.EnequeDatabaseTask(async () =>
                 {
-                    await ctx.Channel.SendMessageAsync( _levelSys.UserInfo(user, userStats)).ConfigureAwait(false);
-                }
-                
-                
+
+
+                    var user = await _userService.GetUser(Guid.Parse($"{ctx.User.Id:X32}")).ConfigureAwait(false);
+                    var userStats = await _userServerStatsService
+                        .GetUserStats(Guid.Parse($"{ctx.User.Id:X32}"), Guid.Parse($"{ctx.Guild.Id:X32}"))
+                        .ConfigureAwait(false);
+                    if (user != null && userStats != null)
+                    {
+                        await ctx.Channel.SendMessageAsync(_levelSys.UserInfo(user, userStats)).ConfigureAwait(false);
+                    }
+                }).ConfigureAwait(false);
+
+
             }
         }
     }
