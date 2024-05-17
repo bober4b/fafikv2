@@ -1,6 +1,8 @@
 ﻿using Fafikv2.Services.dbServices;
 using Microsoft.Extensions.DependencyInjection;
 using Fafikv2.Services.dbServices.Interfaces;
+using Fafikv2.Services.OtherServices;
+using Fafikv2.Services.OtherServices.Interfaces;
 
 namespace Fafikv2.Configuration.DependencyConfiguration
 {
@@ -13,6 +15,7 @@ namespace Fafikv2.Configuration.DependencyConfiguration
             services.AddScoped<IServerUsersService, ServerUsersService>();
             services.AddScoped<IServerConfigService, ServerConfigService>();
             services.AddScoped<IUserServerStatsService, UserServerStatsService>();
+            services.AddScoped<IDatabaseContextQueueService, DatabaseContextQueueService>();
 
 
             return services;

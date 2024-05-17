@@ -8,36 +8,40 @@ using Fafikv2.Commands;
 using Fafikv2.Configuration.ConfigJSON;
 using Fafikv2.Data.Models;
 using Fafikv2.Services.dbServices.Interfaces;
+using Fafikv2.Services.OtherServices.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Fafikv2.Configuration.BotConfig
 {
     public class BotClient
     {
-        private static DiscordClient Client { get; set; }
-        private static CommandsNextExtension Commands { get; set; }
+        private static DiscordClient? Client { get; set; }
+        private static CommandsNextExtension? Commands { get; set; }
 
         private readonly IUserService? _userService;
         private readonly IServerService? _serverService;
         private readonly IServerUsersService? _serverUsersService;
         private readonly IServerConfigService? _serverConfigService;
         private readonly IUserServerStatsService? _userServerStatsService;
+        private readonly IDatabaseContextQueueService? _databaseContextQueueService;
+        private readonly ServiceProvider _serviceProvider;
 
 
 
-        private readonly OnStartUpdateDatabaseQueue _onStartUpdateDatabaseQueue;
+        
 
-        public BotClient(IUserService? userService, 
-            IServerService? serverService, 
-            IServerUsersService? serverUsersService, 
-            IServerConfigService? serverConfigService, 
-            IUserServerStatsService? userServerStatsService)
+        public BotClient(ServiceProvider servicesProvider)
         {
-            _userService= userService;
-            _serverService= serverService;
-            _serverUsersService= serverUsersService;
-            _serverConfigService= serverConfigService;
-            _userServerStatsService= userServerStatsService;
-            _onStartUpdateDatabaseQueue = new OnStartUpdateDatabaseQueue();
+            
+            
+            _userService = servicesProvider.GetRequiredService(typeof(IUserService)) as IUserService;
+            _serverService = servicesProvider.GetRequiredService(typeof(IServerService)) as IServerService;
+            _serverUsersService = servicesProvider.GetRequiredService(typeof(IServerUsersService)) as IServerUsersService;
+            _serverConfigService = servicesProvider.GetRequiredService(typeof(IServerConfigService)) as IServerConfigService; 
+            _userServerStatsService=servicesProvider.GetRequiredService(typeof(IUserServerStatsService)) as IUserServerStatsService;
+            _databaseContextQueueService = servicesProvider.GetRequiredService(typeof(IDatabaseContextQueueService)) as IDatabaseContextQueueService;
+            _serviceProvider = servicesProvider;
+
         }
 
        
@@ -72,7 +76,8 @@ namespace Fafikv2.Configuration.BotConfig
                 StringPrefixes = new[] { jsonReader.Prefix },
                 EnableMentionPrefix = true,
                 EnableDms = true,
-                EnableDefaultHelp = false
+                EnableDefaultHelp = false,
+                Services = _serviceProvider
             };
 
             Commands = Client.UseCommandsNext(commandsConfig);
@@ -103,12 +108,12 @@ namespace Fafikv2.Configuration.BotConfig
             {
                 while (true)
                 {
-                    var task = await _onStartUpdateDatabaseQueue.DequeueAsync(CancellationToken.None).ConfigureAwait(false);
+                    var task = await _databaseContextQueueService.DequeueDatabaseTask(CancellationToken.None).ConfigureAwait(false); 
                     if (task != null)
                     {
 
                         await task();
-                        _onStartUpdateDatabaseQueue.FuncNumberInQueue();
+                        _databaseContextQueueService.DisplayQueueCount();
                     }
                     else
                     {
@@ -141,7 +146,7 @@ namespace Fafikv2.Configuration.BotConfig
 
 
 
-            await _onStartUpdateDatabaseQueue.Enqueue( async () => await UpdateDatabaseOnConnect(users, server));
+            await _databaseContextQueueService.EnequeDatabaseTask(async () => await UpdateDatabaseOnConnect(users, server).ConfigureAwait(false));
 
 
 
@@ -230,7 +235,7 @@ namespace Fafikv2.Configuration.BotConfig
         {
             Console.WriteLine($"[{args.Message.CreationTimestamp}] {args.Message.Author.Username}: {args.Message.Content}");
             if(!args.Author.IsBot)
-            await _onStartUpdateDatabaseQueue.Enqueue(async () =>
+            await _databaseContextQueueService.EnequeDatabaseTask(async () =>
             {
                 if (args.Message.Content.StartsWith("!"))
                 {
@@ -261,7 +266,7 @@ namespace Fafikv2.Configuration.BotConfig
                     await _userServerStatsService.UpdateUserMessageServerCount(Guid.Parse(formatted), Guid.Parse(sformatted))
                         .ConfigureAwait(false);
                 }
-            });
+            }).ConfigureAwait(false);
             
             
             

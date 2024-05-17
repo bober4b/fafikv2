@@ -1,22 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Fafikv2.Data.Models;
-using Fafikv2.Services.dbServices.Interfaces;
+﻿using Fafikv2.Services.dbServices.Interfaces;
 using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
 using Fafikv2.CountSystem;
+
 
 namespace Fafikv2.Services.CommandService
 {
     public class BaseCommandService
     {
-        private readonly IUserService _userService;
-        private readonly IUserServerStatsService _userServerStatsService;
+        private readonly IUserService? _userService;
+        private readonly IUserServerStatsService? _userServerStatsService;
         private readonly LevelSys _levelSys;
-        public BaseCommandService(IUserService userService, IUserServerStatsService userServerStatsService)
+        public BaseCommandService(IUserService? userService, IUserServerStatsService? userServerStatsService)
         {
             _userService = userService;
             _userServerStatsService = userServerStatsService;
@@ -25,10 +19,17 @@ namespace Fafikv2.Services.CommandService
 
         public async Task Stats(CommandContext ctx)
         {
-            var guildId = ctx.Channel.Guild.Id;
-
-            var dcuser = ctx.Member.Id;
-            var dcserver = ctx.Guild.Id;
+            if (_userService != null && _userServerStatsService != null)
+            {
+                var user = await _userService.GetUser(Guid.Parse($"{ctx.User.Id:X32}")).ConfigureAwait(false);
+                var userStats = await _userServerStatsService.GetUserStats(Guid.Parse($"{ctx.User.Id:X32}"), Guid.Parse($"{ctx.Guild.Id:X32}")).ConfigureAwait(false);
+                if (user !=null && userStats !=null)
+                {
+                    await ctx.Channel.SendMessageAsync( _levelSys.UserInfo(user, userStats)).ConfigureAwait(false);
+                }
+                
+                
+            }
         }
     }
 }

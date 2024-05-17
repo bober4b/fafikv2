@@ -2,30 +2,12 @@
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using Fafikv2.Services.CommandService;
-using Fafikv2.Services.dbServices.Interfaces;
-using Fafikv2.Services.dbServices;
 
 namespace Fafikv2.Commands
 {
-    internal class MusicCommands : BaseCommandModule
+    public class MusicCommands : BaseCommandModule
     {
         private readonly MusicService _musicService=new ();
-        private readonly IUserService _userService;
-
-        private static IUserService _cachedUserService;
-
-        /*public MusicCommands(MusicService musicService)
-        {
-            //_musicService = musicService;
-
-            // Pobierz instancję IUserService tylko raz, aby uniknąć wielokrotnego tworzenia
-            /*if (_cachedUserService == null)
-            {
-                _cachedUserService = new UserService(); // Tutaj należy utworzyć instancję UserService lub użyć metod do pobrania instancji zależnie od implementacji
-            }
-
-            _userService = _cachedUserService;
-        }*/
 
         [Command]
         public async Task Join(CommandContext ctx, DiscordChannel? channel=null)
@@ -50,7 +32,7 @@ namespace Fafikv2.Commands
         [Command]
         public async Task Pause(CommandContext ctx)
         {
-            await MusicService.PauseAsync(ctx);
+            await MusicService.PauseAsync(ctx).ConfigureAwait(false);
         }
 
         [Command]

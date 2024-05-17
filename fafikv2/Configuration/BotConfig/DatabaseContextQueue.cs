@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Fafikv2.Configuration.BotConfig
 {
-    public class OnStartUpdateDatabaseQueue
+    public class DatabaseContextQueue
     {
         private readonly ConcurrentQueue<Func<Task>> _taskQueue = new();
         private readonly SemaphoreSlim _signal=new(0);
@@ -29,7 +29,7 @@ namespace Fafikv2.Configuration.BotConfig
 
         public void FuncNumberInQueue()
         {
-            Console.WriteLine("Liczba tasków w kolejce: "+_taskQueue.Count());
+            Console.WriteLine("Liczba tasków w kolejce: "+ _taskQueue.Count);
         }
     }
 }
