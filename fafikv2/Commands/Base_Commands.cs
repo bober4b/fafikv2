@@ -1,7 +1,6 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using Fafikv2.Services.CommandService;
-using Microsoft.Extensions.DependencyInjection;
 
 
 namespace Fafikv2.Commands

@@ -11,8 +11,8 @@ namespace Fafikv2.Data.DataContext
         public DbSet<Server> Servers { get; set; }
         public DbSet<ServerConfig> ServerConfigs { get; set; }
         public DbSet<ServerUsers> ServerUsers { get; set; }
-
         public DbSet<UserServerStats> ServerUsersStats { get; set; }
+        public DbSet<BannedWords> BannedWords { get; set; }
 
        public DiscordBotDbContext() {}
 
@@ -21,6 +21,7 @@ namespace Fafikv2.Data.DataContext
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
             modelBuilder.Entity<ServerUsers>()
                 .HasOne(s => s.UserServerStats)
                 .WithOne(su=>su.ServerUsers)
@@ -34,7 +35,13 @@ namespace Fafikv2.Data.DataContext
                 .WithOne(c => c.Server)
                 .HasForeignKey<ServerConfig>(c => c.ServerId);
 
-            
+            modelBuilder.Entity<ServerConfig>()
+                .HasMany(s => s.BannedWords)
+                .WithOne(b => b.ServerConfig)
+                .HasForeignKey(b => b.ServerConfigId);
+
+                base.OnModelCreating(modelBuilder);
+
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
