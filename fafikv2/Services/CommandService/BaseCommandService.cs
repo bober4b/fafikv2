@@ -35,7 +35,7 @@ namespace Fafikv2.Services.CommandService
                         .ConfigureAwait(false);
                     if (user != null && userStats != null)
                     {
-                        await ctx.Channel.SendMessageAsync(_levelSys.UserInfo(user, userStats)).ConfigureAwait(false);
+                        await ctx.RespondAsync(_levelSys.UserInfo(user, userStats)).ConfigureAwait(false);
                     }
                 }).ConfigureAwait(false);
 

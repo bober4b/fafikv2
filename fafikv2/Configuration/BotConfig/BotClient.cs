@@ -7,6 +7,7 @@ using DSharpPlus.Net;
 using Fafikv2.Commands;
 using Fafikv2.Configuration.ConfigJSON;
 using Fafikv2.Data.Models;
+using Fafikv2.Services.CommandService;
 using Fafikv2.Services.dbServices.Interfaces;
 using Fafikv2.Services.OtherServices.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -83,6 +84,7 @@ namespace Fafikv2.Configuration.BotConfig
             Commands = Client.UseCommandsNext(commandsConfig);
             Commands.RegisterCommands<BaseCommands>();
             Commands.RegisterCommands<MusicCommands>();
+            BaseCommands._baseCommandService = new BaseCommandService(_serviceProvider);
 
             var endpoint = new ConnectionEndpoint
             {

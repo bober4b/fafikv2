@@ -1,20 +1,15 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using Fafikv2.Services.CommandService;
+using Microsoft.Extensions.DependencyInjection;
 
 
 namespace Fafikv2.Commands
 {
     public class BaseCommands : BaseCommandModule
     {
-        private BaseCommandService? _baseCommandService;
+        public static BaseCommandService? _baseCommandService; //do poprawy w przyszłości
 
-        public override async Task BeforeExecutionAsync(CommandContext ctx)
-        {
-            _baseCommandService ??= new BaseCommandService(ctx.Services);
-
-            await base.BeforeExecutionAsync(ctx).ConfigureAwait(false);
-        }
 
         [Command("ping")]
         public async Task Ping(CommandContext ctx)
