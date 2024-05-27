@@ -22,10 +22,16 @@ public class BannedWordsService : IBannedWordsService
         await _bannedWordsRepository.Remove(bannedWords,server).ConfigureAwait(false);
     }
 
-    public async Task<bool> IsBanned(string bannedWord, Server server)
+    public async Task<bool> IsBanned(string bannedWord, Guid server)
     {
         var res= _bannedWordsRepository.GetBannedWordsByServer(server).FirstOrDefault(x=>x.BannedWord==bannedWord);
 
         return res != null;
+    }
+
+    public async Task<IEnumerable<BannedWords>> GetAll(Guid server)
+    {
+       var result= _bannedWordsRepository.GetBannedWordsByServer(server);
+       return result;
     }
 }

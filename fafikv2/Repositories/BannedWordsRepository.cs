@@ -33,10 +33,10 @@ public class BannedWordsRepository : IBannedWordsRepository
         }
     }
 
-    public IEnumerable<BannedWords> GetBannedWordsByServer(Server server)
+    public IEnumerable<BannedWords> GetBannedWordsByServer(Guid server)
     {
         var result = _context.ServerConfigs
-            .Where(x => x.ServerId == server.Id)
+            .Where(x => x.ServerId == server)
             .SelectMany(x => x.BannedWords);
         return result.AsEnumerable();
     }

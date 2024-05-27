@@ -8,8 +8,8 @@
         public virtual ServerUsers? ServerUsers { get; set; }
 
         //server stats
-        public float ServerKarma { get; set; } 
-        public int MessagesCountServer { get; set; } 
+        public float ServerKarma { get; set; }
+        public int MessagesCountServer { get; set; }
         public int BotInteractionServer { get; set; }
 
         //server info

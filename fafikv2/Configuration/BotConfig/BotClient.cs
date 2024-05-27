@@ -25,6 +25,7 @@ namespace Fafikv2.Configuration.BotConfig
         private readonly IServerConfigService? _serverConfigService;
         private readonly IUserServerStatsService? _userServerStatsService;
         private readonly IDatabaseContextQueueService? _databaseContextQueueService;
+        private readonly IAutoModerationService? _autoModerationService;
         private readonly ServiceProvider _serviceProvider;
 
 
@@ -41,6 +42,7 @@ namespace Fafikv2.Configuration.BotConfig
             _serverConfigService = servicesProvider.GetRequiredService(typeof(IServerConfigService)) as IServerConfigService; 
             _userServerStatsService=servicesProvider.GetRequiredService(typeof(IUserServerStatsService)) as IUserServerStatsService;
             _databaseContextQueueService = servicesProvider.GetRequiredService(typeof(IDatabaseContextQueueService)) as IDatabaseContextQueueService;
+            _autoModerationService = servicesProvider.GetService<IAutoModerationService>();
             _serviceProvider = servicesProvider;
 
         }
@@ -84,7 +86,9 @@ namespace Fafikv2.Configuration.BotConfig
             Commands = Client.UseCommandsNext(commandsConfig);
             Commands.RegisterCommands<BaseCommands>();
             Commands.RegisterCommands<MusicCommands>();
+            Commands.RegisterCommands<AdminCommands>();
             BaseCommands._baseCommandService = new BaseCommandService(_serviceProvider);
+            AdminCommands.AdminCommandService = new AdminCommandService(_serviceProvider);
 
             var endpoint = new ConnectionEndpoint
             {
@@ -268,6 +272,12 @@ namespace Fafikv2.Configuration.BotConfig
                     await _userServerStatsService.UpdateUserMessageServerCount(Guid.Parse(formatted), Guid.Parse(sformatted))
                         .ConfigureAwait(false);
                 }
+
+                if (await _autoModerationService.checkMessagesAsync(args).ConfigureAwait(false))
+                {
+                   await args.Message.RespondAsync("baned").ConfigureAwait(false);
+                }
+                
             }).ConfigureAwait(false);
             
             
