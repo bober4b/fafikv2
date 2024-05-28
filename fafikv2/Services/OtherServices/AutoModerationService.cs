@@ -16,10 +16,20 @@ public class AutoModerationService : IAutoModerationService
         _banWordsService = bannedWordsService;
     }
 
-    public async Task<bool> checkMessagesAsync(MessageCreateEventArgs message)
+    public async Task<bool> CheckMessagesAsync(MessageCreateEventArgs message)
     {
-        var badWords = await _banWordsService.GetAll(Guid.Parse($"{message.Guild.Id:X32}")).ConfigureAwait(false);
+        
+        var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
+        {
+            var badWords = await _banWordsService
+                .GetAll(Guid.Parse($"{message.Guild.Id:X32}"))
+                .ConfigureAwait(false);
 
-        return badWords.Any(word => message.Message.Content.Contains(word.BannedWord));
+            return badWords
+                .Any(word => message.Message.Content
+                    .Contains(word.BannedWord));
+        }).ConfigureAwait(false);
+
+        return result;
     }
 }

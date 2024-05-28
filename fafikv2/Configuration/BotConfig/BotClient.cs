@@ -241,47 +241,50 @@ namespace Fafikv2.Configuration.BotConfig
         {
             Console.WriteLine($"[{args.Message.CreationTimestamp}] {args.Message.Author.Username}: {args.Message.Content}");
             if(!args.Author.IsBot)
-            await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
-            {
-                if (args.Message.Content.StartsWith("!"))
+                await _databaseContextQueueService!.EnqueueDatabaseTask(async () =>
                 {
-                    var userid = args.Author.Id;
-                    var formatted = $"{userid:X32}";
+                    if (args.Message.Content.StartsWith("!"))
+                    {
+                        var userid = args.Author.Id;
+                        var formatted = $"{userid:X32}";
 
-                    var serverId = args.Guild.Id;
-                    var sformatted = $"{serverId:X32}";
+                        var serverId = args.Guild.Id;
+                        var sformatted = $"{serverId:X32}";
 
-                    await _userService.UpdateUserBotInteractionsCount(Guid.Parse(formatted)).ConfigureAwait(false);
-                    await _userServerStatsService.UpdateUserMessageServerCount(Guid.Parse(formatted), Guid.Parse(sformatted)).ConfigureAwait(false);
+                        await _userService!.UpdateUserBotInteractionsCount(Guid.Parse(formatted)).ConfigureAwait(false);
+                        await _userServerStatsService!
+                            .UpdateUserMessageServerCount(Guid.Parse(formatted), Guid.Parse(sformatted))
+                            .ConfigureAwait(false);
 
-                    await _userService.UpdateUserMessageCount(Guid.Parse(formatted)).ConfigureAwait(false);
-                    await _userServerStatsService.UpdateUserBotInteractionsServerCount(Guid.Parse(formatted),
-                        Guid.Parse(sformatted)).ConfigureAwait(false);
-                    //Console.WriteLine("elo beenc");
+                        await _userService.UpdateUserMessageCount(Guid.Parse(formatted)).ConfigureAwait(false);
+                        await _userServerStatsService.UpdateUserBotInteractionsServerCount(Guid.Parse(formatted),
+                            Guid.Parse(sformatted)).ConfigureAwait(false);
+                        //Console.WriteLine("elo beenc");
                      
-                }
-                else
-                {
-                    var userid = args.Author.Id;
-                    var formatted = $"{userid:X32}";
+                    }
+                    else
+                    {
+                        var userid = args.Author.Id;
+                        var formatted = $"{userid:X32}";
 
-                    var serverId = args.Guild.Id;
-                    var sformatted = $"{serverId:X32}";
-                    await _userService.UpdateUserMessageCount(Guid.Parse(formatted)).ConfigureAwait(false);
+                        var serverId = args.Guild.Id;
+                        var sformatted = $"{serverId:X32}";
+                        await _userService!.UpdateUserMessageCount(Guid.Parse(formatted)).ConfigureAwait(false);
 
-                    await _userServerStatsService.UpdateUserMessageServerCount(Guid.Parse(formatted), Guid.Parse(sformatted))
-                        .ConfigureAwait(false);
-                }
+                        await _userServerStatsService!
+                            .UpdateUserMessageServerCount(Guid.Parse(formatted), Guid.Parse(sformatted))
+                            .ConfigureAwait(false);
+                    }
 
-                if (await _autoModerationService.checkMessagesAsync(args).ConfigureAwait(false))
-                {
-                   await args.Message.RespondAsync("baned").ConfigureAwait(false);
-                }
+                    
                 
-            }).ConfigureAwait(false);
-            
-            
-            
+                }).ConfigureAwait(false);
+
+            if (await _autoModerationService!.CheckMessagesAsync(args).ConfigureAwait(false))
+            {
+                await args.Message.RespondAsync("baned").ConfigureAwait(false);
+            }
+
         }
     }
 }

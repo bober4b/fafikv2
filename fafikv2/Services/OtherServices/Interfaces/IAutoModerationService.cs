@@ -4,5 +4,5 @@ namespace Fafikv2.Services.OtherServices.Interfaces;
 
 public interface IAutoModerationService
 {
-    public Task<bool> checkMessagesAsync(MessageCreateEventArgs message);
+    public Task<bool> CheckMessagesAsync(MessageCreateEventArgs message);
 }
