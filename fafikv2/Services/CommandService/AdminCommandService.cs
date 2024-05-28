@@ -39,5 +39,9 @@ public class AdminCommandService
             
             await ctx.RespondAsync("benc").ConfigureAwait(false);
         }
+        else
+        {
+            await ctx.RespondAsync("Brak uprawnień").ConfigureAwait(false);
+        }
     }
 }
