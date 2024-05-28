@@ -2,7 +2,7 @@
 {
     public interface IDatabaseContextQueueService
     {
-        Task EnequeDatabaseTask(Func<Task> task);
+        Task EnqueueDatabaseTask(Func<Task> task);
         Task<Func<Task>> DequeueDatabaseTask(CancellationToken cancellationToken);
         void DisplayQueueCount();
     }

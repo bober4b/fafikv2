@@ -25,7 +25,7 @@ namespace Fafikv2.Services.CommandService
         {
             if (_userService != null && _userServerStatsService != null)
             {
-                await _databaseContextQueueService.EnequeDatabaseTask(async () =>
+                await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
                 {
 
 

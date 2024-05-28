@@ -5,13 +5,9 @@ namespace Fafikv2.Services.OtherServices
 {
     internal class DatabaseContextQueueService : IDatabaseContextQueueService
     {
-        private readonly DatabaseContextQueue _queue;
+        private readonly DatabaseContextQueue _queue = new();
 
-        public DatabaseContextQueueService()
-        {
-            _queue = new DatabaseContextQueue();
-        }
-        public Task EnequeDatabaseTask(Func<Task> task)
+        public Task EnqueueDatabaseTask(Func<Task> task)
         {
             return _queue.Enqueue(task);
         }

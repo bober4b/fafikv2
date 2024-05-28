@@ -2,7 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Fafikv2.Data.DataContext;
 using Fafikv2.Configuration.DependencyConfiguration;
-using Fafikv2.Services.dbServices.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fafikv2

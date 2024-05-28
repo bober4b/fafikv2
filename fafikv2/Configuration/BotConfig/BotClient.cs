@@ -152,7 +152,7 @@ namespace Fafikv2.Configuration.BotConfig
 
 
 
-            await _databaseContextQueueService.EnequeDatabaseTask(async () => await UpdateDatabaseOnConnect(users, server).ConfigureAwait(false));
+            await _databaseContextQueueService.EnqueueDatabaseTask(async () => await UpdateDatabaseOnConnect(users, server).ConfigureAwait(false));
 
 
 
@@ -241,7 +241,7 @@ namespace Fafikv2.Configuration.BotConfig
         {
             Console.WriteLine($"[{args.Message.CreationTimestamp}] {args.Message.Author.Username}: {args.Message.Content}");
             if(!args.Author.IsBot)
-            await _databaseContextQueueService.EnequeDatabaseTask(async () =>
+            await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
             {
                 if (args.Message.Content.StartsWith("!"))
                 {

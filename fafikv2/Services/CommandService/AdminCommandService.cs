@@ -24,7 +24,7 @@ public class AdminCommandService
     {
         if (ctx.Member.IsOwner)
         {
-            await _databaseContextQueueService.EnequeDatabaseTask(async () =>
+            await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
             {
                 BannedWords bannedWords = new BannedWords
                 {
