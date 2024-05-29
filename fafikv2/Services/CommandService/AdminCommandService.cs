@@ -1,4 +1,5 @@
-﻿using DSharpPlus.CommandsNext;
+﻿using System.Collections.Specialized;
+using DSharpPlus.CommandsNext;
 using Fafikv2.Data.Models;
 using Fafikv2.Services.dbServices;
 using Fafikv2.Services.dbServices.Interfaces;
@@ -20,11 +21,11 @@ public class AdminCommandService
         _serverConfigService = serviceProvider.GetRequiredService<IServerConfigService>();
     }
 
-    public async Task addBannedWord(CommandContext ctx, string bannedWord)
+    public async Task AddBannedWord(CommandContext ctx, string bannedWord)
     {
         if (ctx.Member.IsOwner)
         {
-            await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
+            var result=await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
             {
                 BannedWords bannedWords = new BannedWords
                 {
@@ -33,15 +34,47 @@ public class AdminCommandService
                     BannedWord = bannedWord,
                     Id = Guid.NewGuid()
                 };
-                _bannedWordsService.Add(bannedWords);
+
+                var result=await _bannedWordsService
+                    .Add(bannedWords)
+                    .ConfigureAwait(false);
+                return result;
+
             }).ConfigureAwait(false);
 
-            
-            await ctx.RespondAsync("benc").ConfigureAwait(false);
+            if(result)
+                await ctx.RespondAsync("Słowo dodane do bazy.").ConfigureAwait(false);
+            else
+            {
+                await ctx.RespondAsync("słowo jest już zabronione!!!").ConfigureAwait(false);
+            }
         }
         else
         {
-            await ctx.RespondAsync("Brak uprawnień").ConfigureAwait(false);
+            await ctx.RespondAsync("Brak uprawnień!!!").ConfigureAwait(false);
+        }
+    }
+
+    public async Task DelBannedWord(CommandContext ctx, String delWord)
+    {
+        if (ctx.Member.IsOwner)
+        {
+            var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () => await _bannedWordsService
+                    .Remove(delWord, Guid.Parse($"{ctx.Guild.Id:X32}"))
+                .ConfigureAwait(false))
+                .ConfigureAwait(false);
+
+            if (result)
+                await ctx.RespondAsync("Słowo zostało usunięte").ConfigureAwait(false);
+            else
+            {
+                await ctx.RespondAsync("Słowo nie jest zabronione!!!").ConfigureAwait(false);
+            }
+
+        }
+        else
+        {
+            await ctx.RespondAsync("Brak uprawnień!!!").ConfigureAwait(false);
         }
     }
 }

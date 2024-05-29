@@ -13,24 +13,33 @@ public class BannedWordsRepository : IBannedWordsRepository
     {
         _context = context;
     }
-    public async Task Add(BannedWords bannedWords)
+    public async Task<bool> Add(BannedWords bannedWords)
     {
+        var result= _context.BannedWords
+            .Any(x => x.ServerConfigId == bannedWords.ServerConfig.Id && x.BannedWord == bannedWords.BannedWord);
+
+        if (result) return false;
+
+
         _context.BannedWords.Add(bannedWords);
         await _context.SaveChangesAsync().ConfigureAwait(false);
+        return true;
+
+
     }
 
-    public async Task Remove(BannedWords bannedWords, Server server)
+    public async Task<bool> Remove(string bannedWords, Guid server)
     {
         var del = await _context.ServerConfigs
-            .Where(x => x.ServerId == server.Id)
+            .Where(x => x.ServerId == server)
             .SelectMany(sc => sc.BannedWords)
-            .FirstOrDefaultAsync(bw => bw.BannedWord == bannedWords.BannedWord)
+            .FirstOrDefaultAsync(bw => bw.BannedWord == bannedWords)
             .ConfigureAwait(false);
-        if (del != null)
-        {
-            _context.BannedWords.Remove(del);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
-        }
+        if (del == null) return false;
+        _context.BannedWords.Remove(del);
+        await _context.SaveChangesAsync().ConfigureAwait(false);
+        return true;
+
     }
 
     public IEnumerable<BannedWords> GetBannedWordsByServer(Guid server)

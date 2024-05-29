@@ -7,7 +7,7 @@ namespace Fafikv2.Commands
 {
     public class BaseCommands : BaseCommandModule
     {
-        public static BaseCommandService? _baseCommandService; //do poprawy w przyszłości
+        public static BaseCommandService? BaseCommandService; //do poprawy w przyszłości
 
 
         [Command("ping")]
@@ -25,7 +25,7 @@ namespace Fafikv2.Commands
         [Command("stats")]
         public async Task Stats(CommandContext ctx)
         {
-            await _baseCommandService!.Stats(ctx).ConfigureAwait(false);
+            await BaseCommandService!.Stats(ctx).ConfigureAwait(false);
         }
 
     }

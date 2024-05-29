@@ -3,8 +3,8 @@ namespace Fafikv2.Repositories.Interfaces
 {
     public interface IBannedWordsRepository
     {
-        public Task Add(BannedWords bannedWords);
-        public Task Remove(BannedWords bannedWords, Server server);
+        public Task<bool> Add(BannedWords bannedWords);
+        public Task<bool> Remove(string bannedWords, Guid server);
 
         public IEnumerable<BannedWords> GetBannedWordsByServer(Guid server);
     }

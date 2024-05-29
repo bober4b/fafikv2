@@ -87,7 +87,7 @@ namespace Fafikv2.Configuration.BotConfig
             Commands.RegisterCommands<BaseCommands>();
             Commands.RegisterCommands<MusicCommands>();
             Commands.RegisterCommands<AdminCommands>();
-            BaseCommands._baseCommandService = new BaseCommandService(_serviceProvider);
+            BaseCommands.BaseCommandService = new BaseCommandService(_serviceProvider);
             AdminCommands.AdminCommandService = new AdminCommandService(_serviceProvider);
 
             var endpoint = new ConnectionEndpoint
