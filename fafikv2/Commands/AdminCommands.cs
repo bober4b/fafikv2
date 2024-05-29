@@ -18,13 +18,7 @@ public class AdminCommands : BaseCommandModule
     {
         await AdminCommandService.DelBannedWord(ctx, delbanned).ConfigureAwait(false);
     }
-    [Command("SPAM")]
-
-    public async Task SPAM(CommandContext ctx, string command, string text)
-    {
-        for(int i=0;i<30;i++)
-            await ctx.RespondAsync(command+" "+text).ConfigureAwait(false);
-    }
+    
 
 
 }
