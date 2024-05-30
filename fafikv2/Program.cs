@@ -1,31 +1,33 @@
-﻿using DSharpPlus;
-using DSharpPlus.CommandsNext;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using Fafikv2.Config;
-using Fafikv2.Commands;
-using DSharpPlus.EventArgs;
-using DSharpPlus.Net;
-using DSharpPlus.Lavalink;
-using Fafikv2.BotConfig;
-
+﻿using Fafikv2.Configuration.BotConfig;
+using Microsoft.Extensions.DependencyInjection;
+using Fafikv2.Data.DataContext;
+using Fafikv2.Configuration.DependencyConfiguration;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fafikv2
 {
-
     public class Program
     {
-
-        static async Task Main()
+        private static async Task Main()
         {
 
-            await new BotClient().Initialize();
+            var servicesProvider = new ServiceCollection()
+                .AddDbContext<DiscordBotDbContext>()
+                .AddRepositories()
+                .AddServices()
+                .BuildServiceProvider();
+
+            await InitializeDatabase(servicesProvider).ConfigureAwait(false);
+
+            await new BotClient(servicesProvider)
+                    .Initialize().ConfigureAwait(false);
         }
-            
-        
+        private static async Task InitializeDatabase(IServiceProvider servicesProvider)
+        {
+            using var scope = servicesProvider.CreateScope();
+            var database = scope.ServiceProvider.GetRequiredService<DiscordBotDbContext>();
+            await database.Database.MigrateAsync().ConfigureAwait(false);
+            await Task.Delay(1000).ConfigureAwait(false);
+        }
     }
 }

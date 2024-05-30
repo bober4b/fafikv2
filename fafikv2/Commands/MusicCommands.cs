@@ -1,27 +1,16 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-using DSharpPlus;
-using DSharpPlus.CommandsNext;
+﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using DSharpPlus.Lavalink.EventArgs;
-using Fafikv2.Services;
+using Fafikv2.Services.CommandService;
 
 namespace Fafikv2.Commands
 {
-    internal class MusicCommands : BaseCommandModule
+    public class MusicCommands : BaseCommandModule
     {
-        private readonly MusicService _musicService=new();
-        
+        private readonly MusicService _musicService=new ();
 
         [Command]
-        public async Task Join(CommandContext ctx, DiscordChannel channel=null)
+        public async Task Join(CommandContext ctx, DiscordChannel? channel=null)
         {
 
             await _musicService.JoinAsync(ctx, channel);
@@ -31,7 +20,7 @@ namespace Fafikv2.Commands
         [Command]
         public async Task Leave(CommandContext ctx)
         {
-            await _musicService.LeaveAsync(ctx);
+            await MusicService.LeaveAsync(ctx);
         }
 
         [Command]
@@ -43,13 +32,13 @@ namespace Fafikv2.Commands
         [Command]
         public async Task Pause(CommandContext ctx)
         {
-            await _musicService.PauseAsync(ctx);
+            await MusicService.PauseAsync(ctx).ConfigureAwait(false);
         }
 
         [Command]
         public async Task Resume(CommandContext ctx)
         {
-            await _musicService.ResumeAsync(ctx);
+            await MusicService.ResumeAsync(ctx);
         }
 
         [Command]
@@ -67,7 +56,7 @@ namespace Fafikv2.Commands
         [Command]
         public async Task Volume(CommandContext ctx, int vol)
         {
-            await _musicService.VolumeAsync(ctx, vol);
+            await MusicService.VolumeAsync(ctx, vol);
         }
         
 
