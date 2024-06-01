@@ -30,9 +30,10 @@ namespace Fafikv2.Repositories
             return Task.CompletedTask;
         }
 
-        public Task UpdateUserServerStats(UserServerStats userServerStats)
+        public async Task UpdateUserServerStats(UserServerStats userServerStats)
         {
-            throw new NotImplementedException();
+            _context.ServerUsersStats.Update(userServerStats);
+            await _context.SaveChangesAsync().ConfigureAwait(false);
         }
 
         public Task DeleteUserServerStats(UserServerStats userServerStats)
@@ -40,7 +41,7 @@ namespace Fafikv2.Repositories
             throw new NotImplementedException();
         }
 
-        public async Task<UserServerStats?> GetUserstatsByUserAndServerId(Guid userId, Guid serverId)
+        public async Task<UserServerStats?> GetUserStatsByUserAndServerId(Guid userId, Guid serverId)
         {
             var serverUsers = _context
                 .ServerUsers
@@ -70,5 +71,7 @@ namespace Fafikv2.Repositories
         {
             await _context.SaveChangesAsync().ConfigureAwait(false);
         }
+
+        
     }
 }

@@ -9,6 +9,7 @@ namespace Fafikv2.Services.dbServices.Interfaces
         public Task UpdateUserMessageServerCount(Guid userId, Guid serverId);
         public Task UpdateUserBotInteractionsServerCount(Guid userId, Guid serverId);
         public Task<UserServerStats?> GetUserStats(Guid userId, Guid serverId);
+        public Task AddPenalty(Guid userId, Guid serverId);
 
     }
 }

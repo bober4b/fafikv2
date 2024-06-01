@@ -1,4 +1,6 @@
-﻿namespace Fafikv2.Data.Models
+﻿using Microsoft.VisualBasic;
+
+namespace Fafikv2.Data.Models
 {
     public class UserServerStats
     {
@@ -14,5 +16,10 @@
 
         //server info
         public string? DisplayName { get; set; }
+
+        //server strikes
+        public int Penalties { get; set; }
+        public DateTime ? LastPenaltyDate { get; set;}
+
     }
 }

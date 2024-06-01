@@ -276,10 +276,10 @@ namespace Fafikv2.Configuration.BotConfig
                             .ConfigureAwait(false);
                     }
 
-                    
-                
-                }).ConfigureAwait(false);
 
+                    var cos = await _autoModerationService.AutoModerator(args);
+                }).ConfigureAwait(false);
+            //var cos = await _autoModerationService.AutoModerator(args);
             if (await _autoModerationService!.CheckMessagesAsync(args).ConfigureAwait(false))
             {
                 await args.Message.RespondAsync("baned").ConfigureAwait(false);
