@@ -43,5 +43,39 @@ namespace Fafikv2.Services.CommandService
 
             }
         }
+
+        public async Task Leaderboard(CommandContext ctx)
+        {
+            await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
+            {
+                var serverUserStats = (await _userServerStatsService!
+                    .GetUsersStatsByServer(Guid.Parse($"{ctx.Guild.Id:X32}"))
+                    .ConfigureAwait(false)).ToList();
+
+                if (serverUserStats.Count < 3)
+                {
+                    await ctx.RespondAsync("Na serwerze jest mniej niż 3 użytkowników.").ConfigureAwait(false);
+                    return;
+                }
+
+                var userStats = await _userServerStatsService
+                    .GetUserStats(Guid.Parse($"{ctx.User.Id:X32}"), Guid.Parse($"{ctx.Guild.Id:X32}"))
+                    .ConfigureAwait(false);
+
+                var index = serverUserStats.FindIndex(x => x.Id == userStats?.Id);
+
+                var response=($"Najbardziej aktywni użytkownicy:\n" +
+                                 $"1. {serverUserStats[0].DisplayName}: {serverUserStats[0].MessagesCountServer}\n" +
+                                 $"2. {serverUserStats[1].DisplayName}: {serverUserStats[1].MessagesCountServer}\n" +
+                                 $"3. {serverUserStats[2].DisplayName}: {serverUserStats[2].MessagesCountServer}\n\n" +
+                                 $"Twoja Pozycja: {index+1}\n" +
+                                 $"{userStats?.DisplayName}: {userStats?.MessagesCountServer}"
+                                 );
+               await ctx.RespondAsync(response).ConfigureAwait(false);
+
+            }).ConfigureAwait(false);
+
+
+        }
     }
 }

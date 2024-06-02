@@ -67,6 +67,17 @@ namespace Fafikv2.Repositories
             return result;
         }
 
+        public async Task<IEnumerable<UserServerStats>> GetUsersStatsByServer(Guid serverId)
+        {
+
+            var serverUsers = _context.ServerUsers.Where(x => x.ServerId == serverId);
+            var result = await _context.ServerUsersStats
+                .Where(uss => serverUsers.Any(su => su.Id == uss.ServerUserId))
+                .OrderByDescending(stats=> stats.MessagesCountServer)
+                .ToListAsync().ConfigureAwait(false);
+            return result;
+        }
+
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync().ConfigureAwait(false);

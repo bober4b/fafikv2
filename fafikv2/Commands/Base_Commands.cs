@@ -28,5 +28,11 @@ namespace Fafikv2.Commands
             await BaseCommandService!.Stats(ctx).ConfigureAwait(false);
         }
 
+        [Command("leaderboard")]
+        public async Task Leaderboard(CommandContext ctx)
+        {
+            await BaseCommandService!.Leaderboard(ctx).ConfigureAwait(false);
+        }
+
     }
 }

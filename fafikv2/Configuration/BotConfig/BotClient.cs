@@ -243,12 +243,11 @@ namespace Fafikv2.Configuration.BotConfig
         {
             Console.WriteLine($"[{args.Message.CreationTimestamp}] {args.Message.Author.Username}: {args.Message.Content}");
             if(args.Channel.IsPrivate)return;
-
-
             if(args.Author.IsBot) return;
+            var result = await _autoModerationService.AutoModerator(args).ConfigureAwait(false);
+            if(!result)return;
 
-
-                await _databaseContextQueueService!.EnqueueDatabaseTask(async () =>
+            await _databaseContextQueueService!.EnqueueDatabaseTask(async () =>
                 {
                     if (args.Message.Content.StartsWith("!"))
                     {
@@ -285,7 +284,7 @@ namespace Fafikv2.Configuration.BotConfig
 
                 }).ConfigureAwait(false);
             
-            var result =await _autoModerationService.AutoModerator(args).ConfigureAwait(false);
+            
 
 
         }

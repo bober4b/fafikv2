@@ -1,7 +1,6 @@
 ﻿using Fafikv2.Data.Models;
 using Fafikv2.Repositories.Interfaces;
 using Fafikv2.Services.dbServices.Interfaces;
-using Microsoft.EntityFrameworkCore;
 
 namespace Fafikv2.Services.dbServices
 {
@@ -18,11 +17,11 @@ namespace Fafikv2.Services.dbServices
         {
             if (userServerStats.ServerUsers != null)
             {
-                var newstats = await _userServerRepository.GetUserStatsByUserAndServerId(userServerStats.ServerUsers.UserId,
+                var newStats = await _userServerRepository.GetUserStatsByUserAndServerId(userServerStats.ServerUsers.UserId,
                     userServerStats.ServerUsers.ServerId).ConfigureAwait(false);
                 
 
-                if (newstats != null)
+                if (newStats != null)
                 {
                     return;
                 }
@@ -79,7 +78,6 @@ namespace Fafikv2.Services.dbServices
                 try
                 {
                     await _userServerRepository.SaveChangesAsync().ConfigureAwait(false);
-                    Console.WriteLine("tak?");
                 }
                 catch (Exception e)
                 {
@@ -88,6 +86,11 @@ namespace Fafikv2.Services.dbServices
                 }
                 //await _userServerRepository.SaveChangesAsync().ConfigureAwait(false);
             }
+        }
+
+        public async Task<IEnumerable<UserServerStats>> GetUsersStatsByServer(Guid serverId)
+        {
+            return  await _userServerRepository.GetUsersStatsByServer(serverId).ConfigureAwait(false);
         }
     }
 }

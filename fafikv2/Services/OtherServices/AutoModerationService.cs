@@ -30,7 +30,6 @@ public class AutoModerationService : IAutoModerationService
         _client=client;
     }
 
-    
     public async Task<bool> CheckMessagesAsync(MessageCreateEventArgs message)
     {
         
@@ -63,6 +62,7 @@ public class AutoModerationService : IAutoModerationService
 
         if (!enable) return true;
         var result = await CheckMessagesAsync(message).ConfigureAwait(false);
+
         if (!result) return true;
 
        var penalty= await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
@@ -104,12 +104,10 @@ public class AutoModerationService : IAutoModerationService
             return true;
         }).ConfigureAwait(false);
 
-
-
-        return penalty;
+        return false;
     }
 
-    public static async Task Warning(MessageCreateEventArgs message)
+    private static async Task Warning(MessageCreateEventArgs message)
     {
         await message.Message.DeleteAsync().ConfigureAwait(false);
         await SendPrivateMessage(message.Guild,
@@ -119,7 +117,7 @@ public class AutoModerationService : IAutoModerationService
             .ConfigureAwait(false);
     }
 
-    public async Task Timeout(MessageCreateEventArgs message,int time)
+    private static async Task Timeout(MessageCreateEventArgs message,int time)
     {
         DateTimeOffset nowTimeOffset=DateTimeOffset.Now;
         DateTimeOffset timeout=nowTimeOffset.AddMinutes(time);
@@ -139,7 +137,7 @@ public class AutoModerationService : IAutoModerationService
             .ConfigureAwait(false);
     }
 
-    public async Task Kick(MessageCreateEventArgs message)
+    private static async Task Kick(MessageCreateEventArgs message)
     {
         var member= await message.Guild.GetMemberAsync(message.Author.Id).ConfigureAwait(false);
         await message.Message.DeleteAsync().ConfigureAwait(false);
@@ -154,7 +152,7 @@ public class AutoModerationService : IAutoModerationService
             .ConfigureAwait(false);
     }
 
-    public async Task Ban(MessageCreateEventArgs message)
+    private static async Task Ban(MessageCreateEventArgs message)
     {
         var member = await message.Guild.GetMemberAsync(message.Author.Id).ConfigureAwait(false);
         await message.Message.DeleteAsync().ConfigureAwait(false);
@@ -168,7 +166,7 @@ public class AutoModerationService : IAutoModerationService
             .ConfigureAwait(false);
     }
 
-    public async Task TimeoutKickOrBan(MessageCreateEventArgs message)
+    private async Task TimeoutKickOrBan(MessageCreateEventArgs message)
     {
        var config =await _serverConfigService.GetServerConfig(Guid.Parse($"{message.Guild.Id:X32}")).ConfigureAwait(false);
 
