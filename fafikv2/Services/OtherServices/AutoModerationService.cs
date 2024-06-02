@@ -1,4 +1,6 @@
-﻿using DSharpPlus.EventArgs;
+﻿using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
+using DSharpPlus;
 using Fafikv2.Services.dbServices.Interfaces;
 using Fafikv2.Services.OtherServices.Interfaces;
 
@@ -9,6 +11,7 @@ public class AutoModerationService : IAutoModerationService
     private readonly IDatabaseContextQueueService _databaseContextQueueService;
     private readonly IBannedWordsService _banWordsService;
     private readonly IUserServerStatsService _userServerStatsService;
+    private static DiscordClient _client;
 
     public AutoModerationService(IDatabaseContextQueueService databaseContextQueueService,
         IBannedWordsService bannedWordsService,
@@ -17,6 +20,11 @@ public class AutoModerationService : IAutoModerationService
         _databaseContextQueueService = databaseContextQueueService;
         _banWordsService = bannedWordsService;
         _userServerStatsService = userServerStatsService;
+    }
+
+    public void ClientConnect(DiscordClient client)
+    {
+        _client=client;
     }
 
     
@@ -35,7 +43,10 @@ public class AutoModerationService : IAutoModerationService
         }).ConfigureAwait(false);
         //var cos=await AutoModerator(message).ConfigureAwait(false);
 
-
+        if (result)
+        {
+            await Warning(message).ConfigureAwait(false);
+        }
         return result;
         
     }
@@ -73,7 +84,30 @@ public class AutoModerationService : IAutoModerationService
             ? $"Nowa data ostatniej kary: {userStats.LastPenaltyDate}"
             : "Data ostatniej kary nadal nie istnieje");
 
+
+        await SendPrivateMessage(message.Guild, message.Author, "moonwalk like michael").ConfigureAwait(false);
+
         return true;
     }
 
+    public async Task Warning(MessageCreateEventArgs message)
+    {
+        await message.Message.DeleteAsync().ConfigureAwait(false);
+    }
+
+    public static async Task SendPrivateMessage(DiscordGuild guild ,DiscordUser user, string message)
+    {
+        var member = await guild
+            .GetMemberAsync(user.Id)
+            .ConfigureAwait(false);
+
+        var dmChannel = await member
+            .CreateDmChannelAsync()
+            .ConfigureAwait(false);
+
+
+        await dmChannel
+            .SendMessageAsync(message)
+            .ConfigureAwait(false);
+    }
 }

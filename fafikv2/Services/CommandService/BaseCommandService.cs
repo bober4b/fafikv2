@@ -36,6 +36,7 @@ namespace Fafikv2.Services.CommandService
                     if (user != null && userStats != null)
                     {
                         await ctx.RespondAsync(_levelSys.UserInfo(user, userStats)).ConfigureAwait(false);
+                        
                     }
                 }).ConfigureAwait(false);
 

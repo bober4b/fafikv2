@@ -44,6 +44,7 @@ namespace Fafikv2.Configuration.BotConfig
             _databaseContextQueueService = servicesProvider.GetRequiredService(typeof(IDatabaseContextQueueService)) as IDatabaseContextQueueService;
             _autoModerationService = servicesProvider.GetService<IAutoModerationService>();
             _serviceProvider = servicesProvider;
+            
 
         }
 
@@ -66,6 +67,7 @@ namespace Fafikv2.Configuration.BotConfig
             };
 
             Client = new DiscordClient(discordConfig);
+            _autoModerationService.ClientConnect(Client);
 
             Client.Ready += Client_Ready;
             Client.MessageCreated += Client_MessageCreated;
@@ -240,6 +242,9 @@ namespace Fafikv2.Configuration.BotConfig
         private async Task Client_MessageCreated(DiscordClient sender, MessageCreateEventArgs args)
         {
             Console.WriteLine($"[{args.Message.CreationTimestamp}] {args.Message.Author.Username}: {args.Message.Content}");
+            if(args.Channel.IsPrivate)return;
+
+
             if(!args.Author.IsBot)
                 await _databaseContextQueueService!.EnqueueDatabaseTask(async () =>
                 {
@@ -280,10 +285,11 @@ namespace Fafikv2.Configuration.BotConfig
                     var cos = await _autoModerationService.AutoModerator(args);
                 }).ConfigureAwait(false);
             //var cos = await _autoModerationService.AutoModerator(args);
-            if (await _autoModerationService!.CheckMessagesAsync(args).ConfigureAwait(false))
-            {
-                await args.Message.RespondAsync("baned").ConfigureAwait(false);
-            }
+            if(!args.Author.IsBot)
+                if (await _autoModerationService!.CheckMessagesAsync(args).ConfigureAwait(false))
+                {
+                        await args.Message.RespondAsync("baned").ConfigureAwait(false);
+                }
 
         }
     }
