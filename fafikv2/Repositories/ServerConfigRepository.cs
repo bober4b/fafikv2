@@ -25,7 +25,7 @@ namespace Fafikv2.Repositories
             {
                 Console.WriteLine(ex.InnerException.Message);
             }
-           // _context.SaveChanges();
+           
             return Task.CompletedTask;
         }
 

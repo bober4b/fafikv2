@@ -245,7 +245,9 @@ namespace Fafikv2.Configuration.BotConfig
             if(args.Channel.IsPrivate)return;
 
 
-            if(!args.Author.IsBot)
+            if(args.Author.IsBot) return;
+
+
                 await _databaseContextQueueService!.EnqueueDatabaseTask(async () =>
                 {
                     if (args.Message.Content.StartsWith("!"))
@@ -281,15 +283,10 @@ namespace Fafikv2.Configuration.BotConfig
                             .ConfigureAwait(false);
                     }
 
-
-                    var cos = await _autoModerationService.AutoModerator(args);
                 }).ConfigureAwait(false);
-            //var cos = await _autoModerationService.AutoModerator(args);
-            if(!args.Author.IsBot)
-                if (await _autoModerationService!.CheckMessagesAsync(args).ConfigureAwait(false))
-                {
-                        await args.Message.RespondAsync("baned").ConfigureAwait(false);
-                }
+            
+            var result =await _autoModerationService.AutoModerator(args).ConfigureAwait(false);
+
 
         }
     }

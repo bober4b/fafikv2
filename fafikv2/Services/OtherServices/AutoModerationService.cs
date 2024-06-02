@@ -11,15 +11,18 @@ public class AutoModerationService : IAutoModerationService
     private readonly IDatabaseContextQueueService _databaseContextQueueService;
     private readonly IBannedWordsService _banWordsService;
     private readonly IUserServerStatsService _userServerStatsService;
+    private readonly IServerConfigService _serverConfigService;
     private static DiscordClient _client;
 
     public AutoModerationService(IDatabaseContextQueueService databaseContextQueueService,
         IBannedWordsService bannedWordsService,
-        IUserServerStatsService userServerStatsService)
+        IUserServerStatsService userServerStatsService,
+        IServerConfigService serverConfigService)
     {
         _databaseContextQueueService = databaseContextQueueService;
         _banWordsService = bannedWordsService;
         _userServerStatsService = userServerStatsService;
+        _serverConfigService = serverConfigService;
     }
 
     public void ClientConnect(DiscordClient client)
@@ -41,54 +44,69 @@ public class AutoModerationService : IAutoModerationService
                 .Any(word => message.Message.Content
                     .Contains(word.BannedWord));
         }).ConfigureAwait(false);
-        //var cos=await AutoModerator(message).ConfigureAwait(false);
 
-        if (result)
-        {
-            //await Warning(message).ConfigureAwait(false);
-            await Timeout(message, 1).ConfigureAwait(false);
-        }
         return result;
         
     }
 
     public async Task<bool> AutoModerator(MessageCreateEventArgs message)
     {
-        Console.WriteLine("Data ostatniej kary jeszcze nie istnieje");
-        //var result = await CheckMessagesAsync(message).ConfigureAwait(false);
-        //if (result) return true;
-
-        var userStats = await _userServerStatsService
-            .GetUserStats(Guid.Parse($"{message.Author.Id:X32}"),
-                Guid.Parse($"{message.Guild.Id:X32}")).ConfigureAwait(false);
-
-        if (userStats == null)
+        var enable = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
         {
-            Console.WriteLine("Błąd, użytkownik nie istnieje!!");
-            return false;
-        }
-
-        Console.WriteLine(userStats.LastPenaltyDate != null
-            ? $"Ostatnia data kary: {userStats.LastPenaltyDate}"
-            : "Data ostatniej kary jeszcze nie istnieje");
-
-        await _userServerStatsService
-            .AddPenalty(Guid.Parse($"{message.Author.Id:X32}"),
-                Guid.Parse($"{message.Guild.Id:X32}")).ConfigureAwait(false);
-
-        // Pobierz statystyki użytkownika ponownie po dodaniu kary, aby upewnić się, że dane są aktualne
-        userStats = await _userServerStatsService
-            .GetUserStats(Guid.Parse($"{message.Author.Id:X32}"),
-                Guid.Parse($"{message.Guild.Id:X32}")).ConfigureAwait(false);
-
-        Console.WriteLine(userStats?.LastPenaltyDate != null
-            ? $"Nowa data ostatniej kary: {userStats.LastPenaltyDate}"
-            : "Data ostatniej kary nadal nie istnieje");
+            var config = await _serverConfigService
+                .GetServerConfig(Guid.Parse($"{message.Guild.Id:X32}"))
+                .ConfigureAwait(false);
 
 
-        //await SendPrivateMessage(message.Guild, message.Author, "moonwalk like michael").ConfigureAwait(false);
+            return config.AutoModeratorEnabled;
+        }).ConfigureAwait(false);
 
-        return true;
+        if (!enable) return true;
+        var result = await CheckMessagesAsync(message).ConfigureAwait(false);
+        if (!result) return true;
+
+       var penalty= await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
+        {
+            var user = await _userServerStatsService
+                .GetUserStats(Guid.Parse($"{message.Author.Id:X32}"),
+                    Guid.Parse($"{message.Guild.Id:X32}"))
+                .ConfigureAwait(false);
+
+            if (user == null) return false;
+            switch (user.Penalties)
+            {
+                case 0:
+                    await Warning(message).ConfigureAwait(false);
+                    break;
+                case 1:
+                    await Timeout(message, 1).ConfigureAwait(false);
+                    break;
+                case 2:
+                    await Timeout(message, 10).ConfigureAwait(false);
+                    break;
+                case 3:
+                    await Timeout(message, 60).ConfigureAwait(false);
+                    break;
+                case 4:
+                    await Kick(message).ConfigureAwait(false);
+                    break;
+                default:
+                    await TimeoutKickOrBan(message).ConfigureAwait(false);
+                    break;
+
+            }
+
+
+            await _userServerStatsService
+                .AddPenalty(Guid.Parse($"{message.Author.Id:X32}"),
+                    Guid.Parse($"{message.Guild.Id:X32}")).ConfigureAwait(false);
+
+            return true;
+        }).ConfigureAwait(false);
+
+
+
+        return penalty;
     }
 
     public static async Task Warning(MessageCreateEventArgs message)
@@ -105,16 +123,84 @@ public class AutoModerationService : IAutoModerationService
     {
         DateTimeOffset nowTimeOffset=DateTimeOffset.Now;
         DateTimeOffset timeout=nowTimeOffset.AddMinutes(time);
+
+
         
         var member = await message.Guild.GetMemberAsync(message.Author.Id).ConfigureAwait(false);
 
-        await member.TimeoutAsync(timeout).ConfigureAwait(false);
+        
+
+        //await member.TimeoutAsync(timeout).ConfigureAwait(false);
 
         await message.Message.DeleteAsync().ConfigureAwait(false);
         await SendPrivateMessage(message.Guild,
                 message.Author,
-                $"kolego, to twoje kolejne ostrzeżenie. tym razem idziesz na przerwę na {time}")
+                $"kolego, to twoje kolejne ostrzeżenie. tym razem idziesz na przerwę na {time} minut")
             .ConfigureAwait(false);
+    }
+
+    public async Task Kick(MessageCreateEventArgs message)
+    {
+        var member= await message.Guild.GetMemberAsync(message.Author.Id).ConfigureAwait(false);
+        await message.Message.DeleteAsync().ConfigureAwait(false);
+
+        //await member.RemoveAsync().ConfigureAwait(false);
+
+        await SendPrivateMessage(message.Guild,
+                message.Author,
+                $"Pofolgowaliście sobie kolego?, " +
+                $"tym razem dostałeś tylko kick, dalej możecie dołączyć do serwera poprzez zaproszenie, " +
+                $"ale kolejne złamanie regulaminu może zakończyć się banicją, więc uważaj na przyszłości, bo pożegnamy się na dłużej. ")
+            .ConfigureAwait(false);
+    }
+
+    public async Task Ban(MessageCreateEventArgs message)
+    {
+        var member = await message.Guild.GetMemberAsync(message.Author.Id).ConfigureAwait(false);
+        await message.Message.DeleteAsync().ConfigureAwait(false);
+
+       // await member.BanAsync().ConfigureAwait(false);
+
+        await SendPrivateMessage(message.Guild,
+                message.Author,
+                "Oj kolego, teraz to już przesadziłeś. Twoja ostatnia wiadomość zakończyła się banicją, teraz to masz problem," +
+                " proś o wybaczenie, ale nie wiem czy zda się to ci na wiele.  ")
+            .ConfigureAwait(false);
+    }
+
+    public async Task TimeoutKickOrBan(MessageCreateEventArgs message)
+    {
+       var config =await _serverConfigService.GetServerConfig(Guid.Parse($"{message.Guild.Id:X32}")).ConfigureAwait(false);
+
+
+
+        var user=await _userServerStatsService
+            .GetUserStats(Guid.Parse($"{message.Author.Id:X32}"),
+            Guid.Parse($"{message.Guild.Id:X32}"))
+            .ConfigureAwait(false);
+        if(user==null) return;
+
+        var date = user.LastPenaltyDate;
+        
+        if(date==null) return;
+        var difference = DateTime.Now - date;
+
+        switch (difference.Value.TotalDays)
+        {
+            case >= 5:
+                await Timeout(message, 60).ConfigureAwait(false);
+                return;
+            case >= 2:
+                await Kick(message).ConfigureAwait(false);
+                return;
+            default:
+                if(!config.BansEnabled) return;
+                await Ban(message).ConfigureAwait(false);
+                return;
+
+        }
+
+
     }
 
     public static async Task SendPrivateMessage(DiscordGuild guild ,DiscordUser user, string message)

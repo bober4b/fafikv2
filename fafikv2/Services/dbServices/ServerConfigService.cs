@@ -41,7 +41,7 @@ namespace Fafikv2.Services.dbServices
 
         public async Task<ServerConfig> GetServerConfig(Guid server)
         {
-            var result=_serverConfigRepository
+            var result= _serverConfigRepository
                 .GetAll()
                 .FirstOrDefault(x => x.ServerId == server);
 
