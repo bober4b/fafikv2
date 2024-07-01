@@ -9,7 +9,7 @@ namespace Fafikv2.Data.Models
         public virtual ICollection<BannedWords> BannedWords { get; set; }
 
         public bool BansEnabled { get; set; }
-
+        public bool KicksEnabled { get; set; }
         public bool AutoModeratorEnabled { get; set; }
     }
 }

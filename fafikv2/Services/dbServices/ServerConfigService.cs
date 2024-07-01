@@ -24,9 +24,9 @@ namespace Fafikv2.Services.dbServices
             }
 
 
-            _serverConfigRepository.AddServerConfig(serverConfig);
+            await _serverConfigRepository.AddServerConfig(serverConfig).ConfigureAwait(false);
 
-            await Task.CompletedTask;
+            await Task.CompletedTask.ConfigureAwait(false);
         }
 
         public Task RemoveServerConfig(ServerConfig serverConfig)
@@ -46,6 +46,26 @@ namespace Fafikv2.Services.dbServices
                 .FirstOrDefault(x => x.ServerId == server);
 
             return result;
+        }
+
+        public async Task EnableBans(Guid server)
+        {
+            await _serverConfigRepository.EnableDisableBans(server,true).ConfigureAwait(false);
+        }
+
+        public async Task DisableBans(Guid server)
+        {
+            await _serverConfigRepository.EnableDisableBans(server, false).ConfigureAwait(false);
+        }
+
+        public async Task EnableKicks(Guid server)
+        {
+            await _serverConfigRepository.EnableDisableKicks(server, true).ConfigureAwait(false);
+        }
+
+        public async Task DisableKicks(Guid server)
+        {
+            await _serverConfigRepository.EnableDisableKicks(server, false).ConfigureAwait(false);
         }
     }
 }

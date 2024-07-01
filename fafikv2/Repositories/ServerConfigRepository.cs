@@ -1,6 +1,7 @@
 ﻿using Fafikv2.Data.Models;
 using Fafikv2.Data.DataContext;
 using Fafikv2.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace Fafikv2.Repositories
@@ -43,6 +44,44 @@ namespace Fafikv2.Repositories
         {
             var result = _context.ServerConfigs;
             return result;
+        }
+
+        public async Task EnableDisableBans(Guid server, bool enableDisable)
+        {
+            var config = await _context.ServerConfigs
+                .FirstOrDefaultAsync(x => x.ServerId == server)
+                .ConfigureAwait(false);
+            if (config != null)
+            {
+                config.BansEnabled=enableDisable;
+                try
+                {
+                    await _context.SaveChangesAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+        }
+
+        public async Task EnableDisableKicks(Guid server, bool enableDisable)
+        {
+            var config = await _context.ServerConfigs
+                .FirstOrDefaultAsync(x => x.ServerId == server)
+                .ConfigureAwait(false);
+            if (config != null)
+            {
+                config.KicksEnabled = enableDisable;
+                try
+                {
+                    await _context.SaveChangesAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
         }
     }
 }

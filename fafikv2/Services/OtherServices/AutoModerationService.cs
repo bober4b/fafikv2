@@ -36,7 +36,7 @@ public class AutoModerationService : IAutoModerationService
         var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
         {
             var badWords = await _banWordsService
-                .GetAll(Guid.Parse($"{message.Guild.Id:X32}"))
+                .GetAllByServer(Guid.Parse($"{message.Guild.Id:X32}"))
                 .ConfigureAwait(false);
 
             return badWords
@@ -137,12 +137,14 @@ public class AutoModerationService : IAutoModerationService
             .ConfigureAwait(false);
     }
 
-    private static async Task Kick(MessageCreateEventArgs message)
+    private async Task Kick(MessageCreateEventArgs message)
     {
-        var member= await message.Guild.GetMemberAsync(message.Author.Id).ConfigureAwait(false);
+        var config = await _serverConfigService.GetServerConfig(Guid.Parse($"{message.Guild.Id:X32}")).ConfigureAwait(false);
+        if (!config.KicksEnabled) return;
+        //var member = await message.Guild.GetMemberAsync(message.Author.Id).ConfigureAwait(false);
         await message.Message.DeleteAsync().ConfigureAwait(false);
 
-        //await member.RemoveAsync().ConfigureAwait(false);
+       // await member.RemoveAsync().ConfigureAwait(false);
 
         await SendPrivateMessage(message.Guild,
                 message.Author,
@@ -157,7 +159,7 @@ public class AutoModerationService : IAutoModerationService
         var member = await message.Guild.GetMemberAsync(message.Author.Id).ConfigureAwait(false);
         await message.Message.DeleteAsync().ConfigureAwait(false);
 
-       // await member.BanAsync().ConfigureAwait(false);
+        //await member.BanAsync().ConfigureAwait(false);
 
         await SendPrivateMessage(message.Guild,
                 message.Author,
@@ -189,6 +191,7 @@ public class AutoModerationService : IAutoModerationService
                 await Timeout(message, 60).ConfigureAwait(false);
                 return;
             case >= 2:
+                if(!config.KicksEnabled) return;
                 await Kick(message).ConfigureAwait(false);
                 return;
             default:

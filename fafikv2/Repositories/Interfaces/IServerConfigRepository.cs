@@ -7,6 +7,8 @@ namespace Fafikv2.Repositories.Interfaces
         public Task UpdateServerConfig(ServerConfig serverConfig);
         public Task DeleteServerConfig(ServerConfig serverConfig);
         public IEnumerable<ServerConfig> GetAll();
+        public Task EnableDisableBans(Guid server, bool enableDisable);
+        public Task EnableDisableKicks(Guid server, bool enableDisable);
 
     }
 }

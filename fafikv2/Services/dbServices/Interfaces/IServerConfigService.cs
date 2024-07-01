@@ -8,6 +8,11 @@ namespace Fafikv2.Services.dbServices.Interfaces
         public Task RemoveServerConfig(ServerConfig serverConfig);
         public Task UpdateServerConfig(ServerConfig serverConfig);
         public Task<ServerConfig> GetServerConfig(Guid server);
+        public Task EnableBans(Guid server);
+        public Task DisableBans(Guid server);
+        public Task EnableKicks(Guid server);
+        public Task DisableKicks(Guid server);
+
     }
 
     

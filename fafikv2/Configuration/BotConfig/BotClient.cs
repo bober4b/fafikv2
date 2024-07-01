@@ -181,54 +181,51 @@ namespace Fafikv2.Configuration.BotConfig
             await _serverConfigService.AddServerConfig(sConfig);
             foreach (var user in users)
             {
-                if (!user.IsBot)
+                if (user.IsBot) continue;
+                var value = user.Id;
+                var formatted = $"{value:X32}";
+                var statsId = Guid.NewGuid();
+                var useradd = new User
                 {
-                    var value = user.Id;
-                    var formatted = $"{value:X32}";
-                    var statsId = Guid.NewGuid();
-                    var useradd = new User
-                    {
-                        Name = user.Username,
-                        Id = Guid.Parse(formatted),
-                        BotInteractionGlobal = 0,
-                        GlobalKarma = 0,
-                        MessagesCountGlobal = 0,
-                        UserLevel = 0
+                    Name = user.Username,
+                    Id = Guid.Parse(formatted),
+                    BotInteractionGlobal = 0,
+                    GlobalKarma = 0,
+                    MessagesCountGlobal = 0,
+                    UserLevel = 0
 
-                    };
-                    await _userService.AddUser(useradd);
-                    Console.WriteLine($"dodano: {user.Username} {user.Id} {server.Name}");
+                };
+                await _userService.AddUser(useradd);
+                Console.WriteLine($"dodano: {user.Username} {user.Id} {server.Name}");
                    
                     
 
-                    var serverUser = new ServerUsers
-                    {
-                        ServerId = server1.Id,
-                        UserId = useradd.Id,
-                        UserServerStatsId = statsId,
-                        Id = Guid.NewGuid(),
+                var serverUser = new ServerUsers
+                {
+                    ServerId = server1.Id,
+                    UserId = useradd.Id,
+                    UserServerStatsId = statsId,
+                    Id = Guid.NewGuid(),
 
 
-                    };
+                };
 
 
-                    var userStats = new UserServerStats
-                    {
-                        Id = statsId,
-                        ServerKarma = 0,
-                        MessagesCountServer = 0,
-                        BotInteractionServer = 0,
-                        DisplayName = user.DisplayName,
-                        ServerUsers = serverUser,
-                        ServerUserId = serverUser.Id
-                    };
+                var userStats = new UserServerStats
+                {
+                    Id = statsId,
+                    ServerKarma = 0,
+                    MessagesCountServer = 0,
+                    BotInteractionServer = 0,
+                    DisplayName = user.DisplayName,
+                    ServerUsers = serverUser,
+                    ServerUserId = serverUser.Id
+                };
 
-                    await _serverUsersService.AddServerUsers(serverUser);
+                await _serverUsersService.AddServerUsers(serverUser);
 
 
-                    await _userServerStatsService.AddUserServerStats(userStats);
-                    
-                }
+                await _userServerStatsService.AddUserServerStats(userStats);
             }
 
             

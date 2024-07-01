@@ -8,6 +8,6 @@ public interface IBannedWordsService
 
     public Task<bool> IsBanned(string bannedWords, Guid server);
 
-    public Task<IEnumerable<BannedWords>> GetAll(Guid server);
+    public Task<IEnumerable<BannedWords>> GetAllByServer(Guid server);
 
 }

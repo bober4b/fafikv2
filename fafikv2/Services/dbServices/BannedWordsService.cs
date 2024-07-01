@@ -32,7 +32,7 @@ public class BannedWordsService : IBannedWordsService
         return res != null;
     }
 
-    public async Task<IEnumerable<BannedWords>> GetAll(Guid server)
+    public async Task<IEnumerable<BannedWords>> GetAllByServer(Guid server)
     {
        var result= _bannedWordsRepository.GetBannedWordsByServer(server);
        return result;
