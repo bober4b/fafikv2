@@ -3,7 +3,7 @@ using Fafikv2.Services.OtherServices.Interfaces;
 
 namespace Fafikv2.Services.OtherServices
 {
-    internal class DatabaseContextQueueService : IDatabaseContextQueueService
+    public class DatabaseContextQueueService : IDatabaseContextQueueService
     {
         private readonly DatabaseContextQueue _queue = new();
 

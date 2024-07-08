@@ -1,6 +1,5 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using Fafikv2.Migrations;
 using Fafikv2.Services.CommandService;
 
 namespace Fafikv2.Commands;
