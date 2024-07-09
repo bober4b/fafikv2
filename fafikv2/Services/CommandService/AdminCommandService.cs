@@ -18,7 +18,6 @@ public class AdminCommandService
         _databaseContextQueueService = serviceProvider.GetRequiredService<IDatabaseContextQueueService>();
         _serverConfigService = serviceProvider.GetRequiredService<IServerConfigService>();
     }
-
     public async Task AddBannedWord(CommandContext ctx, string bannedWord, int time)
     {
         if (ctx.Member.IsOwner)
@@ -53,7 +52,6 @@ public class AdminCommandService
             await ctx.RespondAsync("Brak uprawnień!!!").ConfigureAwait(false);
         }
     }
-
     public async Task DelBannedWord(CommandContext ctx, String delWord)
     {
         if (ctx.Member.IsOwner)
@@ -76,7 +74,6 @@ public class AdminCommandService
             await ctx.RespondAsync("Brak uprawnień!!!").ConfigureAwait(false);
         }
     }
-
     public async Task BanEnable(CommandContext ctx)
     {
         if (ctx.Member.IsOwner)
@@ -92,7 +89,6 @@ public class AdminCommandService
             await ctx.RespondAsync("Brak uprawnień!!!").ConfigureAwait(false);
         }
     }
-
     public async Task BanDisable(CommandContext ctx)
     {
         if (ctx.Member.IsOwner)
@@ -123,7 +119,6 @@ public class AdminCommandService
             await ctx.RespondAsync("Brak uprawnień!!!").ConfigureAwait(false);
         }
     }
-
     public async Task KickDisable(CommandContext ctx)
     {
         if (ctx.Member.IsOwner)

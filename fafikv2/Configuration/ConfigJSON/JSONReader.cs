@@ -1,33 +1,31 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Fafikv2.Configuration.ConfigJSON
 {
-    internal class JsonReader
+    public class JsonReader
     {
         public string Token { get; set; }
         public string Prefix { get; set; }
+        public string GeniusToken { get; set; }
         public async Task ReadJson()
         {
             using (StreamReader sr = new StreamReader("config.json"))
             {
-                string json = await sr.ReadToEndAsync();
-                JsonStructure data = JsonConvert.DeserializeObject<JsonStructure>(json);
+                var json = await sr.ReadToEndAsync().ConfigureAwait(false);
+                var data = JsonConvert.DeserializeObject<JsonStructure>(json);
 
                 Token = data.Token;
                 Prefix = data.Prefix;
+                GeniusToken = data.GeniusToken;
             }
         }
     }
 
-    internal sealed class JsonStructure
+    public sealed class JsonStructure
     {
         public string Token { get; set; }
         public string Prefix { get; set; }
+        public string GeniusToken { get; set; }
     }
 
 }

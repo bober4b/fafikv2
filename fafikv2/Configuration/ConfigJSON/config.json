@@ -1,4 +1,5 @@
 ﻿{
-  "token": "token",
-  "prefix": "!"
+  "geniusToken": "token",
+  "prefix": "!",
+  "token": "token"
 }

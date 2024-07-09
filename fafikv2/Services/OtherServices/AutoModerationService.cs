@@ -51,7 +51,7 @@ namespace Fafikv2.Services.OtherServices
                 return new CheckMessagesResult
                 {
                     Result = result,
-                    words = Enumerable.Empty<BannedWords>()
+                    Words = Enumerable.Empty<BannedWords>()
                 };
 
             var words = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
@@ -69,7 +69,7 @@ namespace Fafikv2.Services.OtherServices
             return new CheckMessagesResult()
             {
                 Result = result,
-                words = words
+                Words = words
             };
 
         }
@@ -91,9 +91,9 @@ namespace Fafikv2.Services.OtherServices
 
             if (!banned.Result) return true;
 
-            if (banned.words.All(x => x.Time != 0))
+            if (banned.Words.All(x => x.Time != 0))
             {
-                var timeout = banned.words.Max(x => x.Time);
+                var timeout = banned.Words.Max(x => x.Time);
                 await Timeout(message, timeout).ConfigureAwait(false);
                 return false;
             }

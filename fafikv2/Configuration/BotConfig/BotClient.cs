@@ -89,8 +89,10 @@ namespace Fafikv2.Configuration.BotConfig
             Commands.RegisterCommands<BaseCommands>();
             Commands.RegisterCommands<MusicCommands>();
             Commands.RegisterCommands<AdminCommands>();
+            Commands.RegisterCommands<AdditionalMusicCommands>();
             BaseCommands.BaseCommandService = new BaseCommandService(_serviceProvider);
             AdminCommands.AdminCommandService = new AdminCommandService(_serviceProvider);
+            AdditionalMusicCommands.AdditionalMusicService = new AdditionalMusicService(jsonReader);
 
             var endpoint = new ConnectionEndpoint
             {

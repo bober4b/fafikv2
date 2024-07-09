@@ -6,7 +6,8 @@ namespace Fafikv2.Commands;
 
 public class AdminCommands : BaseCommandModule
 {
-    public static AdminCommandService AdminCommandService;
+    public static AdminCommandService? AdminCommandService;
+
     [Command("banned")]
     public async Task Banned(CommandContext ctx, string bannedWord, int time=0)
     {
