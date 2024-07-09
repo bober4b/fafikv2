@@ -7,9 +7,19 @@ namespace Fafikv2.Commands
     {
         public static AdditionalMusicService AdditionalMusicService;
         [Command("lyric")]
-        public async Task Lyric(CommandContext ctx,string title, string artist)
+        public async Task Lyric(CommandContext ctx, [RemainingText] string titleAndArtist)
         {
-            await AdditionalMusicService.FindLyric(ctx,title, artist).ConfigureAwait(false);
+            if (titleAndArtist.Contains('|'))
+            {
+                var standardisation = titleAndArtist.Split('|');
+                if (standardisation.Length == 2)
+                {
+                    await AdditionalMusicService.FindLyric(ctx, standardisation[0], standardisation[1]).ConfigureAwait(false);
+                    return;
+                }
+            }
+
+            await ctx.RespondAsync("zły format!!").ConfigureAwait(false);
         }
     }
 }

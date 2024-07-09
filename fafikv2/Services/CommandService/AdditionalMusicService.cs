@@ -33,8 +33,20 @@ namespace Fafikv2.Services.CommandService
                 if (!string.IsNullOrEmpty(songId))
                 {
                     var lyrics = await GetLyrics(_apiKey, songId).ConfigureAwait(false);
-                    await ctx.RespondAsync(lyrics).ConfigureAwait(false);
-                    Console.WriteLine(lyrics);
+                    if (lyrics.Length >= 2000)
+                    {
+                        var chunks = Enumerable.Range(0, (int)Math.Ceiling((double)lyrics.Length / 2000))
+                            .Select(i => lyrics.Substring(i * 2000, Math.Min(2000, lyrics.Length - i * 2000)));
+                        foreach (var partial in chunks )
+                        {
+                            await ctx.RespondAsync(partial).ConfigureAwait(false);
+                        }
+                    }
+                    else
+                    {
+                        await ctx.RespondAsync(lyrics).ConfigureAwait(false);
+
+                    }
                 }
                 else
                 {
@@ -120,12 +132,9 @@ namespace Fafikv2.Services.CommandService
                     .Where(n => n.NodeType == HtmlNodeType.Text && !string.IsNullOrWhiteSpace(n.InnerText))
                     .Select(n => HttpUtility.HtmlDecode(n.InnerText.Trim()))); ;
             }
-            /*var lyrics = string.Join("\n", lyricsNode.DescendantsAndSelf()
-                .Where(n => n.NodeType == HtmlNodeType.Text && !string.IsNullOrWhiteSpace(n.InnerText))
-                .Select(n => HttpUtility.HtmlDecode(n.InnerText.Trim())));
-            */
-           return result;
-           //lyrics.Replace("\n\n", "\n"); // Usuń podwójne nowe linie
+
+            return result;
+           
         }
     }
 }
