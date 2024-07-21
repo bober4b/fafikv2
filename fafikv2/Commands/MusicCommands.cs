@@ -58,8 +58,12 @@ namespace Fafikv2.Commands
         {
             await MusicService.VolumeAsync(ctx, vol);
         }
-        
 
+        [Command("say")]
+        public async Task TextToSpeech(CommandContext ctx, [RemainingText] string textAndLanguage)
+        {
+            await _musicService.PlayAudioFromText(ctx, textAndLanguage,"nic");
+        }
 
 
     }

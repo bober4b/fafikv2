@@ -3,6 +3,7 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.Lavalink;
 using DSharpPlus.Lavalink.EventArgs;
+using Microsoft.CognitiveServices.Speech;
 
 namespace Fafikv2.Services.CommandService
 {
@@ -10,10 +11,6 @@ namespace Fafikv2.Services.CommandService
     {
 
         private readonly Dictionary<ulong, List<LavalinkTrack>> _queue = new();
-
-
-
-
 
         public async Task JoinAsync(CommandContext ctx, DiscordChannel? channel = null)
         {
@@ -209,8 +206,6 @@ namespace Fafikv2.Services.CommandService
 
                 TimeSpan timeLeft = new();
 
-
-
                 foreach (var songTime in timeLeftAll)
                 {
                     timeLeft += songTime;
@@ -347,7 +342,7 @@ namespace Fafikv2.Services.CommandService
             if (_queue.TryGetValue(guildId, out var queue) && queue.Count > 0)
             {
                 var songTitles = queue.Select(track => track.Title).ToList();
-                var titles = "Songs QueueAsync: \n";
+                var titles = "Songs Queue: \n";
                 var i = 0;
                 foreach (var song in songTitles)
                 {
@@ -363,7 +358,7 @@ namespace Fafikv2.Services.CommandService
 
 
         }
-
+        
         public static async Task VolumeAsync(CommandContext ctx, int vol)
         {
 
@@ -404,7 +399,68 @@ namespace Fafikv2.Services.CommandService
             await ctx.RespondAsync($"Volume changed to: {vol}").ConfigureAwait(false);
         }
 
+        private static async Task<MemoryStream> SynthesizeAudio(CommandContext ctx, string language, string text)
+        {
+            var config = SpeechConfig.FromSubscription("d9ef900eab4f4e92a164c8199f18f958", "westeurope");
+            config.SpeechSynthesisLanguage = "pl-PL";
+            using var synthesizer = new SpeechSynthesizer(config, null);
 
+            using var result = await synthesizer.SpeakTextAsync(text);
+            if (result.Reason == ResultReason.SynthesizingAudioCompleted)
+            {
+                var audioData = result.AudioData;
+                return new MemoryStream(audioData);
+            }
+            else
+            {
+                Console.WriteLine($"Speech synthsis failed. Reason:{result.Reason}");
+                return null;
+            }
+
+        }
+
+        public async Task PlayAudioFromText(CommandContext ctx, string text, string language)
+        {
+            var speechStream = await SynthesizeAudio(ctx, language, text);
+            speechStream.Position = 0;
+
+            if (ctx.Member?.VoiceState == null || ctx.Member.VoiceState.Channel == null)
+            {
+                await ctx.RespondAsync("You are not in a voice channel.").ConfigureAwait(false);
+                return;
+            }
+
+            var lava = ctx.Client.GetLavalink();
+            var node = lava.ConnectedNodes.Values.First();
+            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
+            if (conn == null)
+            {
+                await ctx.RespondAsync("Lavalink is not connected").ConfigureAwait(false);
+                return;
+            }
+
+            // Zapisz strumień do pliku
+            var filePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.wav");
+            using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
+            {
+                speechStream.WriteTo(fileStream);
+            }
+
+            var track = await conn.GetTracksAsync(new Uri(@"C: \Users\bober\Desktop\backup\lavalink\test\benc.wav"));
+            var trackInfo = track.Tracks.FirstOrDefault();
+
+            if (trackInfo != null)
+            {
+                await conn.PlayAsync(trackInfo);
+            }
+            else
+            {
+                await ctx.RespondAsync("Track could not be loaded").ConfigureAwait(false);
+            }
+
+            // Usuń plik po odtworzeniu
+            File.Delete(filePath);
+        }
 
     }
 }
