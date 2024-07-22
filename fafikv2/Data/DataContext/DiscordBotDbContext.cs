@@ -13,6 +13,8 @@ namespace Fafikv2.Data.DataContext
         public DbSet<ServerUsers> ServerUsers { get; set; }
         public DbSet<UserServerStats> ServerUsersStats { get; set; }
         public DbSet<BannedWords> BannedWords { get; set; }
+        public DbSet<Song> Songs { get; set; }
+        public DbSet<UserPlayedSong> UserPlayedSongs { get; set; }
 
        public DiscordBotDbContext() {}
 

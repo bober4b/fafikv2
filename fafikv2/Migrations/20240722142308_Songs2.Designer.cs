@@ -4,6 +4,7 @@ using Fafikv2.Data.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fafikv2.Migrations
 {
     [DbContext(typeof(DiscordBotDbContext))]
-    partial class DiscordBotDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240722142308_Songs2")]
+    partial class Songs2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -163,27 +166,6 @@ namespace Fafikv2.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Fafikv2.Data.Models.UserPlayedSong", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("SongId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SongId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserPlayedSongs");
-                });
-
             modelBuilder.Entity("Fafikv2.Data.Models.UserServerStats", b =>
                 {
                     b.Property<Guid>("Id")
@@ -255,25 +237,6 @@ namespace Fafikv2.Migrations
                         .IsRequired();
 
                     b.Navigation("Server");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Fafikv2.Data.Models.UserPlayedSong", b =>
-                {
-                    b.HasOne("Fafikv2.Data.Models.Song", "Song")
-                        .WithMany()
-                        .HasForeignKey("SongId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Fafikv2.Data.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Song");
 
                     b.Navigation("User");
                 });
