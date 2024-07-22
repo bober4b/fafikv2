@@ -1,4 +1,8 @@
-﻿using System.Net.Http.Headers;
+﻿using System;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
 using System.Web;
 using DSharpPlus.CommandsNext;
 using Fafikv2.Configuration.ConfigJSON;
@@ -9,7 +13,7 @@ namespace Fafikv2.Services.CommandService
 {
     public class AdditionalMusicService
     {
-        private static readonly HttpClient Client = new(new HttpClientHandler { AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate })
+        private static readonly HttpClient Client = new HttpClient(new HttpClientHandler { AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate })
         {
             Timeout = TimeSpan.FromSeconds(10) // Ustawienie limitu czasowego
         };
@@ -29,7 +33,7 @@ namespace Fafikv2.Services.CommandService
                 if (!string.IsNullOrEmpty(songId))
                 {
                     var lyrics = await GetLyrics(_apiKey, songId).ConfigureAwait(false);
-                    if (lyrics is { Length: >= 2000 })
+                    if (lyrics.Length >= 2000)
                     {
                         var chunks = Enumerable.Range(0, (int)Math.Ceiling((double)lyrics.Length / 2000))
                             .Select(i => lyrics.Substring(i * 2000, Math.Min(2000, lyrics.Length - i * 2000)));
@@ -40,7 +44,8 @@ namespace Fafikv2.Services.CommandService
                     }
                     else
                     {
-                        if (lyrics != null) await ctx.RespondAsync(lyrics).ConfigureAwait(false);
+                        await ctx.RespondAsync(lyrics).ConfigureAwait(false);
+
                     }
                 }
                 else
@@ -59,53 +64,56 @@ namespace Fafikv2.Services.CommandService
         {
             Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
-            var url = $"https://api.genius.com/search?q={Uri.EscapeDataString(songTitle + " " + artist)}";
-            var response = await Client.GetAsync(url).ConfigureAwait(false);
+            string url = $"https://api.genius.com/search?q={Uri.EscapeDataString(songTitle + " " + artist)}";
+            HttpResponseMessage response = await Client.GetAsync(url);
 
             if (!response.IsSuccessStatusCode)
             {
                 throw new Exception($"Błąd HTTP: {response.StatusCode}");
             }
 
-            var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            var json = JObject.Parse(responseBody);
-            var song = json["response"]?["hits"]?.First?["result"];
+            string responseBody = await response.Content.ReadAsStringAsync();
+            JObject json = JObject.Parse(responseBody);
+            JToken song = json["response"]["hits"]?.First?["result"];
 
             return song?["id"]?.ToString();
         }
 
-        private static async Task<string?> GetLyrics(string apiKey, string? songId)
+        private static async Task<string> GetLyrics(string apiKey, string? songId)
         {
             Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
-            var url = $"https://api.genius.com/songs/{songId}";
-            var response = await Client.GetAsync(url).ConfigureAwait(false);
+            string url = $"https://api.genius.com/songs/{songId}";
+            HttpResponseMessage response = await Client.GetAsync(url);
 
             if (!response.IsSuccessStatusCode)
             {
                 throw new Exception($"Błąd HTTP: {response.StatusCode}");
             }
 
-            var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            var json = JObject.Parse(responseBody);
-            var lyricsPath = json["response"]?["song"]?["path"]?.ToString();
+            string responseBody = await response.Content.ReadAsStringAsync();
+            JObject json = JObject.Parse(responseBody);
+            string lyricsPath = json["response"]["song"]?["path"]?.ToString();
 
-            if (string.IsNullOrEmpty(lyricsPath)) return null;
-            var lyricsUrl = "https://genius.com" + lyricsPath;
-            return await GetLyricsFromPage(lyricsUrl).ConfigureAwait(false);
+            if (!string.IsNullOrEmpty(lyricsPath))
+            {
+                string lyricsUrl = "https://genius.com" + lyricsPath;
+                return await GetLyricsFromPage(lyricsUrl);
+            }
 
+            return null;
         }
 
         private static async Task<string> GetLyricsFromPage(string url)
         {
-            var response = await Client.GetAsync(url).ConfigureAwait(false);
+            HttpResponseMessage response = await Client.GetAsync(url);
 
             if (!response.IsSuccessStatusCode)
             {
                 throw new Exception($"Błąd HTTP: {response.StatusCode}");
             }
 
-            var pageContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            string pageContent = await response.Content.ReadAsStringAsync();
             var htmlDoc = new HtmlDocument();
             htmlDoc.LoadHtml(pageContent);
 
@@ -116,11 +124,16 @@ namespace Fafikv2.Services.CommandService
                 throw new Exception("Nie znaleziono tekstu piosenki na stronie.");
             }
 
+            string result = "";
             // Wyciągnij tekst z wszystkich odpowiednich elementów i zachowaj formatowanie
+            foreach (var lyric in lyricsNode)
+            {
+                result += string.Join("\n", lyric.DescendantsAndSelf()
+                    .Where(n => n.NodeType == HtmlNodeType.Text && !string.IsNullOrWhiteSpace(n.InnerText))
+                    .Select(n => HttpUtility.HtmlDecode(n.InnerText.Trim()))); ;
+            }
 
-            return lyricsNode.Aggregate("", (current, lyric) => current + string.Join("\n", lyric.DescendantsAndSelf()
-                .Where(n => n.NodeType == HtmlNodeType.Text && !string.IsNullOrWhiteSpace(n.InnerText))
-                .Select(n => HttpUtility.HtmlDecode(n.InnerText.Trim()))));
+            return result;
            
         }
     }
