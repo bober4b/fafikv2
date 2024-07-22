@@ -1,6 +1,5 @@
 ﻿using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using DSharpPlus;
 using Fafikv2.Data.Models;
 using Fafikv2.Services.dbServices.Interfaces;
 using Fafikv2.Services.OtherServices.Interfaces;
@@ -13,7 +12,6 @@ namespace Fafikv2.Services.OtherServices
         private readonly IBannedWordsService _banWordsService;
         private readonly IUserServerStatsService _userServerStatsService;
         private readonly IServerConfigService _serverConfigService;
-        private static DiscordClient _client;
 
         public AutoModerationService(IDatabaseContextQueueService databaseContextQueueService,
             IBannedWordsService bannedWordsService,
@@ -26,10 +24,6 @@ namespace Fafikv2.Services.OtherServices
             _serverConfigService = serverConfigService;
         }
 
-        public void ClientConnect(DiscordClient client)
-        {
-            _client = client;
-        }
 
         public async Task<CheckMessagesResult> CheckMessagesAsync(MessageCreateEventArgs message)
         {
@@ -40,9 +34,9 @@ namespace Fafikv2.Services.OtherServices
                     .GetAllByServer(Guid.Parse($"{message.Guild.Id:X32}"))
                     .ConfigureAwait(false);
 
-                var ces = badWords.ToArray();
+                var bannedWordsEnumerable = badWords as BannedWords[] ?? badWords.ToArray();
 
-                return badWords
+                return bannedWordsEnumerable
                     .Any(word => message.Message.Content
                         .Contains(word.BannedWord));
             }).ConfigureAwait(false);
@@ -99,7 +93,7 @@ namespace Fafikv2.Services.OtherServices
             }
 
 
-            var penalty = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
+            await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
             {
                 var user = await _userServerStatsService
                     .GetUserStats(Guid.Parse($"{message.Author.Id:X32}"),
@@ -214,9 +208,8 @@ namespace Fafikv2.Services.OtherServices
                 .GetUserStats(Guid.Parse($"{message.Author.Id:X32}"),
                     Guid.Parse($"{message.Guild.Id:X32}"))
                 .ConfigureAwait(false);
-            if (user == null) return;
 
-            var date = user.LastPenaltyDate;
+            var date = user?.LastPenaltyDate;
 
             if (date == null) return;
             var difference = DateTime.Now - date;

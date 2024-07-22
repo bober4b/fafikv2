@@ -3,12 +3,19 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.Lavalink;
 using DSharpPlus.Lavalink.EventArgs;
-using Microsoft.CognitiveServices.Speech;
+using Fafikv2.Services.OtherServices.Interfaces;
 
 namespace Fafikv2.Services.CommandService
 {
     public class MusicService
     {
+        private readonly ISongCollectionService? _songCollectionService;
+
+
+        public MusicService(ISongCollectionService? songCollectionService)
+        {
+            _songCollectionService= songCollectionService;
+        }
 
         private readonly Dictionary<ulong, List<LavalinkTrack>> _queue = new();
 
@@ -206,6 +213,8 @@ namespace Fafikv2.Services.CommandService
 
                 TimeSpan timeLeft = new();
 
+
+
                 foreach (var songTime in timeLeftAll)
                 {
                     timeLeft += songTime;
@@ -213,7 +222,10 @@ namespace Fafikv2.Services.CommandService
                 Console.WriteLine($"{conn.CurrentState.CurrentTrack.Title}");
                 queue.Add(track);
                 await ctx.RespondAsync($"Added {track.Title} to the queue!\n" + $"Song will be played in: {timeLeft}").ConfigureAwait(false);
+            
             }
+
+            await _songCollectionService.AddToBase(track, ctx).ConfigureAwait(false);
         }
 
         public static async Task PauseAsync(CommandContext ctx)

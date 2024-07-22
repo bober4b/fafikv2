@@ -1,5 +1,7 @@
 ﻿{
   "geniusToken": "token",
   "prefix": "!",
+  "SpotifyClientId": "token",
+  "SpotifyClientToken": "token",
   "token": "token"
 }

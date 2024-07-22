@@ -7,6 +7,8 @@ namespace Fafikv2.Configuration.ConfigJSON
         public string Token { get; set; }
         public string Prefix { get; set; }
         public string GeniusToken { get; set; }
+        public string SpotifyClientId { get; set; }
+        public string SpotifyClientToken { get; set; }
         public async Task ReadJson()
         {
             using (StreamReader sr = new StreamReader("config.json"))
@@ -17,6 +19,9 @@ namespace Fafikv2.Configuration.ConfigJSON
                 Token = data.Token;
                 Prefix = data.Prefix;
                 GeniusToken = data.GeniusToken;
+                SpotifyClientId = data.SpotifyClientId;
+                SpotifyClientToken = data.SpotifyClientToken;
+
             }
         }
     }
@@ -26,6 +31,8 @@ namespace Fafikv2.Configuration.ConfigJSON
         public string Token { get; set; }
         public string Prefix { get; set; }
         public string GeniusToken { get; set; }
+        public string SpotifyClientId { get; set; }
+        public string SpotifyClientToken { get; set; }
     }
 
 }

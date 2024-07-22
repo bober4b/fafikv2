@@ -21,15 +21,37 @@ namespace Fafikv2.Repositories
         }
         public async Task Add(UserPlayedSong userPlayedSong)
         {
-           await _context.UserPlayedSongs.AddAsync(userPlayedSong).ConfigureAwait(false);
+            try
+            {
+                Console.WriteLine("Adding UserPlayedSong to the database.");
 
-           await _context.SaveChangesAsync().ConfigureAwait(false);
+                // Dodanie obiektu do kontekstu
+                await _context.UserPlayedSongs.AddAsync(userPlayedSong).ConfigureAwait(false);
+                Console.WriteLine("UserPlayedSong added to the context.");
+
+                // Zapisanie zmian do bazy danych
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+                Console.WriteLine("Changes saved to the database.");
+            }
+            catch (Exception ex)
+            {
+                // Obsługa wyjątków
+                Console.WriteLine($"An error occurred while adding UserPlayedSong to the database: {ex.Message}");
+
+                // Sprawdzenie szczegółów wyjątku
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+
+                throw; // Ponowne rzucenie wyjątku
+            }
         }
 
         public async Task<bool> HasBeenAdded(UserPlayedSong userPlayedSong)
         {
             var result=await _context.UserPlayedSongs
-                .AnyAsync(x=>x.Song==userPlayedSong.Song && x.User==userPlayedSong.User)
+                .AnyAsync(x=>x.Song.Title==userPlayedSong.Song.Title && x.Song.Artist ==userPlayedSong.Song.Artist &&x.User.Id==userPlayedSong.Id)
                 .ConfigureAwait(false);
             return result;
         }

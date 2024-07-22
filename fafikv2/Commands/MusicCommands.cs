@@ -7,7 +7,8 @@ namespace Fafikv2.Commands
 {
     public class MusicCommands : BaseCommandModule
     {
-        private readonly MusicService _musicService=new ();
+        public static MusicService _musicService;
+        
 
         [Command]
         public async Task Join(CommandContext ctx, DiscordChannel? channel=null)

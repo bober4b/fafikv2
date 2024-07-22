@@ -20,6 +20,8 @@ namespace Fafikv2.Configuration.DependencyConfiguration
             services.AddScoped<IUserPlayedSongsService, UserPlayedSongsService>();
             services.AddSingleton<IDatabaseContextQueueService, DatabaseContextQueueService>();
             services.AddSingleton<IAutoModerationService, AutoModerationService>();
+            services.AddSingleton<ISongCollectionService, SongCollectionService>();
+            services.AddSingleton<ISpotifyApiService, SpotifyApiService>();
 
 
 

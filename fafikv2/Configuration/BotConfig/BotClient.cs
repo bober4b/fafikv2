@@ -11,6 +11,7 @@ using Fafikv2.Services.CommandService;
 using Fafikv2.Services.dbServices.Interfaces;
 using Fafikv2.Services.OtherServices.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace Fafikv2.Configuration.BotConfig
 {
@@ -67,7 +68,7 @@ namespace Fafikv2.Configuration.BotConfig
             };
 
             Client = new DiscordClient(discordConfig);
-            _autoModerationService.ClientConnect(Client);
+            
 
             Client.Ready += Client_Ready;
             Client.MessageCreated += Client_MessageCreated;
@@ -90,8 +91,10 @@ namespace Fafikv2.Configuration.BotConfig
             Commands.RegisterCommands<MusicCommands>();
             Commands.RegisterCommands<AdminCommands>();
             Commands.RegisterCommands<AdditionalMusicCommands>();
+
             BaseCommands.BaseCommandService = new BaseCommandService(_serviceProvider);
             AdminCommands.AdminCommandService = new AdminCommandService(_serviceProvider);
+            MusicCommands._musicService = new MusicService( _serviceProvider.GetRequiredService(typeof(ISongCollectionService)) as ISongCollectionService);
             AdditionalMusicCommands.AdditionalMusicService = new AdditionalMusicService(jsonReader);
 
             var endpoint = new ConnectionEndpoint
