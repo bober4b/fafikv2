@@ -16,6 +16,8 @@ namespace Fafikv2.Configuration.DependencyConfiguration
             services.AddScoped<IServerConfigService, ServerConfigService>();
             services.AddScoped<IUserServerStatsService, UserServerStatsService>();
             services.AddScoped<IBannedWordsService, BannedWordsService>();
+            services.AddScoped<ISongsService, SongsService>();
+            services.AddScoped<IUserPlayedSongsService, UserPlayedSongsService>();
             services.AddSingleton<IDatabaseContextQueueService, DatabaseContextQueueService>();
             services.AddSingleton<IAutoModerationService, AutoModerationService>();
 

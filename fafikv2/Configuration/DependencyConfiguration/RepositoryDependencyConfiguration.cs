@@ -14,6 +14,8 @@ namespace Fafikv2.Configuration.DependencyConfiguration
             services.AddScoped<IServerConfigRepository, ServerConfigRepository>();
             services.AddScoped<IUserServerStatsRepository, UserServerStatsRepository>();
             services.AddScoped<IBannedWordsRepository, BannedWordsRepository>();
+            services.AddScoped<ISongsRepository, SongsRepository>();
+            services.AddScoped<IUserPlayedSongsRepository,UserPlayedSongsRepository>();
 
             return services;
         }

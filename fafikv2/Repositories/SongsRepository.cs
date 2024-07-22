@@ -33,9 +33,17 @@ namespace Fafikv2.Repositories
             return result;
         }
 
+        public async Task<bool> HasBeenAdded(string name, string artist)
+        {
+            var result = await _context.Songs
+                .AnyAsync(x => x.Name == name && x.Artist == artist)
+                .ConfigureAwait(false);
+            return result;
+        }
+
         public async Task<IEnumerable<Song>> GetSongByGenre(string genre)
         {
-            var result =  _context.Songs.Where(x => x.Genres == genre);
+            var result =  _context.Songs.Where(x => x.Genres.Contains(genre) );
             return result.AsEnumerable();
         }
 
@@ -44,7 +52,7 @@ namespace Fafikv2.Repositories
             var result =  _context.UserPlayedSongs
                 .Where(x => x.UserId == userId)
                 .Select(x=>x.Song)
-                .Where(song=>song.Genres==genre);
+                .Where(song=>song.Genres.Contains(genre));
             return result.AsEnumerable();
         }
 
