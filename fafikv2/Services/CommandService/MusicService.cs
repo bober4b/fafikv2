@@ -221,7 +221,7 @@ namespace Fafikv2.Services.CommandService
                 }
                 Console.WriteLine($"{conn.CurrentState.CurrentTrack.Title}");
                 queue.Add(track);
-                await ctx.RespondAsync($"Added {track.Title} to the queue!\n" + $"Song will be played in: {timeLeft}").ConfigureAwait(false);
+                await ctx.RespondAsync($"Added {track.Title} to the queue!\n" + $"Song will be played in: {timeLeft.Minutes},{timeLeft.Seconds:D2}").ConfigureAwait(false);
             
             }
 

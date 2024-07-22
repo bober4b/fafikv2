@@ -22,7 +22,7 @@ namespace Fafikv2.Services.OtherServices
 
         public async Task AddToBase(LavalinkTrack track, CommandContext ctx)
         {
-            var genresArray = await _spotifyApiService.GetGenresOfTrackAsync(track.Title, track.Author).ConfigureAwait(false);
+            var genresArray = await _spotifyApiService.GetGenresOfTrackAsync(ctx.Message.Content).ConfigureAwait(false);
             var genres = string.Join(", ", genresArray);
             var songId = Guid.NewGuid();
             var song=new Song
