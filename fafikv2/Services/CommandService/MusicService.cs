@@ -189,7 +189,7 @@ namespace Fafikv2.Services.CommandService
                 queue = new List<LavalinkTrack>();
                 _queue[ctx.Guild.Id] = queue;
             }
-
+            
 
             if (queue.Count == 0)
             {
