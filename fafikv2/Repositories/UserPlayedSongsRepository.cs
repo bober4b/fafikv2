@@ -21,6 +21,7 @@ namespace Fafikv2.Repositories
         }
         public async Task Add(UserPlayedSong userPlayedSong)
         {
+            
             try
             {
                 Console.WriteLine("Adding UserPlayedSong to the database.");

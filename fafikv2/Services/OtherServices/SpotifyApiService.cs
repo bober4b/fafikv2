@@ -10,14 +10,14 @@ namespace Fafikv2.Services.OtherServices
         private readonly string _clientId;
         private readonly string _clientSecret;
 
-        public  SpotifyApiService()
+        public SpotifyApiService()
         {
             var jsonReader = new JsonReader();
-            jsonReader.ReadJson().ConfigureAwait(false);
+            jsonReader.ReadJson().Wait();
             _clientId = jsonReader.SpotifyClientId;
             _clientSecret = jsonReader.SpotifyClientToken;
-
         }
+
         private async Task<string?> GetAccessTokenAsync()
         {
             const string url = "https://accounts.spotify.com/api/token";
@@ -43,11 +43,14 @@ namespace Fafikv2.Services.OtherServices
 
         private static async Task<JsonDocument> SearchTrackAsync(string query, string? accessToken)
         {
-            var url = $"https://api.spotify.com/v1/search?q={Uri.EscapeDataString(query)}&type=track&limit=1";
+            var builder = new UriBuilder("https://api.spotify.com/v1/search");
+            var queryParams = $"q={Uri.EscapeDataString(query)}&type=track&limit=1";
+            builder.Query = queryParams;
+
             var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
-            var response = await client.GetAsync(url).ConfigureAwait(false);
+            var response = await client.GetAsync(builder.Uri).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -56,7 +59,6 @@ namespace Fafikv2.Services.OtherServices
 
         private static async Task<JsonDocument> GetTrackDetailsAsync(string? trackId, string? accessToken)
         {
-
             var url = $"https://api.spotify.com/v1/tracks/{trackId}";
             var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
@@ -70,7 +72,6 @@ namespace Fafikv2.Services.OtherServices
 
         private static async Task<JsonDocument> GetArtistDetailsAsync(string? artistId, string? accessToken)
         {
-
             var url = $"https://api.spotify.com/v1/artists/{artistId}";
             var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
@@ -79,6 +80,18 @@ namespace Fafikv2.Services.OtherServices
             response.EnsureSuccessStatusCode();
 
             var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            return JsonDocument.Parse(responseBody);
+        }
+        private async Task<JsonDocument> GetRecommendationsAsync(string seedTracks, string seedArtists, string seedGenres, string accessToken)
+        {
+            var url = $"https://api.spotify.com/v1/recommendations?seed_tracks={seedTracks}&seed_artists={seedArtists}&seed_genres={seedGenres}";
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+            var response = await client.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+
+            var responseBody = await response.Content.ReadAsStringAsync();
             return JsonDocument.Parse(responseBody);
         }
 
@@ -158,5 +171,54 @@ namespace Fafikv2.Services.OtherServices
             return genres.Select(genre => genre.GetString()).ToArray();
         }
 
+        public async Task<string> GetRecommendationsBasedOnInputAsync(string userInput)
+        {
+            var accessToken = await GetAccessTokenAsync().ConfigureAwait(false);
+
+            // Zakładamy, że jeśli input zawiera słowo "gatunek: ", to jest to gatunek, w przeciwnym razie traktujemy to jako utwór
+            if (userInput.ToLower().Contains("gatunek:"))
+            {
+                var genre = userInput[(userInput.IndexOf(":", StringComparison.Ordinal) + 1)..].Trim();
+                var recommendations = await GetRecommendationsAsync(string.Empty, string.Empty, genre, accessToken).ConfigureAwait(false);
+                return ExtractTrackDetails(recommendations);
+            }
+            else
+            {
+                var searchResult = await SearchTrackAsync(userInput, accessToken).ConfigureAwait(false);
+
+                if (searchResult.RootElement.GetProperty("tracks").GetProperty("items").GetArrayLength() == 0)
+                {
+                    throw new Exception("Nie znaleziono utworów pasujących do zapytania.");
+                }
+
+                var trackId = searchResult.RootElement
+                    .GetProperty("tracks")
+                    .GetProperty("items")[0]
+                    .GetProperty("id")
+                    .GetString();
+
+                var trackDetails = await GetTrackDetailsAsync(trackId, accessToken).ConfigureAwait(false);
+                var artistId = trackDetails.RootElement
+                    .GetProperty("artists")[0]
+                    .GetProperty("id")
+                    .GetString();
+
+                var recommendations = await GetRecommendationsAsync(trackId, artistId, string.Empty, accessToken).ConfigureAwait(false);
+                return ExtractTrackDetails(recommendations);
+            }
+        }
+
+        private static string ExtractTrackDetails(JsonDocument recommendations)
+        {
+            var tracks = recommendations.RootElement.GetProperty("tracks").EnumerateArray();
+            var trackDetailsList = tracks.Select(track =>
+            {
+                var title = track.GetProperty("name").GetString();
+                var artist = track.GetProperty("artists")[0].GetProperty("name").GetString();
+                return $"{artist} - {title}";
+            }).ToList();
+
+            return string.Join(", ", trackDetailsList);
+        }
     }
 }

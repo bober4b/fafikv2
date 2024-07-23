@@ -10,14 +10,14 @@ namespace Fafikv2.Services.CommandService
     public class MusicService
     {
         private readonly ISongCollectionService? _songCollectionService;
-
+        private readonly Dictionary<ulong, List<LavalinkTrack>> _queue = new();
 
         public MusicService(ISongCollectionService? songCollectionService)
         {
             _songCollectionService= songCollectionService;
         }
 
-        private readonly Dictionary<ulong, List<LavalinkTrack>> _queue = new();
+        
 
         public async Task JoinAsync(CommandContext ctx, DiscordChannel? channel = null)
         {
@@ -214,11 +214,7 @@ namespace Fafikv2.Services.CommandService
                 TimeSpan timeLeft = new();
 
 
-
-                foreach (var songTime in timeLeftAll)
-                {
-                    timeLeft += songTime;
-                }
+                timeLeft = timeLeftAll.Aggregate(timeLeft, (current, songTime) => current + songTime);
                 Console.WriteLine($"{conn.CurrentState.CurrentTrack.Title}");
                 queue.Add(track);
                 await ctx.RespondAsync($"Added {track.Title} to the queue!\n" + $"Song will be played in: {timeLeft.Minutes},{timeLeft.Seconds:D2}").ConfigureAwait(false);
