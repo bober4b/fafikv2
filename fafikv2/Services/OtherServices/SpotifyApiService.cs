@@ -11,6 +11,7 @@ namespace Fafikv2.Services.OtherServices
     {
         private readonly string _clientId;
         private readonly string _clientSecret;
+        private readonly PolishLettersConverter _converter=new();
 
         public SpotifyApiService()
         {
@@ -101,6 +102,8 @@ namespace Fafikv2.Services.OtherServices
         {
             var accessToken = await GetAccessToken().ConfigureAwait(false);
             JsonDocument searchResult;
+
+            if (_converter.ContainsPolishChars(query)) query=_converter.ReplacePolishChars(query);
 
             if ( Uri.TryCreate(query, UriKind.Absolute, out _))
             {
