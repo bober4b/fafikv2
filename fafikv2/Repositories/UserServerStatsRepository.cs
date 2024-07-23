@@ -23,7 +23,7 @@ namespace Fafikv2.Repositories
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.InnerException.Message);
+                Console.WriteLine(e.InnerException?.Message);
                 throw;
             }
             //_context.SaveChanges();
@@ -41,24 +41,23 @@ namespace Fafikv2.Repositories
             throw new NotImplementedException();
         }
 
-        public async Task<UserServerStats?> GetUserStatsByUserAndServerId(Guid userId, Guid serverId)
+        public Task<UserServerStats> GetUserStatsByUserAndServerId(Guid userId, Guid serverId)
         {
             var serverUsers = _context
                 .ServerUsers
                 .FirstOrDefault(x => x.ServerId == serverId && x.UserId == userId);
 
-            if (serverUsers != null)
+            if (serverUsers == null) return Task.FromResult<UserServerStats>(null!);
             {
-                var result= _context.ServerUsersStats.FirstOrDefault(x => serverUsers != null && x.ServerUserId == serverUsers.Id);
+                var result= _context.ServerUsersStats.FirstOrDefault(x => x.ServerUserId == serverUsers.Id);
 
                 if (result != null)
                 {
-                    return result;
+                    return Task.FromResult(result);
                 }
-
             }
 
-            return null;
+            return Task.FromResult<UserServerStats>(null!);
         }
 
         public IEnumerable<UserServerStats> GetAll()

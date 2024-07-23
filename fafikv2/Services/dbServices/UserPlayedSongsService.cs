@@ -17,7 +17,9 @@ namespace Fafikv2.Services.dbServices
         {
             var added = await _userPlayedSongsRepository.HasBeenAdded(userPlayedSong).ConfigureAwait(false);
             if (added) return;
+            
             await _userPlayedSongsRepository.Add(userPlayedSong).ConfigureAwait(false);
+            
         }
     }
 }

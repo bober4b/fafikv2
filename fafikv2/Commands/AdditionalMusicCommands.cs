@@ -6,8 +6,9 @@ namespace Fafikv2.Commands
     public class AdditionalMusicCommands : BaseCommandModule
     {
         public static AdditionalMusicService AdditionalMusicService;
+
         [Command("lyric")]
-        public async Task Lyric(CommandContext ctx, [RemainingText] string titleAndArtist)
+        public static async Task Lyric(CommandContext ctx, [RemainingText] string titleAndArtist)
         {
             if (titleAndArtist.Contains('|'))
             {

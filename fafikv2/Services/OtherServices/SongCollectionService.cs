@@ -30,17 +30,25 @@ namespace Fafikv2.Services.OtherServices
                 Id=songId,
                 Title = track.Title,
                 Artist = track.Author,
-                Genres = genres
+                Genres = genres,
+                LinkUri = track.Uri
 
             };
 
             var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
             {
-                await _songsService.Add(song).ConfigureAwait(false);
-                return true;
+               var wasAddedBefore= await _songsService.Add(song).ConfigureAwait(false);
+                return wasAddedBefore;
             }).ConfigureAwait(false);
 
-
+            if (result)
+            {
+                song = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
+                {
+                    var result1= await _songsService.Get(song.Title, song.Artist).ConfigureAwait(false);
+                    return result1;
+                }).ConfigureAwait(false);
+            }
            
 
             var playedSong = new UserPlayedSong
@@ -48,13 +56,14 @@ namespace Fafikv2.Services.OtherServices
                 Id = Guid.NewGuid(),
                 UserId = Guid.Parse($"{ctx.Message.Author.Id:X32}"),
                 SongId = songId,
+                Song = song
                 
             };
 
-            var res=await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
+            await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
             {
                 await _userPlayedSongsService.Add(playedSong).ConfigureAwait(false);
-                return true;
+                
             }).ConfigureAwait(false);
         }
     }

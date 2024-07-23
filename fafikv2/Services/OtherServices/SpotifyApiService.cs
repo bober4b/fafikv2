@@ -1,19 +1,28 @@
 ﻿using System.Text;
 using System.Text.Json;
+using Fafikv2.Configuration.ConfigJSON;
 using Fafikv2.Services.OtherServices.Interfaces;
 
 namespace Fafikv2.Services.OtherServices
 {
     public class SpotifyApiService : ISpotifyApiService
     {
-        private readonly string clientId= "";
-        private readonly string clientSecret= "";
+        private readonly string _clientId;
+        private readonly string _clientSecret;
 
+        public  SpotifyApiService()
+        {
+            var jsonReader = new JsonReader();
+            jsonReader.ReadJson().ConfigureAwait(false);
+            _clientId = jsonReader.SpotifyClientId;
+            _clientSecret = jsonReader.SpotifyClientToken;
+
+        }
         private async Task<string?> GetAccessTokenAsync()
         {
-            var url = "https://accounts.spotify.com/api/token";
+            const string url = "https://accounts.spotify.com/api/token";
             var client = new HttpClient();
-            var authHeader = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}"));
+            var authHeader = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_clientId}:{_clientSecret}"));
 
             var request = new HttpRequestMessage(HttpMethod.Post, url)
             {
@@ -24,87 +33,130 @@ namespace Fafikv2.Services.OtherServices
                 Content = new StringContent("grant_type=client_credentials", Encoding.UTF8, "application/x-www-form-urlencoded")
             };
 
-            var response = await client.SendAsync(request);
+            var response = await client.SendAsync(request).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
-            var responseBody = await response.Content.ReadAsStringAsync();
+            var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             var responseJson = JsonDocument.Parse(responseBody);
             return responseJson.RootElement.GetProperty("access_token").GetString();
         }
 
-        private async Task<JsonDocument> SearchTrackAsync(string query, string? accessToken)
+        private static async Task<JsonDocument> SearchTrackAsync(string query, string? accessToken)
         {
             var url = $"https://api.spotify.com/v1/search?q={Uri.EscapeDataString(query)}&type=track&limit=1";
             var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
-            var response = await client.GetAsync(url);
+            var response = await client.GetAsync(url).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
-            var responseBody = await response.Content.ReadAsStringAsync();
+            var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             return JsonDocument.Parse(responseBody);
         }
 
-        private async Task<JsonDocument> GetTrackDetailsAsync(string? trackId, string? accessToken)
+        private static async Task<JsonDocument> GetTrackDetailsAsync(string? trackId, string? accessToken)
         {
 
             var url = $"https://api.spotify.com/v1/tracks/{trackId}";
             var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
-            var response = await client.GetAsync(url);
+            var response = await client.GetAsync(url).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
-            var responseBody = await response.Content.ReadAsStringAsync();
+            var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             return JsonDocument.Parse(responseBody);
         }
 
-        private async Task<JsonDocument> GetArtistDetailsAsync(string? artistId, string? accessToken)
+        private static async Task<JsonDocument> GetArtistDetailsAsync(string? artistId, string? accessToken)
         {
 
             var url = $"https://api.spotify.com/v1/artists/{artistId}";
             var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
-            var response = await client.GetAsync(url);
+            var response = await client.GetAsync(url).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
-            var responseBody = await response.Content.ReadAsStringAsync();
+            var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             return JsonDocument.Parse(responseBody);
         }
 
         public async Task<string?[]> GetGenresOfTrackAsync(string query)
         {
-            var accessToken = await GetAccessTokenAsync();
-            var searchResult = await SearchTrackAsync(query.Remove(0,5), accessToken);
+            var accessToken = await GetAccessTokenAsync().ConfigureAwait(false);
+            JsonDocument searchResult;
+            try
+            {
+                searchResult = await SearchTrackAsync(query, accessToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error searching track: {ex.Message}");
+                return Array.Empty<string>();
+            }
 
             if (searchResult.RootElement.GetProperty("tracks").GetProperty("items").GetArrayLength() == 0)
             {
-                throw new Exception("No tracks found matching the query.");
+                Console.WriteLine("No tracks found matching the query.");
+                return Array.Empty<string>();
             }
 
-            var trackId = searchResult.RootElement
-                .GetProperty("tracks")
-                .GetProperty("items")[0]
-                .GetProperty("id")
-                .GetString();
-
-            var trackDetails = await GetTrackDetailsAsync(trackId, accessToken);
-            var artistId = trackDetails.RootElement
-                .GetProperty("artists")[0]
-                .GetProperty("id")
-                .GetString();
-
-            var artistDetails = await GetArtistDetailsAsync(artistId, accessToken);
-            var genres = artistDetails.RootElement.GetProperty("genres").EnumerateArray();
-            var genreList = new List<string>();
-
-            foreach (var genre in genres)
+            string trackId;
+            try
             {
-                genreList.Add(genre.GetString());
+                trackId = searchResult.RootElement
+                    .GetProperty("tracks")
+                    .GetProperty("items")[0]
+                    .GetProperty("id")
+                    .GetString();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error extracting track ID: {ex.Message}");
+                return Array.Empty<string>();
             }
 
-            return genreList.ToArray();
+            JsonDocument trackDetails;
+            try
+            {
+                trackDetails = await GetTrackDetailsAsync(trackId, accessToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting track details: {ex.Message}");
+                return Array.Empty<string>();
+            }
+
+            string artistId;
+            try
+            {
+                artistId = trackDetails.RootElement
+                    .GetProperty("artists")[0]
+                    .GetProperty("id")
+                    .GetString();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error extracting artist ID: {ex.Message}");
+                return Array.Empty<string>();
+            }
+
+            JsonDocument artistDetails;
+            try
+            {
+                artistDetails = await GetArtistDetailsAsync(artistId, accessToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting artist details: {ex.Message}");
+                return Array.Empty<string>();
+            }
+
+            var genres = artistDetails.RootElement.GetProperty("genres").EnumerateArray();
+
+            return genres.Select(genre => genre.GetString()).ToArray();
         }
+
     }
 }

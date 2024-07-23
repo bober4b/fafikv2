@@ -8,8 +8,10 @@ namespace Fafikv2.Data.Models
         public virtual Server? Server { get; set; }
         public virtual ICollection<BannedWords> BannedWords { get; set; }
 
-        public bool BansEnabled { get; set; }
-        public bool KicksEnabled { get; set; }
-        public bool AutoModeratorEnabled { get; set; }
+        public bool BansEnabled { get; set; } = false;
+        public bool KicksEnabled { get; set; } = false;
+        public bool AutoModeratorEnabled { get; set; } = false;
+        public bool AutoplayEnabled { get; set; } = false;
+
     }
 }

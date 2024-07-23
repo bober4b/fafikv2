@@ -9,6 +9,8 @@ namespace Fafikv2.Repositories.Interfaces
         public IEnumerable<ServerConfig> GetAll();
         public Task EnableDisableBans(Guid server, bool enableDisable);
         public Task EnableDisableKicks(Guid server, bool enableDisable);
+        public Task EnableDisableAutoModerator(Guid server, bool enableDisable);
+        public Task EnableDisableAutoPlay(Guid server, bool enableDisable);
 
     }
 }

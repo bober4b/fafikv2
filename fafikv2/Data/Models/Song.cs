@@ -1,5 +1,4 @@
-﻿
-namespace Fafikv2.Data.Models
+﻿namespace Fafikv2.Data.Models
 {
     public class Song
     {
@@ -7,6 +6,7 @@ namespace Fafikv2.Data.Models
         public string Title { get; set; }
         public string Artist { get; set; }
         public string Genres { get; set; }
+        public Uri LinkUri { get; set; }
 
     }
 }

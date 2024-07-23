@@ -67,5 +67,25 @@ namespace Fafikv2.Services.dbServices
         {
             await _serverConfigRepository.EnableDisableKicks(server, false).ConfigureAwait(false);
         }
+
+        public async Task EnableAutoModerator(Guid server)
+        {
+            await _serverConfigRepository.EnableDisableAutoModerator(server, true).ConfigureAwait(false);
+        }
+
+        public async Task DisableAutoModerator(Guid server)
+        {
+            await _serverConfigRepository.EnableDisableAutoModerator(server, false).ConfigureAwait(false);
+        }
+
+        public async Task EnableAutoPlay(Guid server)
+        {
+            await _serverConfigRepository.EnableDisableAutoPlay(server, true).ConfigureAwait(false);
+        }
+
+        public async Task DisableAutoPlay(Guid server)
+        {
+            await _serverConfigRepository.EnableDisableAutoModerator(server, false).ConfigureAwait(false);
+        }
     }
 }

@@ -43,7 +43,25 @@ public class AdminCommands : BaseCommandModule
     {
         await AdminCommandService.BanDisable(ctx);
     }
-    
-
+    [Command("Auto_moderator_enable")]
+    public async Task AutoModeratorEnable(CommandContext ctx)
+    {
+        await AdminCommandService.AutoModeratorEnable(ctx);
+    }
+    [Command("Auto_moderator_disable")]
+    public async Task AutoModeratorDisable(CommandContext ctx)
+    {
+        await AdminCommandService.AutoModeratorDisable(ctx);
+    }
+    [Command("Auto_play_enable")]
+    public async Task AutoPlayEnable(CommandContext ctx)
+    {
+        await AdminCommandService.AutoPlayEnabled(ctx);
+    }
+    [Command("Auto_play_disable")]
+    public async Task AutoPlayDisable(CommandContext ctx)
+    {
+        await AdminCommandService.AutoPlayDisabled(ctx);
+    }
 
 }

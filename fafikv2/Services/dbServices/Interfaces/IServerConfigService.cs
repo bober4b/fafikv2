@@ -12,6 +12,10 @@ namespace Fafikv2.Services.dbServices.Interfaces
         public Task DisableBans(Guid server);
         public Task EnableKicks(Guid server);
         public Task DisableKicks(Guid server);
+        public Task EnableAutoModerator(Guid server);
+        public Task DisableAutoModerator(Guid server);
+        public Task EnableAutoPlay(Guid server);
+        public Task DisableAutoPlay(Guid server);
 
     }
 

@@ -24,7 +24,7 @@ namespace Fafikv2.Repositories
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.InnerException.Message);
+                Console.WriteLine(ex.InnerException?.Message);
             }
            
             return Task.CompletedTask;
@@ -73,6 +73,44 @@ namespace Fafikv2.Repositories
             if (config != null)
             {
                 config.KicksEnabled = enableDisable;
+                try
+                {
+                    await _context.SaveChangesAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+        }
+
+        public async Task EnableDisableAutoModerator(Guid server, bool enableDisable)
+        {
+            var config = await _context.ServerConfigs
+                .FirstOrDefaultAsync(x => x.ServerId == server)
+                .ConfigureAwait(false);
+            if (config != null)
+            {
+                config.AutoModeratorEnabled = enableDisable;
+                try
+                {
+                    await _context.SaveChangesAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+        }
+
+        public async Task EnableDisableAutoPlay(Guid server, bool enableDisable)
+        {
+            var config = await _context.ServerConfigs
+                .FirstOrDefaultAsync(x => x.ServerId == server)
+                .ConfigureAwait(false);
+            if (config != null)
+            {
+                config.AutoplayEnabled = enableDisable;
                 try
                 {
                     await _context.SaveChangesAsync().ConfigureAwait(false);

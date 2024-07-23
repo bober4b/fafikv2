@@ -12,16 +12,17 @@ namespace Fafikv2.Services.dbServices
         {
             _songsRepository= songsRepository;
         }
-        public async Task Add(Song song)
+        public async Task<bool> Add(Song song)
         {
             var added = await _songsRepository.HasBeenAdded(song.Title, song.Artist).ConfigureAwait(false);
-            if (added) return;
+            if (added) return false;
             await _songsRepository.AddSong(song).ConfigureAwait(false);
+            return true;
         }
 
-        public async Task<Song?> Get(string name, string artist)
+        public async Task<Song?> Get(string title, string artist)
         {
-            var result = await _songsRepository.Get(name, artist).ConfigureAwait(false);
+            var result = await _songsRepository.Get(title, artist).ConfigureAwait(false);
             return result ?? null;
         }
 
