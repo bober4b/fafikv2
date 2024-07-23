@@ -1,5 +1,7 @@
-﻿using DSharpPlus.CommandsNext;
+﻿using System.Runtime.CompilerServices;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.Lavalink;
+using DSharpPlus.Lavalink.EventArgs;
 using Fafikv2.Data.Models;
 using Fafikv2.Services.dbServices.Interfaces;
 using Fafikv2.Services.OtherServices.Interfaces;
@@ -22,7 +24,7 @@ namespace Fafikv2.Services.OtherServices
 
         public async Task AddToBase(LavalinkTrack track, CommandContext ctx)
         {
-            var genresArray = await _spotifyApiService.GetGenresOfTrackAsync(ctx.Message.Content.Remove(0,6)).ConfigureAwait(false);
+            var genresArray = await _spotifyApiService.GetGenresOfTrack(ctx.Message.Content.Remove(0,6)).ConfigureAwait(false);
             var genres = string.Join(", ", genresArray);
             var songId = Guid.NewGuid();
             var song=new Song
@@ -67,10 +69,30 @@ namespace Fafikv2.Services.OtherServices
             }).ConfigureAwait(false);
 
             var test = await _spotifyApiService
-                .GetRecommendationsBasedOnInputAsync(ctx.Message.Content.Remove(0, 6))
+                .GetRecommendationsBasedOnInput(ctx.Message.Content.Remove(0, 6))
                 .ConfigureAwait(false);
         }
 
+        public async Task<LavalinkTrack> AutoPlay(LavalinkGuildConnection node, LavalinkTrack track)
+        {
+            var voiceChannel = node.Channel;
+            var membersInChannel = voiceChannel.Users;
+            /*List<Song> songs = new();
+            await _databaseContextQueueService.EnqueueDatabaseTask(async () => 
+            { 
+                
+                foreach (var user in membersInChannel )
+                {
+                    songs.AddRange( await _songsService.GetSongsByUser(Guid.Parse($"{user.Guild.Id:X32}")).ConfigureAwait(false));
+                }
+            }).ConfigureAwait(false);*/
+            var nextSongName = await _spotifyApiService.GetRecommendationsBasedOnInput(track.Title).ConfigureAwait(false);
+
+            var nextSongResult = await node.GetTracksAsync(nextSongName,LavalinkSearchType.SoundCloud).ConfigureAwait(false);
+
+            return nextSongResult.Tracks.First();
+
+        }
         
     }
 }

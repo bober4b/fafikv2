@@ -1,5 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
+using DSharpPlus.Lavalink;
+using System.Xml.Linq;
 using Fafikv2.Configuration.ConfigJSON;
 using Fafikv2.Services.OtherServices.Interfaces;
 
@@ -18,7 +20,7 @@ namespace Fafikv2.Services.OtherServices
             _clientSecret = jsonReader.SpotifyClientToken;
         }
 
-        private async Task<string?> GetAccessTokenAsync()
+        private async Task<string?> GetAccessToken()
         {
             const string url = "https://accounts.spotify.com/api/token";
             var client = new HttpClient();
@@ -41,7 +43,7 @@ namespace Fafikv2.Services.OtherServices
             return responseJson.RootElement.GetProperty("access_token").GetString();
         }
 
-        private static async Task<JsonDocument> SearchTrackAsync(string query, string? accessToken)
+        private static async Task<JsonDocument> SearchTrack(string query, string? accessToken)
         {
             var builder = new UriBuilder("https://api.spotify.com/v1/search");
             var queryParams = $"q={Uri.EscapeDataString(query)}&type=track&limit=1";
@@ -57,7 +59,7 @@ namespace Fafikv2.Services.OtherServices
             return JsonDocument.Parse(responseBody);
         }
 
-        private static async Task<JsonDocument> GetTrackDetailsAsync(string? trackId, string? accessToken)
+        private static async Task<JsonDocument> GetTrackDetails(string? trackId, string? accessToken)
         {
             var url = $"https://api.spotify.com/v1/tracks/{trackId}";
             var client = new HttpClient();
@@ -70,7 +72,7 @@ namespace Fafikv2.Services.OtherServices
             return JsonDocument.Parse(responseBody);
         }
 
-        private static async Task<JsonDocument> GetArtistDetailsAsync(string? artistId, string? accessToken)
+        private static async Task<JsonDocument> GetArtistDetails(string? artistId, string? accessToken)
         {
             var url = $"https://api.spotify.com/v1/artists/{artistId}";
             var client = new HttpClient();
@@ -82,7 +84,7 @@ namespace Fafikv2.Services.OtherServices
             var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             return JsonDocument.Parse(responseBody);
         }
-        private async Task<JsonDocument> GetRecommendationsAsync(string seedTracks, string seedArtists, string seedGenres, string accessToken)
+        private async Task<JsonDocument> GetRecommendations(string seedTracks, string seedArtists, string seedGenres, string accessToken)
         {
             var url = $"https://api.spotify.com/v1/recommendations?seed_tracks={seedTracks}&seed_artists={seedArtists}&seed_genres={seedGenres}";
             var client = new HttpClient();
@@ -95,19 +97,32 @@ namespace Fafikv2.Services.OtherServices
             return JsonDocument.Parse(responseBody);
         }
 
-        public async Task<string?[]> GetGenresOfTrackAsync(string query)
+        public async Task<string?[]> GetGenresOfTrack(string query)
         {
-            var accessToken = await GetAccessTokenAsync().ConfigureAwait(false);
+            var accessToken = await GetAccessToken().ConfigureAwait(false);
             JsonDocument searchResult;
+
+            if ( Uri.TryCreate(query, UriKind.Absolute, out _))
+            {
+                // If search is a valid URL, use the URI overload
+                var sort = query.Split('/');
+                query = sort.Last();
+            }
+
             try
             {
-                searchResult = await SearchTrackAsync(query, accessToken).ConfigureAwait(false);
+                searchResult = await SearchTrack(query, accessToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error searching track: {ex.Message}");
                 return Array.Empty<string>();
             }
+
+            
+            
+            
+
 
             if (searchResult.RootElement.GetProperty("tracks").GetProperty("items").GetArrayLength() == 0)
             {
@@ -133,7 +148,7 @@ namespace Fafikv2.Services.OtherServices
             JsonDocument trackDetails;
             try
             {
-                trackDetails = await GetTrackDetailsAsync(trackId, accessToken).ConfigureAwait(false);
+                trackDetails = await GetTrackDetails(trackId, accessToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -158,7 +173,7 @@ namespace Fafikv2.Services.OtherServices
             JsonDocument artistDetails;
             try
             {
-                artistDetails = await GetArtistDetailsAsync(artistId, accessToken).ConfigureAwait(false);
+                artistDetails = await GetArtistDetails(artistId, accessToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -168,27 +183,66 @@ namespace Fafikv2.Services.OtherServices
 
             var genres = artistDetails.RootElement.GetProperty("genres").EnumerateArray();
 
-            return genres.Select(genre => genre.GetString()).ToArray();
+            string[] result;
+            try
+            {
+                result = genres.Select(genre => genre.GetString()).ToArray();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                result = Array.Empty<string>();
+                throw;
+            }
+            return result;
         }
 
-        public async Task<string> GetRecommendationsBasedOnInputAsync(string userInput)
+        public async Task<string> GetRecommendationsBasedOnInput(string userInput)
         {
-            var accessToken = await GetAccessTokenAsync().ConfigureAwait(false);
+            string accessToken;
+            try
+            {
+                accessToken = await GetAccessToken().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error obtaining access token: {ex.Message}");
+                return "Error obtaining access token.";
+            }
 
-            // Zakładamy, że jeśli input zawiera słowo "gatunek: ", to jest to gatunek, w przeciwnym razie traktujemy to jako utwór
+            // Zakładamy, że jeśli input zawiera słowo "gatunek:", to jest to gatunek, w przeciwnym razie traktujemy to jako utwór
             if (userInput.ToLower().Contains("gatunek:"))
             {
-                var genre = userInput[(userInput.IndexOf(":", StringComparison.Ordinal) + 1)..].Trim();
-                var recommendations = await GetRecommendationsAsync(string.Empty, string.Empty, genre, accessToken).ConfigureAwait(false);
-                return ExtractTrackDetails(recommendations);
+                try
+                {
+                    var genre = userInput[(userInput.IndexOf(":", StringComparison.Ordinal) + 1)..].Trim();
+                    var recommendations = await GetRecommendations(string.Empty, string.Empty, genre, accessToken).ConfigureAwait(false);
+                    return ExtractTrackDetails(recommendations);
+                }
+                catch (HttpRequestException httpEx)
+                {
+                    Console.WriteLine($"HTTP request error: {httpEx.Message}");
+                    return "Błąd podczas wykonywania żądania HTTP.";
+                }
+                catch (JsonException jsonEx)
+                {
+                    Console.WriteLine($"JSON parsing error: {jsonEx.Message}");
+                    return "Błąd podczas przetwarzania danych JSON.";
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Unexpected error: {ex.Message}");
+                    return "Wystąpił nieoczekiwany błąd.";
+                }
             }
-            else
+
+            try
             {
-                var searchResult = await SearchTrackAsync(userInput, accessToken).ConfigureAwait(false);
+                var searchResult = await SearchTrack(userInput, accessToken).ConfigureAwait(false);
 
                 if (searchResult.RootElement.GetProperty("tracks").GetProperty("items").GetArrayLength() == 0)
                 {
-                    throw new Exception("Nie znaleziono utworów pasujących do zapytania.");
+                    return "Nie znaleziono utworów pasujących do zapytania.";
                 }
 
                 var trackId = searchResult.RootElement
@@ -197,16 +251,32 @@ namespace Fafikv2.Services.OtherServices
                     .GetProperty("id")
                     .GetString();
 
-                var trackDetails = await GetTrackDetailsAsync(trackId, accessToken).ConfigureAwait(false);
+                var trackDetails = await GetTrackDetails(trackId, accessToken).ConfigureAwait(false);
                 var artistId = trackDetails.RootElement
                     .GetProperty("artists")[0]
                     .GetProperty("id")
                     .GetString();
 
-                var recommendations = await GetRecommendationsAsync(trackId, artistId, string.Empty, accessToken).ConfigureAwait(false);
+                var recommendations = await GetRecommendations(trackId, artistId, string.Empty, accessToken).ConfigureAwait(false);
                 return ExtractTrackDetails(recommendations);
             }
+            catch (HttpRequestException httpEx)
+            {
+                Console.WriteLine($"HTTP request error: {httpEx.Message}");
+                return "Błąd podczas wykonywania żądania HTTP.";
+            }
+            catch (JsonException jsonEx)
+            {
+                Console.WriteLine($"JSON parsing error: {jsonEx.Message}");
+                return "Błąd podczas przetwarzania danych JSON.";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected error: {ex.Message}");
+                return "Wystąpił nieoczekiwany błąd.";
+            }
         }
+
 
         private static string ExtractTrackDetails(JsonDocument recommendations)
         {
@@ -218,7 +288,7 @@ namespace Fafikv2.Services.OtherServices
                 return $"{artist} - {title}";
             }).ToList();
 
-            return string.Join(", ", trackDetailsList);
+            return trackDetailsList[0];
         }
     }
 }

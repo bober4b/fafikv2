@@ -60,5 +60,10 @@ namespace Fafikv2.Commands
             await MusicService.VolumeAsync(ctx, vol);
         }
 
+        [Command("AutoPlay")]
+        public async Task AutoPlay(CommandContext ctx)
+        {
+            _musicService.StartAutoplay(ctx);
+        }
     }
 }

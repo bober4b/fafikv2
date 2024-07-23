@@ -3,7 +3,7 @@ namespace Fafikv2.Services.OtherServices.Interfaces
 {
     public interface ISpotifyApiService
     {
-        public Task<string?[]> GetGenresOfTrackAsync(string query);
-        public Task<string> GetRecommendationsBasedOnInputAsync(string userInput);
+        public Task<string?[]> GetGenresOfTrack(string query);
+        public Task<string> GetRecommendationsBasedOnInput(string userInput);
     }
 }
