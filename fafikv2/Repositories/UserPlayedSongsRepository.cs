@@ -52,7 +52,7 @@ namespace Fafikv2.Repositories
         public async Task<bool> HasBeenAdded(UserPlayedSong userPlayedSong)
         {
             var result=await _context.UserPlayedSongs
-                .AnyAsync(x=>x.Song.Title==userPlayedSong.Song.Title && x.Song.Artist ==userPlayedSong.Song.Artist &&x.User.Id==userPlayedSong.Id)
+                .AnyAsync(x=>x.Song.Title==userPlayedSong.Song.Title && x.Song.Artist ==userPlayedSong.Song.Artist &&x.User.Id==userPlayedSong.UserId)
                 .ConfigureAwait(false);
             return result;
         }

@@ -65,6 +65,7 @@ namespace Fafikv2.Services.OtherServices
                 await _userPlayedSongsService.Add(playedSong).ConfigureAwait(false);
                 
             }).ConfigureAwait(false);
+
             var test = await _spotifyApiService
                 .GetRecommendationsBasedOnInputAsync(ctx.Message.Content.Remove(0, 6))
                 .ConfigureAwait(false);
