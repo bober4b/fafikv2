@@ -124,8 +124,10 @@ namespace Fafikv2.Services.CommandService
             if (_queue.TryGetValue(guild, out var queue))
             {
                 queue.Clear();
+
             }
 
+            _AutoPlayOn.Remove(guild, out _);
             return Task.CompletedTask;
         }
 
