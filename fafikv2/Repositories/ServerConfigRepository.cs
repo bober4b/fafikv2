@@ -121,5 +121,13 @@ namespace Fafikv2.Repositories
                 }
             }
         }
+
+        public async Task<bool> IsAutoPlayEnable(Guid server)
+        {
+            var result = await _context.ServerConfigs
+                .FirstOrDefaultAsync(x => x.ServerId == server)
+                .ConfigureAwait(false);
+            return result is { AutoplayEnabled: true };
+        }
     }
 }

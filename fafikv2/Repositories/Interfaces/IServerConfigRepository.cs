@@ -11,6 +11,7 @@ namespace Fafikv2.Repositories.Interfaces
         public Task EnableDisableKicks(Guid server, bool enableDisable);
         public Task EnableDisableAutoModerator(Guid server, bool enableDisable);
         public Task EnableDisableAutoPlay(Guid server, bool enableDisable);
+        public Task<bool> IsAutoPlayEnable(Guid server);
 
     }
 }

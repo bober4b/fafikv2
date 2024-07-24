@@ -7,5 +7,6 @@ namespace Fafikv2.Repositories.Interfaces
         public Task AddServer(Server server);
         public Task DeleteServer(Server server);
         public IEnumerable<Server> GetAll();
+
     }
 }

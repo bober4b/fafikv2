@@ -39,7 +39,7 @@ namespace Fafikv2.Services.dbServices
             throw new NotImplementedException();
         }
 
-        public async Task<ServerConfig> GetServerConfig(Guid server)
+        public async Task<ServerConfig?> GetServerConfig(Guid server)
         {
             var result= _serverConfigRepository
                 .GetAll()
@@ -85,7 +85,13 @@ namespace Fafikv2.Services.dbServices
 
         public async Task DisableAutoPlay(Guid server)
         {
-            await _serverConfigRepository.EnableDisableAutoModerator(server, false).ConfigureAwait(false);
+            await _serverConfigRepository.EnableDisableAutoPlay(server, false).ConfigureAwait(false);
+            
+        }
+
+        public async Task<bool> IsAutoPlayEnable(Guid server)
+        {
+            return await _serverConfigRepository.IsAutoPlayEnable(server).ConfigureAwait(false);
         }
     }
 }
