@@ -4,10 +4,9 @@ using DSharpPlus.Entities;
 using DSharpPlus.Lavalink;
 using DSharpPlus.Lavalink.EventArgs;
 using Fafikv2.Services.dbServices.Interfaces;
-using Fafikv2.Services.OtherServices;
 using Fafikv2.Services.OtherServices.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System;
+
 
 namespace Fafikv2.Services.CommandService
 {
@@ -17,7 +16,7 @@ namespace Fafikv2.Services.CommandService
         private readonly IServerConfigService? _serverConfigService;
         private readonly IDatabaseContextQueueService? _databaseContextQueueService;
         private readonly Dictionary<ulong, List<LavalinkTrack>> _queue = new();
-        private readonly Dictionary<ulong, bool> _AutoPlayOn = new();
+        private readonly Dictionary<ulong, bool> _autoPlayOn = new();
         private readonly Dictionary<ulong,string> _genre=new();
 
         public MusicService(IServiceProvider servicesProvider)
@@ -107,22 +106,25 @@ namespace Fafikv2.Services.CommandService
                 }
 
 
-                if (_AutoPlayOn.TryGetValue(guildId, out var isOn1) && isOn1 && queue.Count == 0 &&_genre.TryGetValue(guildId, out var genre))
+                if (_autoPlayOn.TryGetValue(guildId, out var isOn1) && isOn1 && queue.Count == 0 &&_genre.TryGetValue(guildId, out var genre))
                 {
-                    
-                    var AutoNextTrack = await _songCollectionService.AutoPlayByGenre(node, genre).ConfigureAwait(false);
-                    await node.PlayAsync(AutoNextTrack).ConfigureAwait(false);
-                    nextTrackMessage = $"Next track: {AutoNextTrack.Title}";
-                    _queue[guildId].Add(AutoNextTrack);
-
+                    if (_songCollectionService != null)
+                    {
+                        var autoNextTrack = await _songCollectionService.AutoPlayByGenre(node, genre).ConfigureAwait(false);
+                        await node.PlayAsync(autoNextTrack).ConfigureAwait(false);
+                        nextTrackMessage = $"Next track: {autoNextTrack.Title}";
+                        _queue[guildId].Add(autoNextTrack);
+                    }
                 }
-                else if (_AutoPlayOn.TryGetValue(guildId, out var isOn) && isOn && queue.Count==0)
+                else if (_autoPlayOn.TryGetValue(guildId, out var isOn) && isOn && queue.Count==0)
                 {
-                   var AutoNextTrack = await _songCollectionService.AutoPlay(node, finishedTrack).ConfigureAwait(false);
-                   await node.PlayAsync(AutoNextTrack).ConfigureAwait(false);
-                   nextTrackMessage = $"Next track: {AutoNextTrack.Title}";
-                   _queue[guildId].Add(AutoNextTrack);
-
+                    if (_songCollectionService != null)
+                    {
+                        var autoNextTrack = await _songCollectionService.AutoPlay(node, finishedTrack).ConfigureAwait(false);
+                        await node.PlayAsync(autoNextTrack).ConfigureAwait(false);
+                        nextTrackMessage = $"Next track: {autoNextTrack.Title}";
+                        _queue[guildId].Add(autoNextTrack);
+                    }
                 }
 
                 var finishedTrackMessage = $"Finished playing: {finishedTrack.Title}";
@@ -144,7 +146,7 @@ namespace Fafikv2.Services.CommandService
 
             }
 
-            _AutoPlayOn.Remove(guild, out _);
+            _autoPlayOn.Remove(guild, out _);
             _genre.Remove(guild, out _);
             return Task.CompletedTask;
         }
@@ -216,7 +218,7 @@ namespace Fafikv2.Services.CommandService
             else
             {
                 // Otherwise, treat it as a search query
-                loadResult = await node.Rest.GetTracksAsync(search, LavalinkSearchType.SoundCloud).ConfigureAwait(false);
+                loadResult = await node.Rest.GetTracksAsync(search,LavalinkSearchType.SoundCloud).ConfigureAwait(false);
             }
             // node.Rest.GetTracksAsync()
 
@@ -252,7 +254,7 @@ namespace Fafikv2.Services.CommandService
                 try
                 {
                     await conn.PlayAsync(track).ConfigureAwait(false);
-                    Console.WriteLine($"{conn.CurrentState.CurrentTrack.Title}");
+                    Console.WriteLine($"{track.Title}");
                 }
                 catch (Exception e)
                 {
@@ -270,13 +272,14 @@ namespace Fafikv2.Services.CommandService
 
 
                 timeLeft = timeLeftAll.Aggregate(timeLeft, (current, songTime) => current + songTime);
-                Console.WriteLine($"{conn.CurrentState.CurrentTrack.Title}");
+                Console.WriteLine($"{track.Title}");
                 queue.Add(track);
                 await ctx.RespondAsync($"Added {track.Title} to the queue!\n" + $"Song will be played in: {timeLeft.Minutes},{timeLeft.Seconds:D2}").ConfigureAwait(false);
             
             }
 
-            await _songCollectionService.AddToBase(track, ctx).ConfigureAwait(false);
+            if (_songCollectionService != null)
+                await _songCollectionService.AddToBase(track, ctx).ConfigureAwait(false);
         }
 
         public static async Task PauseAsync(CommandContext ctx)
@@ -380,14 +383,15 @@ namespace Fafikv2.Services.CommandService
 
                 if (queue.Count == 0)
                 {
-                    if (_AutoPlayOn.TryGetValue(guildId, out var isOn) && isOn)
+                    if (_autoPlayOn.TryGetValue(guildId, out var isOn) && isOn)
                     {
-                        var autoNextTrack = await _songCollectionService.AutoPlay(conn, finishedTrack).ConfigureAwait(false);
-                        await conn.PlayAsync(autoNextTrack).ConfigureAwait(false);
-                        nextTrackMessage = $"Next track: {autoNextTrack.Title}";
-                        _queue[guildId].Add(autoNextTrack);
-
-
+                        if (_songCollectionService != null)
+                        {
+                            var autoNextTrack = await _songCollectionService.AutoPlay(conn, finishedTrack).ConfigureAwait(false);
+                            await conn.PlayAsync(autoNextTrack).ConfigureAwait(false);
+                            nextTrackMessage = $"Next track: {autoNextTrack.Title}";
+                            _queue[guildId].Add(autoNextTrack);
+                        }
                     }
                     else
                     {
@@ -477,8 +481,8 @@ namespace Fafikv2.Services.CommandService
 
         public async Task StartAutoplay(CommandContext ctx)
         {
-            var result =await _databaseContextQueueService.EnqueueDatabaseTask(async() =>
-                await _serverConfigService.IsAutoPlayEnable(Guid.Parse($"{ctx.Guild.Id:X32}")).ConfigureAwait(false));
+            var result =await (_databaseContextQueueService?.EnqueueDatabaseTask(async() =>
+                _serverConfigService != null && await _serverConfigService.IsAutoPlayEnable(Guid.Parse($"{ctx.Guild.Id:X32}")).ConfigureAwait(false))!).ConfigureAwait(false);
 
             if (!result)
             {
@@ -502,15 +506,15 @@ namespace Fafikv2.Services.CommandService
             }
 
             const bool autoPlayIsOn = true;
-            _AutoPlayOn[ctx.Guild.Id] = autoPlayIsOn;
+            _autoPlayOn[ctx.Guild.Id] = autoPlayIsOn;
             
             await ctx.RespondAsync("Auto Play is on").ConfigureAwait(false);
         }
 
         public async Task StartAutoPlayByGenre(CommandContext ctx, string genre)
         {
-            var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
-                await _serverConfigService.IsAutoPlayEnable(Guid.Parse($"{ctx.Guild.Id:X32}")).ConfigureAwait(false));
+            var result = await (_databaseContextQueueService?.EnqueueDatabaseTask(async () =>
+                _serverConfigService != null && await _serverConfigService.IsAutoPlayEnable(Guid.Parse($"{ctx.Guild.Id:X32}")).ConfigureAwait(false))!).ConfigureAwait(false);
 
             if (!result)
             {

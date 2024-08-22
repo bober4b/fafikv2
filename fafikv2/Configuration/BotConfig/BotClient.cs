@@ -112,12 +112,12 @@ namespace Fafikv2.Configuration.BotConfig
 
             var lavalink = Client.UseLavalink();
 
-            await Client.ConnectAsync();
+            await Client.ConnectAsync().ConfigureAwait(false);
 
-            await lavalink.ConnectAsync(lavalinkConfig);
+            await lavalink.ConnectAsync(lavalinkConfig).ConfigureAwait(false);
 
 
-            Task.Run(async () =>
+            _ = Task.Run(async () =>
             {
                 while (true)
                 {
@@ -131,13 +131,13 @@ namespace Fafikv2.Configuration.BotConfig
                     else
                     {
                         
-                        await Task.Delay(1000);
+                        await Task.Delay(1000).ConfigureAwait(false);
                     }
                 }
             });
 
 
-            await Task.Delay(-1);
+            await Task.Delay(-1).ConfigureAwait(false);
         }
 
         private static Task Client_UnknownEvent(DiscordClient sender, UnknownEventArgs args)

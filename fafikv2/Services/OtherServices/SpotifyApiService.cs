@@ -193,7 +193,6 @@ namespace Fafikv2.Services.OtherServices
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                result = Array.Empty<string>();
                 throw;
             }
             return result;
@@ -212,7 +211,6 @@ namespace Fafikv2.Services.OtherServices
                 return "Error obtaining access token.";
             }
 
-            // Zakładamy, że jeśli input zawiera słowo "gatunek: ", to jest to gatunek, w przeciwnym razie traktujemy to jako utwór
             if (userInput.ToLower().Contains("gatunek:"))
             {
                 try
@@ -259,7 +257,7 @@ namespace Fafikv2.Services.OtherServices
                     .GetProperty("id")
                     .GetString();
 
-                var recommendations = await GetRecommendations(trackId, artistId, string.Empty, accessToken).ConfigureAwait(false);
+                var recommendations = await GetRecommendations(trackId!, artistId!, string.Empty, accessToken).ConfigureAwait(false);
                 return ExtractTrackDetails(recommendations);
             }
             catch (HttpRequestException httpEx)
@@ -318,14 +316,14 @@ namespace Fafikv2.Services.OtherServices
         private static string ExtractTrackDetails(JsonDocument recommendations)
         {
             var tracks = recommendations.RootElement.GetProperty("tracks").EnumerateArray();
-            var trackDetailsList = tracks.Select(track =>
-            {
-                var title = track.GetProperty("name").GetString();
-                var artist = track.GetProperty("artists")[0].GetProperty("name").GetString();
-                return $"{artist} - {title}";
-            }).ToList();
+            var firstTrack = tracks.FirstOrDefault(); // Pobierz pierwszy element lub null, jeśli lista jest pusta
 
-            return trackDetailsList[0];
+            if (firstTrack.ValueKind == JsonValueKind.Undefined) return string.Empty;
+
+            var title = firstTrack.GetProperty("name").GetString();
+            var artist = firstTrack.GetProperty("artists")[0].GetProperty("name").GetString();
+            return $"{artist} - {title}";
+
         }
     }
 }

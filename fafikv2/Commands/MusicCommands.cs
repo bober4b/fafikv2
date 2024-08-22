@@ -63,7 +63,7 @@ namespace Fafikv2.Commands
         [Command("AutoPlay")]
         public async Task AutoPlay(CommandContext ctx)
         {
-            _musicService.StartAutoplay(ctx);
+            await _musicService.StartAutoplay(ctx).ConfigureAwait(false);
         }
         [Command("AutoPlayByGenre")]
         public async Task AutoPlayByGenre(CommandContext ctx, [RemainingText] string genre)

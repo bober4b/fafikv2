@@ -39,17 +39,19 @@ namespace Fafikv2.Services.OtherServices
 
             };
 
+            var song1 = song;
             var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
             {
-                var wasAddedBefore = await _songsService.Add(song).ConfigureAwait(false);
+                var wasAddedBefore = await _songsService.Add(song1).ConfigureAwait(false);
                 return wasAddedBefore;
             }).ConfigureAwait(false);
 
             if (result)
             {
+                var song2 = song;
                 song = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
                 {
-                    var result1 = await _songsService.Get(song.Title, song.Artist).ConfigureAwait(false);
+                    var result1 = await _songsService.Get(song2.Title, song2.Artist).ConfigureAwait(false);
                     return result1;
                 }).ConfigureAwait(false);
             }
@@ -69,7 +71,7 @@ namespace Fafikv2.Services.OtherServices
                 await _userPlayedSongsService.Add(playedSong).ConfigureAwait(false);
             }).ConfigureAwait(false);
 
-            var test = await _spotifyApiService
+            await _spotifyApiService
                 .GetRecommendationsBasedOnInput(ctx.Message.Content.Remove(0, 6))
                 .ConfigureAwait(false);
         }
@@ -81,10 +83,10 @@ namespace Fafikv2.Services.OtherServices
             var spotifyRecommendationOrDatabase = random.Next(0, 3);
 
 
-            if (spotifyRecommendationOrDatabase < 2)
+            /*if (spotifyRecommendationOrDatabase < 2) //do przebudowy, lepiej to będzie działać, jeżeli będzie pobierać piosenki w tym samym typie, a nie losowo
             {
                 return await AutoPlayFromDatabaseSongs(node).ConfigureAwait(false);
-            }
+            }*/
 
             return await AutoPlayFromSpotifyRecommendation(node, track).ConfigureAwait(false);
 
@@ -115,7 +117,6 @@ namespace Fafikv2.Services.OtherServices
 
             return nextSongResult.Tracks.First();
         }
-
         private async Task<LavalinkTrack> AutoPlayFromDatabaseSongs(LavalinkGuildConnection node)
         {
             var voiceChannel = node.Channel;
