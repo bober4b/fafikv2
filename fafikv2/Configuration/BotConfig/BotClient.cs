@@ -56,7 +56,7 @@ namespace Fafikv2.Configuration.BotConfig
         {
 
             var jsonReader = new JsonReader();
-            await jsonReader.ReadJson();
+            await jsonReader.ReadJson().ConfigureAwait(false);
 
 
             var discordConfig = new DiscordConfiguration()
@@ -154,12 +154,12 @@ namespace Fafikv2.Configuration.BotConfig
 
         private async Task Client_GuildAvailable(DiscordClient sender, GuildCreateEventArgs args)
         {
-            var users = await args.Guild.GetAllMembersAsync();
+            var users = await args.Guild.GetAllMembersAsync().ConfigureAwait(false);
             var server =  args.Guild;
 
 
 
-            await _databaseContextQueueService.EnqueueDatabaseTask(async () => await UpdateDatabaseOnConnect(users, server).ConfigureAwait(false));
+            await (_databaseContextQueueService?.EnqueueDatabaseTask(async () => await UpdateDatabaseOnConnect(users, server).ConfigureAwait(false))!).ConfigureAwait(false);
 
 
 
@@ -182,8 +182,8 @@ namespace Fafikv2.Configuration.BotConfig
                 ConfigId = sConfig.Id
             };
             
-            await _serverService.AddServer(server1);
-            await _serverConfigService.AddServerConfig(sConfig);
+            await (_serverService?.AddServer(server1)!).ConfigureAwait(false);
+            await (_serverConfigService?.AddServerConfig(sConfig)!).ConfigureAwait(false);
             foreach (var user in users)
             {
                 if (user.IsBot) continue;
@@ -200,7 +200,7 @@ namespace Fafikv2.Configuration.BotConfig
                     UserLevel = 0
 
                 };
-                await _userService.AddUser(useradd);
+                await (_userService?.AddUser(useradd)!).ConfigureAwait(false);
                 Console.WriteLine($"dodano: {user.Username} {user.Id} {server.Name}");
                    
                     
@@ -227,10 +227,10 @@ namespace Fafikv2.Configuration.BotConfig
                     ServerUserId = serverUser.Id
                 };
 
-                await _serverUsersService.AddServerUsers(serverUser);
+                await (_serverUsersService?.AddServerUsers(serverUser)!).ConfigureAwait(false);
 
 
-                await _userServerStatsService.AddUserServerStats(userStats);
+                await (_userServerStatsService?.AddUserServerStats(userStats)!).ConfigureAwait(false);
             }
 
             
@@ -246,7 +246,7 @@ namespace Fafikv2.Configuration.BotConfig
             Console.WriteLine($"[{args.Message.CreationTimestamp}] {args.Message.Author.Username}: {args.Message.Content}");
             if(args.Channel.IsPrivate)return;
             if(args.Author.IsBot) return;
-            var result = await _autoModerationService.AutoModerator(args).ConfigureAwait(false);
+            var result = _autoModerationService != null && await _autoModerationService.AutoModerator(args).ConfigureAwait(false);
             if(!result)return;
 
             await _databaseContextQueueService!.EnqueueDatabaseTask(async () =>
@@ -267,7 +267,6 @@ namespace Fafikv2.Configuration.BotConfig
                         await _userService.UpdateUserMessageCount(Guid.Parse(formatted)).ConfigureAwait(false);
                         await _userServerStatsService.UpdateUserBotInteractionsServerCount(Guid.Parse(formatted),
                             Guid.Parse(sformatted)).ConfigureAwait(false);
-                        //Console.WriteLine("elo beenc");
                      
                     }
                     else

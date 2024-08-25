@@ -4,6 +4,7 @@ using Fafikv2.Data.DifferentClasses;
 using Fafikv2.Data.Models;
 using Fafikv2.Services.dbServices.Interfaces;
 using Fafikv2.Services.OtherServices.Interfaces;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Fafikv2.Services.OtherServices
 {
@@ -80,13 +81,13 @@ namespace Fafikv2.Services.OtherServices
         {
 
             var random = new Random();
-            var spotifyRecommendationOrDatabase = random.Next(0, 3);
+            var spotifyRecommendationOrDatabase = random.Next(0, 100);
 
 
-            /*if (spotifyRecommendationOrDatabase < 2) //do przebudowy, lepiej to będzie działać, jeżeli będzie pobierać piosenki w tym samym typie, a nie losowo
+            if (spotifyRecommendationOrDatabase < 40) //do przebudowy, lepiej to będzie działać, jeżeli będzie pobierać piosenki w tym samym typie, a nie losowo
             {
-                return await AutoPlayFromDatabaseSongs(node).ConfigureAwait(false);
-            }*/
+                return await AutoPlayFromDatabaseSongs(node,track).ConfigureAwait(false);
+            }
 
             return await AutoPlayFromSpotifyRecommendation(node, track).ConfigureAwait(false);
 
@@ -117,7 +118,7 @@ namespace Fafikv2.Services.OtherServices
 
             return nextSongResult.Tracks.First();
         }
-        private async Task<LavalinkTrack> AutoPlayFromDatabaseSongs(LavalinkGuildConnection node)
+        private async Task<LavalinkTrack> AutoPlayFromDatabaseSongs(LavalinkGuildConnection node, LavalinkTrack track)
         {
             var voiceChannel = node.Channel;
             var membersInChannel = voiceChannel.Users;
@@ -125,13 +126,21 @@ namespace Fafikv2.Services.OtherServices
 
             var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
             {
+                var genre=_spotifyApiService.GetGenresOfTrack(track.Title).Result.First();
+
 
                 foreach (var user in membersInChannel)
                 {
                     if (user.IsBot) continue;
-
-                    var temporary = await _songsService.GetSongsByUser(Guid.Parse($"{user.Id:X32}"))
+                    IEnumerable<Song> temporary;
+                    if(genre==null)
+                     temporary = await _songsService.GetSongsByUser(Guid.Parse($"{user.Id:X32}"))
                         .ConfigureAwait(false);
+                    else
+                    {
+                        temporary = await _songsService.GetSongsByGenreAndUser(genre, Guid.Parse($"{user.Id:X32}"))
+                            .ConfigureAwait(false);
+                    }
                     temporary = temporary.Randomize(5);
                     songs.AddRange(temporary);
 
@@ -154,11 +163,15 @@ namespace Fafikv2.Services.OtherServices
         }
 
         private async Task<LavalinkTrack> AutoPlayFromSpotifyRecommendationByGenre(LavalinkGuildConnection node,
-            string genre)
+            string genre) 
         {
             var nextSongName =
                 await _spotifyApiService.GetRecommendationBasenOnGenre(genre).ConfigureAwait(false);
 
+
+            if (nextSongName.IsNullOrEmpty())
+                return await AutoPlayFromSpotifyRecommendation(node, node.CurrentState.CurrentTrack)
+                    .ConfigureAwait(false);
             var nextSongResult =
                 await node.GetTracksAsync(nextSongName, LavalinkSearchType.SoundCloud).ConfigureAwait(false);
 
@@ -194,6 +207,12 @@ namespace Fafikv2.Services.OtherServices
                 Console.WriteLine("SongsFound");
             }
 
+            if (songs.Count == 0)
+            {
+                return await AutoPlayFromSpotifyRecommendationByGenre(node, genre).ConfigureAwait(false);
+
+            }
+
             var nextTrack = songs.Randomize(1).First();
             Console.WriteLine(nextTrack.Title);
             var nextSongResult = await node.GetTracksAsync(nextTrack.LinkUri).ConfigureAwait(false);
@@ -221,7 +240,13 @@ namespace Fafikv2.Services.OtherServices
                 Console.WriteLine("SongsFound");
             }
 
-            var nextTrack = songs.First();
+            if (songs.Count == 0)
+            {
+                return await AutoPlayFromSpotifyRecommendationByGenre(node, genre).ConfigureAwait(false);
+                
+            }
+
+            var nextTrack = songs.Randomize(1).First();
             Console.WriteLine(nextTrack.Title);
             var nextSongResult = await node.GetTracksAsync(nextTrack.LinkUri).ConfigureAwait(false);
 

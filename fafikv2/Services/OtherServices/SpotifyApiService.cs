@@ -292,7 +292,7 @@ namespace Fafikv2.Services.OtherServices
 
             try
             {
-                var genre = userInput.Trim(); // Użycie całego inputu jako nazwy gatunku
+                var genre = userInput.Trim(' '); // Użycie całego inputu jako nazwy gatunku
                 var recommendations = await GetRecommendations(string.Empty, string.Empty, genre, accessToken).ConfigureAwait(false);
                 return ExtractTrackDetails(recommendations);
             }

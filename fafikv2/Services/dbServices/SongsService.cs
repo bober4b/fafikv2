@@ -25,7 +25,7 @@ namespace Fafikv2.Services.dbServices
             return true;
         }
 
-        public async Task<Song?> Get(string title, string artist)
+        public async Task<Song?> Get(string? title, string? artist)
         {
             var result = await _songsRepository.Get(title, artist).ConfigureAwait(false);
             return result ?? null;

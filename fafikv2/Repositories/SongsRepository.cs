@@ -25,7 +25,7 @@ namespace Fafikv2.Repositories
             throw new NotImplementedException();
         }
 
-        public async Task<Song?> Get(string title, string artist)
+        public async Task<Song?> Get(string? title, string? artist)
         {
             var result = await _context.Songs
                 .FirstOrDefaultAsync(x => x.Artist == artist && x.Title == title)
@@ -33,7 +33,7 @@ namespace Fafikv2.Repositories
             return result;
         }
 
-        public async Task<bool> HasBeenAdded(string title, string artist)
+        public async Task<bool> HasBeenAdded(string? title, string? artist)
         {
             Console.WriteLine("Start method HasBeenAdded");
 

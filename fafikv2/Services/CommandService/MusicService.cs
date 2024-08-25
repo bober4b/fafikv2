@@ -6,6 +6,7 @@ using DSharpPlus.Lavalink.EventArgs;
 using Fafikv2.Services.dbServices.Interfaces;
 using Fafikv2.Services.OtherServices.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 
 
 namespace Fafikv2.Services.CommandService
@@ -106,7 +107,7 @@ namespace Fafikv2.Services.CommandService
                 }
 
 
-                if (_autoPlayOn.TryGetValue(guildId, out var isOn1) && isOn1 && queue.Count == 0 &&_genre.TryGetValue(guildId, out var genre))
+                if (_autoPlayOn.TryGetValue(guildId, out var isOn1) && isOn1 && queue.Count == 0 &&_genre.TryGetValue(guildId, out var genre) && !genre.IsNullOrEmpty())
                 {
                     if (_songCollectionService != null)
                     {
@@ -379,26 +380,26 @@ namespace Fafikv2.Services.CommandService
                     nextTrackMessage = $"Next track: {nextTrack.Title}";
                     await conn.PlayAsync(nextTrack).ConfigureAwait(false);
                 }
-                
 
-                if (queue.Count == 0)
+
+                if (_autoPlayOn.TryGetValue(guildId, out var isOn1) && isOn1 && queue.Count == 0 && _genre.TryGetValue(guildId, out var genre) && !genre.IsNullOrEmpty())
                 {
-                    if (_autoPlayOn.TryGetValue(guildId, out var isOn) && isOn)
+                    if (_songCollectionService != null)
                     {
-                        if (_songCollectionService != null)
-                        {
-                            var autoNextTrack = await _songCollectionService.AutoPlay(conn, finishedTrack).ConfigureAwait(false);
-                            await conn.PlayAsync(autoNextTrack).ConfigureAwait(false);
-                            nextTrackMessage = $"Next track: {autoNextTrack.Title}";
-                            _queue[guildId].Add(autoNextTrack);
-                        }
+                        var autoNextTrack = await _songCollectionService.AutoPlayByGenre(conn, genre).ConfigureAwait(false);
+                        await conn.PlayAsync(autoNextTrack).ConfigureAwait(false);
+                        nextTrackMessage = $"Next track: {autoNextTrack.Title}";
+                        _queue[guildId].Add(autoNextTrack);
                     }
-                    else
+                }
+                else if (_autoPlayOn.TryGetValue(guildId, out var isOn) && isOn && queue.Count == 0)
+                {
+                    if (_songCollectionService != null)
                     {
-                        await conn.StopAsync().ConfigureAwait(false);
-                        var textChanneled = ctx.Guild.SystemChannel;
-                        await textChanneled.SendMessageAsync("there is no more songs.").ConfigureAwait(false);
-                        return;
+                        var autoNextTrack = await _songCollectionService.AutoPlay(conn, finishedTrack).ConfigureAwait(false);
+                        await conn.PlayAsync(autoNextTrack).ConfigureAwait(false);
+                        nextTrackMessage = $"Next track: {autoNextTrack.Title}";
+                        _queue[guildId].Add(autoNextTrack);
                     }
                 }
 
@@ -505,8 +506,10 @@ namespace Fafikv2.Services.CommandService
                 return;
             }
 
-            const bool autoPlayIsOn = true;
-            _autoPlayOn[ctx.Guild.Id] = autoPlayIsOn;
+
+
+            _genre[ctx.Guild.Id] = string.Empty;
+            _autoPlayOn[ctx.Guild.Id] = true;
             
             await ctx.RespondAsync("Auto Play is on").ConfigureAwait(false);
         }
@@ -538,7 +541,8 @@ namespace Fafikv2.Services.CommandService
             }
 
             _genre[ctx.Guild.Id] = genre;
-            
+            _autoPlayOn[ctx.Guild.Id] = true;
+
             await ctx.RespondAsync("Auto Play by genre is on").ConfigureAwait(false);
         }
 

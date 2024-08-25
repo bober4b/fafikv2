@@ -28,8 +28,9 @@ public class BannedWordsService : IBannedWordsService
     public async Task<bool> IsBanned(string bannedWord, Guid server)
     {
         var res= _bannedWordsRepository.GetBannedWordsByServer(server).FirstOrDefault(x=>x.BannedWord==bannedWord);
-
+        
         return res != null;
+        
     }
 
     public async Task<IEnumerable<BannedWords>> GetAllByServer(Guid server)

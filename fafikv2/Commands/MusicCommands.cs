@@ -14,20 +14,20 @@ namespace Fafikv2.Commands
         public async Task Join(CommandContext ctx, DiscordChannel? channel=null)
         {
 
-            await _musicService.JoinAsync(ctx, channel);
+            await _musicService.JoinAsync(ctx, channel).ConfigureAwait(false);
 
         }
 
         [Command]
         public async Task Leave(CommandContext ctx)
         {
-            await MusicService.LeaveAsync(ctx);
+            await MusicService.LeaveAsync(ctx).ConfigureAwait(false);
         }
 
         [Command]
         public async Task Play(CommandContext ctx, [RemainingText] string search)
         {
-            await _musicService.PlayAsync(ctx, search);
+            await _musicService.PlayAsync(ctx, search).ConfigureAwait(false);
         }
 
         [Command]
@@ -39,13 +39,13 @@ namespace Fafikv2.Commands
         [Command]
         public async Task Resume(CommandContext ctx)
         {
-            await MusicService.ResumeAsync(ctx);
+            await MusicService.ResumeAsync(ctx).ConfigureAwait(false);
         }
 
         [Command]
         public async Task Skip(CommandContext ctx)
         {
-            await _musicService.SkipAsync(ctx);
+            await _musicService.SkipAsync(ctx).ConfigureAwait(false);
         }
 
         [Command]
@@ -68,7 +68,7 @@ namespace Fafikv2.Commands
         [Command("AutoPlayByGenre")]
         public async Task AutoPlayByGenre(CommandContext ctx, [RemainingText] string genre)
         {
-            _musicService.StartAutoplay(ctx);
+            await _musicService.StartAutoPlayByGenre(ctx,genre).ConfigureAwait(false);
         }
     }
 }

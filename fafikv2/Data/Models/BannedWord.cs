@@ -4,9 +4,9 @@
     {
         public Guid Id { get; set; }
         public Guid ServerConfigId { get; set; }
-        public virtual ServerConfig ServerConfig { get; set; }
+        public virtual ServerConfig? ServerConfig { get; set; }
 
-        public string BannedWord { get; set; }
+        public string? BannedWord { get; set; }
         public int Time { get; set; }
 
     }
