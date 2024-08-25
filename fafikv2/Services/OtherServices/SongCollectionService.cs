@@ -94,7 +94,7 @@ namespace Fafikv2.Services.OtherServices
 
 
         }
-        public async Task<LavalinkTrack> AutoPlayByGenre(LavalinkGuildConnection node, string genre)
+        public async Task<LavalinkTrack> AutoPlayByGenre(LavalinkGuildConnection node, string? genre)
         {
             var random = new Random();
             var spotifyRecommendationOrDatabase = random.Next(0, 6);
@@ -163,7 +163,7 @@ namespace Fafikv2.Services.OtherServices
         }
 
         private async Task<LavalinkTrack> AutoPlayFromSpotifyRecommendationByGenre(LavalinkGuildConnection node,
-            string genre) 
+            string? genre) 
         {
             var nextSongName =
                 await _spotifyApiService.GetRecommendationBasenOnGenre(genre).ConfigureAwait(false);
@@ -178,7 +178,7 @@ namespace Fafikv2.Services.OtherServices
             return nextSongResult.Tracks.First();
         }
 
-        private async Task<LavalinkTrack> AutoPlayFromDatabaseSongsByGenre(LavalinkGuildConnection node,string genre)
+        private async Task<LavalinkTrack> AutoPlayFromDatabaseSongsByGenre(LavalinkGuildConnection node,string? genre)
         {
             var voiceChannel = node.Channel;
             var membersInChannel = voiceChannel.Users;
@@ -220,7 +220,7 @@ namespace Fafikv2.Services.OtherServices
             return nextSongResult.Tracks.First();
         }
 
-        private async Task<LavalinkTrack> AutoPlayFromDatabaseSongsOnlyByGenre(LavalinkGuildConnection node, string genre)
+        private async Task<LavalinkTrack> AutoPlayFromDatabaseSongsOnlyByGenre(LavalinkGuildConnection node, string? genre)
         {
             
             List<Song> songs = new();

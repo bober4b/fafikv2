@@ -31,13 +31,13 @@ namespace Fafikv2.Services.dbServices
             return result ?? null;
         }
 
-        public async Task<IEnumerable<Song>> GetSongByGenre(string genre)
+        public async Task<IEnumerable<Song>> GetSongByGenre(string? genre)
         {
             var result = await _songsRepository.GetSongByGenre(genre).ConfigureAwait(false);
             return result ;
         }
 
-        public async Task<IEnumerable<Song>> GetSongsByGenreAndUser(string genre, Guid userId)
+        public async Task<IEnumerable<Song>> GetSongsByGenreAndUser(string? genre, Guid userId)
         {
             var result = await _songsRepository.GetSongsByGenreAndUser(genre, userId).ConfigureAwait(false);
             return result ;

@@ -60,13 +60,13 @@ namespace Fafikv2.Repositories
 
         }
 
-        public async Task<IEnumerable<Song>> GetSongByGenre(string genre)
+        public async Task<IEnumerable<Song>> GetSongByGenre(string? genre)
         {
             var result =  _context.Songs.Where(x => x.Genres.Contains(genre) );
             return result.AsEnumerable();
         }
 
-        public async Task<IEnumerable<Song>> GetSongsByGenreAndUser(string genre, Guid userId)
+        public async Task<IEnumerable<Song>> GetSongsByGenreAndUser(string? genre, Guid userId)
         {
             var result =  _context.UserPlayedSongs
                 .Where(x => x.UserId == userId)

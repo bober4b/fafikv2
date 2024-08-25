@@ -277,7 +277,7 @@ namespace Fafikv2.Services.OtherServices
             }
         }
 
-        public async Task<string> GetRecommendationBasenOnGenre(string userInput)
+        public async Task<string> GetRecommendationBasenOnGenre(string? userInput)
         {
             string? accessToken;
             try

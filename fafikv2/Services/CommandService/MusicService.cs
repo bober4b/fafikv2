@@ -3,6 +3,7 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.Lavalink;
 using DSharpPlus.Lavalink.EventArgs;
+using Fafikv2.Data.Models;
 using Fafikv2.Services.dbServices.Interfaces;
 using Fafikv2.Services.OtherServices.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,9 +17,8 @@ namespace Fafikv2.Services.CommandService
         private readonly ISongCollectionService? _songCollectionService;
         private readonly IServerConfigService? _serverConfigService;
         private readonly IDatabaseContextQueueService? _databaseContextQueueService;
-        private readonly Dictionary<ulong, List<LavalinkTrack>> _queue = new();
-        private readonly Dictionary<ulong, bool> _autoPlayOn = new();
-        private readonly Dictionary<ulong,string> _genre=new();
+        private readonly Dictionary<ulong, SongServiceDictionary> _songServiceDictionaries = new();
+
 
         public MusicService(IServiceProvider servicesProvider)
         {
@@ -72,6 +72,8 @@ namespace Fafikv2.Services.CommandService
 
             if (node != null) await node.ConnectAsync(channel).ConfigureAwait(false);
             await ctx.RespondAsync($"Joined {channel.Name}!").ConfigureAwait(false);
+
+            _songServiceDictionaries[ctx.Guild.Id] = new SongServiceDictionary { Queue = new List<LavalinkTrack>() ,Genre = string.Empty,AutoPlayOn = false};
         }
 
         private async Task Node_PlaybackFinished(LavalinkGuildConnection sender, TrackFinishEventArgs args)
@@ -93,38 +95,39 @@ namespace Fafikv2.Services.CommandService
         {
             var guildId = args.Player.Guild.Id;
 
-            if (_queue.TryGetValue(guildId, out var queue) && queue.Count > 0)
+            if ( _songServiceDictionaries.TryGetValue(guildId, out var dictionary) && dictionary.Queue is { Count: > 0 })
             {
-                var finishedTrack = queue.First();
-                queue.RemoveAt(0);
+                var finishedTrack = dictionary.Queue.First();
+                dictionary.Queue.RemoveAt(0);
 
                 var nextTrackMessage = "";
-                if (queue.Count > 0)
+                if (dictionary.Queue.Count > 0)
                 {
-                    var nextTrack = queue.First();
+                    var nextTrack = dictionary.Queue.First();
                     nextTrackMessage = $"Next track: {nextTrack.Title}";
                     await node.PlayAsync(nextTrack).ConfigureAwait(false);
                 }
 
 
-                if (_autoPlayOn.TryGetValue(guildId, out var isOn1) && isOn1 && queue.Count == 0 &&_genre.TryGetValue(guildId, out var genre) && !genre.IsNullOrEmpty())
+                if (dictionary.AutoPlayOn && dictionary.Queue.Count == 0 && !dictionary.Genre.IsNullOrEmpty())
                 {
                     if (_songCollectionService != null)
                     {
-                        var autoNextTrack = await _songCollectionService.AutoPlayByGenre(node, genre).ConfigureAwait(false);
+                        var autoNextTrack = await _songCollectionService.AutoPlayByGenre(node, dictionary.Genre).ConfigureAwait(false);
                         await node.PlayAsync(autoNextTrack).ConfigureAwait(false);
                         nextTrackMessage = $"Next track: {autoNextTrack.Title}";
-                        _queue[guildId].Add(autoNextTrack);
+                        dictionary.Queue.Add(autoNextTrack);
+                        
                     }
                 }
-                else if (_autoPlayOn.TryGetValue(guildId, out var isOn) && isOn && queue.Count==0)
+                else if (dictionary.AutoPlayOn && dictionary.Queue.Count==0)
                 {
                     if (_songCollectionService != null)
                     {
                         var autoNextTrack = await _songCollectionService.AutoPlay(node, finishedTrack).ConfigureAwait(false);
                         await node.PlayAsync(autoNextTrack).ConfigureAwait(false);
                         nextTrackMessage = $"Next track: {autoNextTrack.Title}";
-                        _queue[guildId].Add(autoNextTrack);
+                        dictionary.Queue.Add(autoNextTrack);
                     }
                 }
 
@@ -141,14 +144,12 @@ namespace Fafikv2.Services.CommandService
         {
             var guild = sender.Guild.Id;
 
-            if (_queue.TryGetValue(guild, out var queue))
+            if (_songServiceDictionaries.TryGetValue(guild, out var dictionary))
             {
-                queue.Clear();
+                dictionary.Queue?.Clear();
 
             }
-
-            _autoPlayOn.Remove(guild, out _);
-            _genre.Remove(guild, out _);
+            _songServiceDictionaries.Remove(guild, out _);
             return Task.CompletedTask;
         }
 
@@ -243,14 +244,18 @@ namespace Fafikv2.Services.CommandService
 
 
 
-            if (!_queue.TryGetValue(ctx.Guild.Id, out var queue))
+            if (!_songServiceDictionaries.TryGetValue(ctx.Guild.Id, out var dictionary))
             {
-                queue = new List<LavalinkTrack>();
-                _queue[ctx.Guild.Id] = queue;
+                 
+                 _songServiceDictionaries[ctx.Guild.Id] = new SongServiceDictionary() {Queue = new List<LavalinkTrack>()};
+                 
+                 
+
             }
+
             
 
-            if (queue.Count == 0)
+            if (dictionary!.Queue!.Count == 0)
             {
                 try
                 {
@@ -261,20 +266,20 @@ namespace Fafikv2.Services.CommandService
                 {
                     Console.WriteLine($"{e.InnerException?.Message}");
                 }
-                queue.Add(track);
+                dictionary.Queue.Add(track);
                 await ctx.RespondAsync($"now playing {track.Title}!").ConfigureAwait(false);
             }
             else
             {
 
-                var timeLeftAll = queue.Select(lavalinkTrack => lavalinkTrack.Length).ToList();
+                var timeLeftAll = dictionary.Queue.Select(lavalinkTrack => lavalinkTrack.Length).ToList();
 
                 TimeSpan timeLeft = new();
 
 
                 timeLeft = timeLeftAll.Aggregate(timeLeft, (current, songTime) => current + songTime);
                 Console.WriteLine($"{track.Title}");
-                queue.Add(track);
+                dictionary.Queue.Add(track);
                 await ctx.RespondAsync($"Added {track.Title} to the queue!\n" + $"Song will be played in: {timeLeft.Minutes},{timeLeft.Seconds:D2}").ConfigureAwait(false);
             
             }
@@ -368,38 +373,38 @@ namespace Fafikv2.Services.CommandService
                 return;
             }
 
-            if (_queue.TryGetValue(guildId, out var queue) && queue.Count > 0)
+            if (_songServiceDictionaries.TryGetValue(guildId, out var dictionary) && dictionary!.Queue!.Count > 0)
             {
-                var finishedTrack = queue.First();
-                queue.RemoveAt(0);
+                var finishedTrack = dictionary.Queue.First();
+                dictionary.Queue.RemoveAt(0);
 
                 var nextTrackMessage = "";
-                if (queue.Count > 0)
+                if (dictionary.Queue.Count > 0)
                 {
-                    var nextTrack = queue.First();
+                    var nextTrack = dictionary.Queue.First();
                     nextTrackMessage = $"Next track: {nextTrack.Title}";
                     await conn.PlayAsync(nextTrack).ConfigureAwait(false);
                 }
 
 
-                if (_autoPlayOn.TryGetValue(guildId, out var isOn1) && isOn1 && queue.Count == 0 && _genre.TryGetValue(guildId, out var genre) && !genre.IsNullOrEmpty())
+                if (dictionary.AutoPlayOn && dictionary.Queue.Count == 0 && dictionary.Genre.IsNullOrEmpty())
                 {
                     if (_songCollectionService != null)
                     {
-                        var autoNextTrack = await _songCollectionService.AutoPlayByGenre(conn, genre).ConfigureAwait(false);
+                        var autoNextTrack = await _songCollectionService.AutoPlayByGenre(conn, dictionary.Genre).ConfigureAwait(false);
                         await conn.PlayAsync(autoNextTrack).ConfigureAwait(false);
                         nextTrackMessage = $"Next track: {autoNextTrack.Title}";
-                        _queue[guildId].Add(autoNextTrack);
+                        dictionary.Queue.Add(autoNextTrack);
                     }
                 }
-                else if (_autoPlayOn.TryGetValue(guildId, out var isOn) && isOn && queue.Count == 0)
+                else if (dictionary.AutoPlayOn && dictionary.Queue.Count == 0)
                 {
                     if (_songCollectionService != null)
                     {
                         var autoNextTrack = await _songCollectionService.AutoPlay(conn, finishedTrack).ConfigureAwait(false);
                         await conn.PlayAsync(autoNextTrack).ConfigureAwait(false);
                         nextTrackMessage = $"Next track: {autoNextTrack.Title}";
-                        _queue[guildId].Add(autoNextTrack);
+                        dictionary.Queue.Add(autoNextTrack);
                     }
                 }
 
@@ -420,9 +425,9 @@ namespace Fafikv2.Services.CommandService
 
 
 
-            if (_queue.TryGetValue(guildId, out var queue) && queue.Count > 0)
+            if (_songServiceDictionaries.TryGetValue(guildId, out var dictionary) && dictionary?.Queue?.Count > 0)
             {
-                var songTitles = queue.Select(track => track.Title).ToList();
+                var songTitles = dictionary.Queue.Select(track => track.Title).ToList();
                 var titles = "Songs Queue: \n";
                 var i = 0;
                 foreach (var song in songTitles)
@@ -435,21 +440,93 @@ namespace Fafikv2.Services.CommandService
                 await textChannel.SendMessageAsync(titles).ConfigureAwait(false);
             }
 
+            await ctx.RespondAsync("Queue Is empty").ConfigureAwait(false);
 
 
 
         }
         
-        public static async Task VolumeAsync(CommandContext ctx, int vol)
+        public  async Task VolumeAsync(CommandContext ctx, int vol)
         {
 
+            if(!await IsConnected(ctx).ConfigureAwait(false)) return;
+            
 
+            if (vol is < 0 or > 100)
+            {
+                await ctx.RespondAsync("volume must be between 0 and 100").ConfigureAwait(false);
+                return;
+            }
+
+            await ctx
+                .Client
+                .GetLavalink()
+                .ConnectedNodes
+                .Values
+                .First()
+                .GetGuildConnection(ctx.Member?.VoiceState.Guild)
+                .SetVolumeAsync(vol)
+                .ConfigureAwait(false);
+
+            await ctx.RespondAsync($"Volume changed to: {vol}").ConfigureAwait(false);
+        }
+
+        public async Task StartAutoplay(CommandContext ctx)
+        {
+            if (!await IsAutoplayEnabled(ctx).ConfigureAwait(false)) return;
+
+            _songServiceDictionaries[ctx.Guild.Id].AutoPlayOn = true;
+            _songServiceDictionaries[ctx.Guild.Id].Genre = string.Empty;
+            
+            
+            await ctx.RespondAsync("Auto Play is on").ConfigureAwait(false);
+        }
+
+        public async Task StartAutoPlayByGenre(CommandContext ctx, string genre)
+        {
+            var result = await IsAutoplayEnabled(ctx).ConfigureAwait(false);
+            if (!result) return; 
+
+            _songServiceDictionaries[ctx.Guild.Id].Genre = genre;
+            _songServiceDictionaries[ctx.Guild.Id].AutoPlayOn = true;
+
+            await ctx.RespondAsync("Auto Play by genre is on").ConfigureAwait(false);
+        }
+
+        private async Task<bool> IsAutoplayEnabled(CommandContext ctx)
+        {
+            var result = await (_databaseContextQueueService?.EnqueueDatabaseTask(async () =>
+                _serverConfigService != null && await _serverConfigService.IsAutoPlayEnable(Guid.Parse($"{ctx.Guild.Id:X32}")).ConfigureAwait(false))!).ConfigureAwait(false);
+
+            if (!result)
+            {
+                await ctx.RespondAsync("Auto Play is disabled on this server.").ConfigureAwait(false);
+                return false;
+            }
+
+            if (ctx.Member?.VoiceState == null || ctx.Member.VoiceState.Channel == null)
+            {
+                await ctx.RespondAsync("You are not in a voice channel.").ConfigureAwait(false);
+                return false;
+            }
+            var lava = ctx.Client.GetLavalink();
+            var node = lava.ConnectedNodes.Values.First();
+            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
+            if (conn != null) return true;
+            await ctx.RespondAsync("Lavalink is not connected").ConfigureAwait(false);
+            return false;
+
+        }
+
+
+        private async Task<bool> IsConnected(CommandContext ctx)
+        {
             var lava = ctx.Client.GetLavalink();
 
             if (!lava.ConnectedNodes.Any())
             {
                 await ctx.RespondAsync("The Lavalink connection is not established").ConfigureAwait(false);
-                return;
+                return false;
             }
 
             var node = lava.ConnectedNodes.Values.First();
@@ -460,91 +537,17 @@ namespace Fafikv2.Services.CommandService
             {
                 Console.WriteLine($"{ctx.Member?.VoiceState?.Channel}");
                 await ctx.RespondAsync("You need to be in a voice channel to use this command.").ConfigureAwait(false);
-                return;
+                return false;
             }
             var conn = node.GetGuildConnection(ctx.Member?.VoiceState.Guild);
 
-            if (conn == null)
-            {
-                await ctx.RespondAsync("Lavalink is not connected.").ConfigureAwait(false);
-                return;
-            }
+            if (conn != null) return true;
+            await ctx.RespondAsync("Lavalink is not connected.").ConfigureAwait(false);
+            return false;
 
-            if (vol is < 0 or > 100)
-            {
-                await ctx.RespondAsync("volume must be between 0 and 100").ConfigureAwait(false);
-                return;
-            }
-
-            await conn.SetVolumeAsync(vol).ConfigureAwait(false);
-            await ctx.RespondAsync($"Volume changed to: {vol}").ConfigureAwait(false);
-        }
-
-        public async Task StartAutoplay(CommandContext ctx)
-        {
-            var result =await (_databaseContextQueueService?.EnqueueDatabaseTask(async() =>
-                _serverConfigService != null && await _serverConfigService.IsAutoPlayEnable(Guid.Parse($"{ctx.Guild.Id:X32}")).ConfigureAwait(false))!).ConfigureAwait(false);
-
-            if (!result)
-            {
-                await ctx.RespondAsync("Auto Play is disabled on this server.").ConfigureAwait(false);
-                return;
-            }
-
-            if (ctx.Member?.VoiceState == null || ctx.Member.VoiceState.Channel == null)
-            {
-                await ctx.RespondAsync("You are not in a voice channel.").ConfigureAwait(false);
-                return;
-            }
-
-            var lava = ctx.Client.GetLavalink();
-            var node = lava.ConnectedNodes.Values.First();
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
-            if (conn == null)
-            {
-                await ctx.RespondAsync("Lavalink is not connected").ConfigureAwait(false);
-                return;
-            }
-
-
-
-            _genre[ctx.Guild.Id] = string.Empty;
-            _autoPlayOn[ctx.Guild.Id] = true;
-            
-            await ctx.RespondAsync("Auto Play is on").ConfigureAwait(false);
-        }
-
-        public async Task StartAutoPlayByGenre(CommandContext ctx, string genre)
-        {
-            var result = await (_databaseContextQueueService?.EnqueueDatabaseTask(async () =>
-                _serverConfigService != null && await _serverConfigService.IsAutoPlayEnable(Guid.Parse($"{ctx.Guild.Id:X32}")).ConfigureAwait(false))!).ConfigureAwait(false);
-
-            if (!result)
-            {
-                await ctx.RespondAsync("Auto Play is disabled on this server.").ConfigureAwait(false);
-                return;
-            }
-
-            if (ctx.Member?.VoiceState == null || ctx.Member.VoiceState.Channel == null)
-            {
-                await ctx.RespondAsync("You are not in a voice channel.").ConfigureAwait(false);
-                return;
-            }
-
-            var lava = ctx.Client.GetLavalink();
-            var node = lava.ConnectedNodes.Values.First();
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
-            if (conn == null)
-            {
-                await ctx.RespondAsync("Lavalink is not connected").ConfigureAwait(false);
-                return;
-            }
-
-            _genre[ctx.Guild.Id] = genre;
-            _autoPlayOn[ctx.Guild.Id] = true;
-
-            await ctx.RespondAsync("Auto Play by genre is on").ConfigureAwait(false);
         }
 
     }
+
+    
 }
