@@ -31,37 +31,15 @@ namespace Fafikv2.Services.CommandService
 
         public async Task JoinAsync(CommandContext ctx, DiscordChannel? channel = null)
         {
-            var lava = ctx.Client.GetLavalink();
-
-            if (!lava.ConnectedNodes.Any())
-            {
-                await ctx.RespondAsync("The Lavalink Connection is not established").ConfigureAwait(false);
-                return;
-            }
+            if(!await IsConnected(ctx).ConfigureAwait(false)) return;
 
 
-            if (channel == null)
-            {
-                var voiceState = ctx.Member?.VoiceState;
-                if (voiceState?.Channel == null)
-                {
-                    if (ctx.Member != null) Console.WriteLine($"{ctx.Member.VoiceState?.Channel}");
-                    await ctx.RespondAsync("You need to be in a voice channel to use this command.").ConfigureAwait(false);
-                    return;
-                }
-
-                channel = voiceState.Channel;
-
-            }
-
-            if (channel.Type != ChannelType.Voice)
-            {
-
-                await ctx.RespondAsync("Not a valid voice channel").ConfigureAwait(false);
-                return;
-            }
-
-            var node = lava.ConnectedNodes.Values.First();
+            var node = ctx
+                .Client
+                .GetLavalink()
+                .ConnectedNodes
+                .Values
+                .First();
             if (node != null)
             {
                 node.PlaybackFinished += Node_PlaybackFinished;
@@ -71,7 +49,7 @@ namespace Fafikv2.Services.CommandService
             }
 
             if (node != null) await node.ConnectAsync(channel).ConfigureAwait(false);
-            await ctx.RespondAsync($"Joined {channel.Name}!").ConfigureAwait(false);
+            await ctx.RespondAsync($"Joined {channel?.Name}!").ConfigureAwait(false);
 
             _songServiceDictionaries[ctx.Guild.Id] = new SongServiceDictionary { Queue = new List<LavalinkTrack>() ,Genre = string.Empty,AutoPlayOn = false};
         }
@@ -153,61 +131,34 @@ namespace Fafikv2.Services.CommandService
             return Task.CompletedTask;
         }
 
-        public static async Task LeaveAsync(CommandContext ctx)
+        public async Task LeaveAsync(CommandContext ctx)
         {
-            var lava = ctx.Client.GetLavalink();
+            if(!await IsConnected(ctx).ConfigureAwait(false)) return;
 
-            if (!lava.ConnectedNodes.Any())
-            {
-                await ctx.RespondAsync("The Lavalink connection is not established").ConfigureAwait(false);
-                return;
-            }
-
-            var node = lava.ConnectedNodes.Values.First();
-
-            var voiceState = ctx.Guild.CurrentMember?.VoiceState;
-            var channel = voiceState?.Channel;
-
-            if (channel == null)
-            {
-                await ctx.RespondAsync("I'm not in a voice channel.").ConfigureAwait(false);
-                return;
-            }
-
-            if (channel.Type != ChannelType.Voice)
-            {
-                await ctx.RespondAsync("Not a valid voice channel.").ConfigureAwait(false);
-                return;
-            }
-
-            var conn = node.GetGuildConnection(channel.Guild);
-
-            if (conn == null)
-            {
-                await ctx.RespondAsync("Not a valid voice channel.").ConfigureAwait(false);
-                return;
-            }
+            var conn = ctx
+                .Client
+                .GetLavalink()
+                .ConnectedNodes
+                .Values
+                .First()
+                .GetGuildConnection(ctx.Member?.VoiceState.Guild);
 
             await conn.DisconnectAsync().ConfigureAwait(false);
-            await ctx.RespondAsync($"Left {channel.Name}").ConfigureAwait(false);
+            await ctx.RespondAsync($"Left {ctx.Guild.CurrentMember.VoiceState.Channel.Name}").ConfigureAwait(false);
         }
 
         public async Task PlayAsync(CommandContext ctx, string search)
         {
-            if (ctx.Member?.VoiceState == null || ctx.Member.VoiceState.Channel == null)
-            {
-                await ctx.RespondAsync("You are not in a voice channel.").ConfigureAwait(false);
-                return;
-            }
+            if(!await IsConnected(ctx).ConfigureAwait(false)) return;
 
-            var lava = ctx.Client.GetLavalink();
-            var node = lava.ConnectedNodes.Values.First();
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
-            if (conn == null)
-            {
-                await ctx.RespondAsync("Lavalink is not connected").ConfigureAwait(false);
-                return;
-            }
+            var conn = ctx
+                .Client
+                .GetLavalink()
+                .ConnectedNodes
+                .Values
+                .First()
+                .GetGuildConnection(ctx.Member?.VoiceState.Guild);
+            var node = ctx.Client.GetLavalink().ConnectedNodes.Values.First();
 
 
 
@@ -288,23 +239,17 @@ namespace Fafikv2.Services.CommandService
                 await _songCollectionService.AddToBase(track, ctx).ConfigureAwait(false);
         }
 
-        public static async Task PauseAsync(CommandContext ctx)
+        public async Task PauseAsync(CommandContext ctx)
         {
-            if (ctx.Member?.VoiceState == null || ctx.Member.VoiceState.Channel == null)
-            {
-                await ctx.RespondAsync("You are not in a voice channel.").ConfigureAwait(false);
-                return;
-            }
+            if(!await IsConnected(ctx).ConfigureAwait(false)) return;
 
-            var lava = ctx.Client.GetLavalink();
-            var node = lava.ConnectedNodes.Values.First();
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
-
-            if (conn == null)
-            {
-                await ctx.RespondAsync("Lavalink is not connected.").ConfigureAwait(false);
-                return;
-            }
+            var conn = ctx
+                .Client
+                .GetLavalink()
+                .ConnectedNodes
+                .Values
+                .First()
+                .GetGuildConnection(ctx.Member?.VoiceState.Guild);
 
             if (conn.CurrentState.CurrentTrack == null)
             {
@@ -318,23 +263,20 @@ namespace Fafikv2.Services.CommandService
 
         }
 
-        public static async Task ResumeAsync(CommandContext ctx)
+        public async Task ResumeAsync(CommandContext ctx)
         {
-            if (ctx.Member?.VoiceState == null || ctx.Member.VoiceState.Channel == null)
-            {
-                await ctx.RespondAsync("You are not in a voice channel.").ConfigureAwait(false);
-                return;
-            }
 
-            var lava = ctx.Client.GetLavalink();
-            var node = lava.ConnectedNodes.Values.First();
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
+            
+            if (! await IsConnected(ctx).ConfigureAwait(false)) return;
 
-            if (conn == null)
-            {
-                await ctx.RespondAsync("Lavalink is not connected.").ConfigureAwait(false);
-                return;
-            }
+            var conn = ctx
+                .Client
+                .GetLavalink()
+                .ConnectedNodes
+                .Values
+                .First()
+                .GetGuildConnection(ctx.Member?.VoiceState.Guild);
+
 
             if (conn.CurrentState.CurrentTrack == null)
             {
@@ -350,30 +292,18 @@ namespace Fafikv2.Services.CommandService
         {
 
 
-            if (ctx.Member?.VoiceState == null || ctx.Member.VoiceState.Channel == null)
-            {
-                await ctx.RespondAsync("You are not in a voice channel.").ConfigureAwait(false);
-                return;
-            }
+            if(!await IsConnected(ctx).ConfigureAwait(false)) return;
 
             var guildId = ctx.Channel.Guild.Id;
             var lava = ctx.Client.GetLavalink();
             var node = lava.ConnectedNodes.Values.First();
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
+            var conn = node.GetGuildConnection(ctx.Member?.VoiceState.Guild);
 
-            if (conn == null)
-            {
-                await ctx.RespondAsync("Lavalink is not connected.").ConfigureAwait(false);
-                return;
-            }
 
-            if (conn.CurrentState.CurrentTrack == null)
-            {
-                await ctx.RespondAsync("there are no track loaded.").ConfigureAwait(false);
-                return;
-            }
 
-            if (_songServiceDictionaries.TryGetValue(guildId, out var dictionary) && dictionary!.Queue!.Count > 0)
+
+
+            if (_songServiceDictionaries.TryGetValue(guildId, out var dictionary) && dictionary.Queue!.Count > 0)
             {
                 var finishedTrack = dictionary.Queue.First();
                 dictionary.Queue.RemoveAt(0);
@@ -425,7 +355,7 @@ namespace Fafikv2.Services.CommandService
 
 
 
-            if (_songServiceDictionaries.TryGetValue(guildId, out var dictionary) && dictionary?.Queue?.Count > 0)
+            if (_songServiceDictionaries.TryGetValue(guildId, out var dictionary) && dictionary.Queue?.Count > 0)
             {
                 var songTitles = dictionary.Queue.Select(track => track.Title).ToList();
                 var titles = "Songs Queue: \n";
@@ -517,8 +447,6 @@ namespace Fafikv2.Services.CommandService
             return false;
 
         }
-
-
         private async Task<bool> IsConnected(CommandContext ctx)
         {
             var lava = ctx.Client.GetLavalink();
