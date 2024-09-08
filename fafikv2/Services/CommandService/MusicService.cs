@@ -30,39 +30,43 @@ namespace Fafikv2.Services.CommandService
 
         public async Task JoinAsync(CommandContext ctx, DiscordChannel? channel = null)
         {
-            if(await IsConnected(ctx).ConfigureAwait(false)==null) return;
 
 
-            var node = ctx
-                .Client
-                .GetLavalink()
-                .ConnectedNodes
-                .Values
-                .First();
-            if (node != null)
+            await ExecuteIfConnected(ctx, async _ =>
             {
-                node.PlaybackFinished += Node_PlaybackFinished;
-                node.GuildConnectionRemoved += Node_disconnected;
-                
+                var node = ctx
+                    .Client
+                    .GetLavalink()
+                    .ConnectedNodes
+                    .Values
+                    .First();
+                if (node != null)
+                {
+                    node.PlaybackFinished += Node_PlaybackFinished;
+                    node.GuildConnectionRemoved += Node_disconnected;
 
 
-            }
-            
-            if (node != null)
-                try
-                {
-                    await node.ConnectAsync(channel).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    await ctx.RespondAsync("Wystąpił błąd z połączeniem, spróbuj ponownie później").ConfigureAwait(false);
-                    Console.WriteLine(ex.Message);
-                    return;
+
                 }
 
-            await ctx.RespondAsync($"Joined {channel?.Name}!").ConfigureAwait(false);
+                if (node != null)
+                    try
+                    {
+                        await node.ConnectAsync(channel).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        await ctx.RespondAsync("Wystąpił błąd z połączeniem, spróbuj ponownie później")
+                            .ConfigureAwait(false);
+                        Console.WriteLine(ex.Message);
+                        return;
+                    }
 
-            _songServiceDictionaries[ctx.Guild.Id] = new SongServiceDictionary { Queue = new List<LavalinkTrack>() ,Genre = string.Empty,AutoPlayOn = false};
+                await ctx.RespondAsync($"Joined {channel?.Name}!").ConfigureAwait(false);
+
+                _songServiceDictionaries[ctx.Guild.Id] = new SongServiceDictionary
+                    { Queue = new List<LavalinkTrack>(), Genre = string.Empty, AutoPlayOn = false };
+            }).ConfigureAwait(false);
         }
 
         private async Task Node_PlaybackFinished(LavalinkGuildConnection sender, TrackFinishEventArgs args)
@@ -94,6 +98,15 @@ namespace Fafikv2.Services.CommandService
                 {
                     var nextTrack = dictionary.Queue.First();
                     nextTrackMessage = $"Next track: {nextTrack.Title}";
+                    try
+                    {
+                        await node.PlayAsync(nextTrack).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                        return;
+                    }
                     await node.PlayAsync(nextTrack).ConfigureAwait(false);
                 }
 
@@ -142,289 +155,232 @@ namespace Fafikv2.Services.CommandService
             return Task.CompletedTask;
         }
 
-        public async Task LeaveAsync(CommandContext ctx)
+        public static async Task LeaveAsync(CommandContext ctx)
         {
 
 
-            var conn = await IsConnected(ctx).ConfigureAwait(false);
-            if (conn == null) return;
+            await ExecuteIfConnected(ctx, async conn =>
+            {
+                try
+                {
+                    await conn.DisconnectAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    await ctx.RespondAsync("Wystąpił błąd podczas opuszczania pokoju.").ConfigureAwait(false);
+                    Console.WriteLine(ex.Message);
+                    return;
+                }
 
+                await conn.DisconnectAsync().ConfigureAwait(false);
+                await ctx.RespondAsync($"Left {ctx.Guild.CurrentMember.VoiceState.Channel.Name}").ConfigureAwait(false);
+            }).ConfigureAwait(false);
+        }
 
+        private async Task PlayTrack(CommandContext ctx, LavalinkGuildConnection conn, LavalinkTrack track)
+        {
             try
             {
-                await conn.DisconnectAsync().ConfigureAwait(false);
+                await conn.PlayAsync(track).ConfigureAwait(false);
+                var lavalinkTracks = _songServiceDictionaries[ctx.Guild.Id].Queue;
+                lavalinkTracks?.Add(track);
+                await ctx.RespondAsync($"Now playing {track.Title}!").ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                await ctx.RespondAsync("Wystąpił błąd podczas odtwarzania piosenki. Spróbuj ponownie później.")
+                    .ConfigureAwait(false);
+                Console.WriteLine($"{e.Message}");
+            }
+        }
+
+        private static async Task<LavalinkLoadResult> LoadTrack(LavalinkNodeConnection node, string search)
+        {
+            try
+            {
+                if (Uri.TryCreate(search, UriKind.Absolute, out var uri))
+                {
+                    return await node.Rest.GetTracksAsync(uri).ConfigureAwait(false);
+                }
+
+                return await node.Rest.GetTracksAsync(search, LavalinkSearchType.SoundCloud).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                await ctx.RespondAsync("Wystąpił błąd podczas opuszczania pokoju.").ConfigureAwait(false);
-                Console.WriteLine(ex.Message);
-                return;
+                throw new Exception("Wystąpił błąd podczas pobierania piosenki.", ex);
             }
-            await conn.DisconnectAsync().ConfigureAwait(false);
-            await ctx.RespondAsync($"Left {ctx.Guild.CurrentMember.VoiceState.Channel.Name}").ConfigureAwait(false);
         }
 
         public async Task PlayAsync(CommandContext ctx, string search)
         {
 
-            var conn = await IsConnected(ctx).ConfigureAwait(false);
-            if(conn== null) return;
-
-
-            var node = ctx.Client.GetLavalink().ConnectedNodes.Values.First();
-
-
-
-            LavalinkLoadResult loadResult;
-            if (Uri.TryCreate(search, UriKind.Absolute, out var uri))
+            await ExecuteIfConnected(ctx, async conn =>
             {
-                // If search is a valid URL, use the URI overload
+                var node = ctx.Client.GetLavalink().ConnectedNodes.Values.First();
+
+
+                var loadResult=await LoadTrack(node,search).ConfigureAwait(false);
+                
+                // node.Rest.GetTracksAsync()
+
+                if (loadResult.LoadResultType is LavalinkLoadResultType.LoadFailed or LavalinkLoadResultType.NoMatches)
+                {
+                    await ctx.RespondAsync($"Track search failed for {search}.").ConfigureAwait(false);
+                    return;
+                }
+
+                LavalinkTrack track;
                 try
                 {
-                    loadResult = await node.Rest.GetTracksAsync(uri).ConfigureAwait(false);
+                    track = loadResult.Tracks.First();
                 }
                 catch (Exception ex)
                 {
-
-                    await ctx.RespondAsync("Wystąpił błąd podczas pobierania piosenki. Spróbuj ponownie później.").ConfigureAwait(false);
+                    await ctx.RespondAsync("Wystąpił błąd podczas pobierania piosenki. Spróbuj ponownie później.")
+                        .ConfigureAwait(false);
                     Console.WriteLine(ex.Message);
                     return;
                 }
-                
-            }
-            else
-            {
-                // Otherwise, treat it as a search query
-                try
+
+
+                if (!_songServiceDictionaries.TryGetValue(ctx.Guild.Id, out var dictionary))
                 {
-                    loadResult = await node.Rest.GetTracksAsync(search, LavalinkSearchType.SoundCloud).ConfigureAwait(false);
-                }
-                catch (Exception e)
-                {
-                    await ctx.RespondAsync("Wystąpił błąd podczas pobierania piosenki. Spróbuj ponownie później.").ConfigureAwait(false);
-                    Console.WriteLine(e.Message);
-                    return;
+                    _songServiceDictionaries[ctx.Guild.Id] = new SongServiceDictionary { Queue = new List<LavalinkTrack>() };
                 }
 
-            }
-            // node.Rest.GetTracksAsync()
 
-            if (loadResult.LoadResultType is LavalinkLoadResultType.LoadFailed or LavalinkLoadResultType.NoMatches)
-            {
-                await ctx.RespondAsync($"Track search failed for {search}.").ConfigureAwait(false);
-                return;
-            }
-
-            LavalinkTrack track;
-            try
-            {
-                track = loadResult.Tracks.First();
-            }
-            catch (Exception ex)
-            {
-                await ctx.RespondAsync("Wystąpił błąd podczas pobierania piosenki. Spróbuj ponownie później.").ConfigureAwait(false);
-                Console.WriteLine(ex.Message);
-                return;
-            }
-           
-
-
-
-            if (!_songServiceDictionaries.TryGetValue(ctx.Guild.Id, out var dictionary))
-            {
-                 
-                 _songServiceDictionaries[ctx.Guild.Id] = new SongServiceDictionary() {Queue = new List<LavalinkTrack>()};
-                 
-                 
-
-            }
-
-            
-
-            if (dictionary!.Queue!.Count == 0)
-            {
-                try
+                if (dictionary!.Queue!.Count == 0)
                 {
-                    await conn.PlayAsync(track).ConfigureAwait(false);
+                    await PlayTrack(ctx, conn, track).ConfigureAwait(false);
+
+                    await ctx.RespondAsync($"now playing {track.Title}!").ConfigureAwait(false);
+                }
+                else
+                {
                     Console.WriteLine($"{track.Title}");
+                    dictionary.Queue.Add(track);
+
+
+                    var timeLeft = dictionary.Queue.Aggregate(TimeSpan.Zero,
+                        (total, lavalinkTrack) => total + lavalinkTrack.Length);
+                    await ctx.RespondAsync(
+                            $"Utwór {track.Title} zostanie odtworzony za: {timeLeft.Minutes}:{timeLeft.Seconds:D2}.")
+                        .ConfigureAwait(false);
                 }
-                catch (Exception e)
-                {
-                    await ctx.RespondAsync("Wystąpił błąd podczas odtwarzania piosenki. Spróbuj ponownie później.").ConfigureAwait(false);
-                    Console.WriteLine($"{e.Message}");
-                    return;
-                }
-                dictionary.Queue.Add(track);
-                await ctx.RespondAsync($"now playing {track.Title}!").ConfigureAwait(false);
-            }
-            else
-            {
 
-
-                
-                Console.WriteLine($"{track.Title}");
-                dictionary.Queue.Add(track);
-
-
-                var timeLeft = dictionary.Queue.Aggregate(TimeSpan.Zero, (total, lavalinkTrack) => total + lavalinkTrack.Length);
-                await ctx.RespondAsync($"Utwór {track.Title} zostanie odtworzony za: {timeLeft.Minutes}:{timeLeft.Seconds:D2}.").ConfigureAwait(false);
-
-            }
-
-            if (_songCollectionService != null)
-                try
-                {
-                    await _songCollectionService.AddToBase(track, ctx).ConfigureAwait(false);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.Message);
-                }
-                
-        }
-
-        public async Task PauseAsync(CommandContext ctx)
-        {
-
-            var conn = await IsConnected(ctx).ConfigureAwait(false);
-            if(conn == null) return;
-
-            if (conn.CurrentState.CurrentTrack == null)
-            {
-                await ctx.RespondAsync("there are no track loaded.").ConfigureAwait(false);
-                return;
-            }
-
-            try
-            {
-                await conn.PauseAsync().ConfigureAwait(false);
-            }
-            catch (Exception e)
-            {
-                await ctx.RespondAsync("Wystąpił błąd podczas pauzowania piosenki. Spróbuj ponownie później.").ConfigureAwait(false);
-                Console.WriteLine($"{e.Message}");
-                return;
-            }
-            await ctx.RespondAsync("music is paused.").ConfigureAwait(false);
-
-
-        }
-
-        public async Task ResumeAsync(CommandContext ctx)
-        {
-
-            
-
-            var conn = await IsConnected(ctx).ConfigureAwait(false);
-            if(conn==null) return;
-
-
-            if (conn.CurrentState.CurrentTrack == null)
-            {
-                await ctx.RespondAsync("there are no track loaded.").ConfigureAwait(false);
-                return;
-            }
-
-            try
-            {
-                await conn.ResumeAsync().ConfigureAwait(false);
-            }
-            catch (Exception e)
-            {
-                await ctx.RespondAsync("Wystąpił błąd podczas wznawiania piosenki. Spróbuj ponownie później.").ConfigureAwait(false);
-                Console.WriteLine($"{e.Message}");
-                return;
-            }
-            await ctx.RespondAsync("music is playing again.").ConfigureAwait(false);
+                if (_songCollectionService != null)
+                    try
+                    {
+                        await _songCollectionService.AddToBase(track, ctx).ConfigureAwait(false);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
+            }).ConfigureAwait(false);
         }
 
         public async Task SkipAsync(CommandContext ctx)
         {
-
-
-            var conn = await IsConnected(ctx).ConfigureAwait(false);
-            if(conn==null) return;
-
-
-
-
-
-            if (_songServiceDictionaries.TryGetValue(ctx.Channel.Guild.Id, out var dictionary) && dictionary.Queue!.Count > 0)
+            await ExecuteIfConnected(ctx, async conn =>
             {
-                var finishedTrack = dictionary.Queue.First();
-                dictionary.Queue.RemoveAt(0);
-
-                var nextTrackMessage = "";
-                if (dictionary.Queue.Count > 0)
+                if (_songServiceDictionaries.TryGetValue(ctx.Channel.Guild.Id, out var dictionary)&& dictionary.Queue is
+                    {
+                        Count: > 0
+                    })
                 {
-                    var nextTrack = dictionary.Queue.First();
-                    nextTrackMessage = $"Next track: {nextTrack.Title}";
-                    try
+                    var finishedTrack = dictionary.Queue.First();
+                    dictionary.Queue.RemoveAt(0);
+
+                    if (dictionary.Queue.Count > 0)
                     {
-                        await conn.PlayAsync(nextTrack).ConfigureAwait(false);
+                        await PlayTrack(ctx,conn,finishedTrack).ConfigureAwait(false);
                     }
-                    catch (Exception e)
+                    else if (dictionary.AutoPlayOn)
                     {
-                        await ctx.RespondAsync("Wystąpił błąd podczas pomijania piosenki. Spróbuj ponownie później.").ConfigureAwait(false);
-                        Console.WriteLine($"{e.Message}");
-                        
+                        var autoNextTrack = await GetAutoNextTrack(conn, dictionary, finishedTrack).ConfigureAwait(false);
+                        if (autoNextTrack != null)
+                        {
+                            await PlayTrack(ctx, conn, finishedTrack).ConfigureAwait(false);
+                        }
                     }
 
+                    var finishedTrackMessage = $"Finished playing: {finishedTrack.Title}";
+                    var nextTrackMessage = dictionary.Queue.Count > 0 ? $"Next track: {dictionary.Queue.First().Title}" : "No more tracks in queue.";
+                    var message = $"{finishedTrackMessage}\n{nextTrackMessage}";
+
+                    var textChannel = ctx.Guild.SystemChannel;
+                    await textChannel.SendMessageAsync(message).ConfigureAwait(false);
                 }
+            }).ConfigureAwait(false);
+        }
 
-
-                if (dictionary.AutoPlayOn && dictionary.Queue.Count == 0 && dictionary.Genre.IsNullOrEmpty())
-                {
-                    if (_songCollectionService != null)
-                    {
-                        var autoNextTrack = await _songCollectionService.AutoPlayByGenre(conn, dictionary.Genre).ConfigureAwait(false);
-
-
-                        try
-                        {
-                            await conn.PlayAsync(autoNextTrack).ConfigureAwait(false);
-                        }
-                        catch (Exception e)
-                        {
-                            await ctx.RespondAsync("Wystąpił błąd podczas pomijania piosenki. Spróbuj ponownie później.").ConfigureAwait(false);
-                            Console.WriteLine($"{e.Message}");
-
-                        }
-
-
-                        nextTrackMessage = $"Next track: {autoNextTrack.Title}";
-                        dictionary.Queue.Add(autoNextTrack);
-                    }
-                }
-                else if (dictionary.AutoPlayOn && dictionary.Queue.Count == 0)
-                {
-                    if (_songCollectionService != null)
-                    {
-                        var autoNextTrack = await _songCollectionService.AutoPlay(conn, finishedTrack).ConfigureAwait(false);
-
-                        try
-                        {
-                            await conn.PlayAsync(autoNextTrack).ConfigureAwait(false);
-                        }
-                        catch (Exception e)
-                        {
-                            await ctx.RespondAsync("Wystąpił błąd podczas pomijania piosenki. Spróbuj ponownie później.").ConfigureAwait(false);
-                            Console.WriteLine($"{e.Message}");
-
-                        }
-
-                        nextTrackMessage = $"Next track: {autoNextTrack.Title}";
-                        dictionary.Queue.Add(autoNextTrack);
-                    }
-                }
-
-                var finishedTrackMessage = $"Finished playing: {finishedTrack.Title}";
-                var message = $"{finishedTrackMessage}\n{nextTrackMessage}";
-
-                
-                var textChannel = ctx.Guild.SystemChannel;
-                await textChannel.SendMessageAsync(message).ConfigureAwait(false);
+        private async Task<LavalinkTrack?> GetAutoNextTrack(LavalinkGuildConnection conn, SongServiceDictionary dictionary, LavalinkTrack finishedTrack)
+        {
+            if (!string.IsNullOrEmpty(dictionary.Genre))
+            {
+                return await _songCollectionService!.AutoPlayByGenre(conn, dictionary.Genre).ConfigureAwait(false);
             }
+
+            return await _songCollectionService!.AutoPlay(conn, finishedTrack).ConfigureAwait(false);
+        }
+
+        public static async Task PauseAsync(CommandContext ctx)
+        {
+
+            await ExecuteIfConnected(ctx, async conn =>
+            {
+
+                if (conn.CurrentState.CurrentTrack == null)
+                {
+                    await ctx.RespondAsync("there are no track loaded.").ConfigureAwait(false);
+                    return;
+                }
+
+                try
+                {
+                    await conn.PauseAsync().ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    await ctx.RespondAsync("Wystąpił błąd podczas pauzowania piosenki. Spróbuj ponownie później.")
+                        .ConfigureAwait(false);
+                    Console.WriteLine($"{e.Message}");
+                    return;
+                }
+
+                await ctx.RespondAsync("music is paused.").ConfigureAwait(false);
+
+            }).ConfigureAwait(false);
+        }
+
+        public static async Task ResumeAsync(CommandContext ctx)
+        {
+
+
+            
+            await ExecuteIfConnected(ctx, async conn =>
+            {
+                if (conn.CurrentState.CurrentTrack == null)
+                {
+                    await ctx.RespondAsync("there are no track loaded.").ConfigureAwait(false); 
+                    return;
+                }
+
+                try
+                {
+                    await conn.ResumeAsync().ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    await ctx.RespondAsync("Wystąpił błąd podczas wznawiania piosenki. Spróbuj ponownie później.")
+                        .ConfigureAwait(false);
+                    Console.WriteLine($"{e.Message}");
+                    return;
+                }
+
+                await ctx.RespondAsync("music is playing again.").ConfigureAwait(false);
+            }).ConfigureAwait(false);
         }
 
         public async Task QueueAsync(CommandContext ctx)
@@ -446,8 +402,8 @@ namespace Fafikv2.Services.CommandService
 
 
         }
-        
-        public  async Task VolumeAsync(CommandContext ctx, int vol)
+
+        public static async Task VolumeAsync(CommandContext ctx, int vol)
         {
 
             if (vol is < 0 or > 100)
@@ -456,21 +412,23 @@ namespace Fafikv2.Services.CommandService
                 return;
             }
 
-            var conn=await IsConnected(ctx).ConfigureAwait(false);
-            if(conn==null) return;
-
-            try
+            await ExecuteIfConnected(ctx, async conn =>
             {
-                await conn.SetVolumeAsync(vol).ConfigureAwait(false);
-            }
-            catch (Exception e)
-            {
-                await ctx.RespondAsync("Wystąpił błąd podczas ustawiania głośności. Spróbuj ponownie później.").ConfigureAwait(false);
-                Console.WriteLine($"{e.Message}");
-                return;
-            }
 
-            await ctx.RespondAsync($"Volume changed to: {vol}").ConfigureAwait(false);
+                try
+                {
+                    await conn.SetVolumeAsync(vol).ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    await ctx.RespondAsync("Wystąpił błąd podczas ustawiania głośności. Spróbuj ponownie później.")
+                        .ConfigureAwait(false);
+                    Console.WriteLine($"{e.Message}");
+                    return;
+                }
+
+                await ctx.RespondAsync($"Volume changed to: {vol}").ConfigureAwait(false);
+            }).ConfigureAwait(false);
         }
 
         public async Task StartAutoplay(CommandContext ctx)
@@ -511,7 +469,7 @@ namespace Fafikv2.Services.CommandService
             return true;
 
         }
-        private async Task<LavalinkGuildConnection?> IsConnected(CommandContext ctx)
+        private static async Task<LavalinkGuildConnection?> IsConnected(CommandContext ctx)
         {
             var lava = ctx.Client.GetLavalink();
 
@@ -539,7 +497,13 @@ namespace Fafikv2.Services.CommandService
 
         }
 
-    }
+        private static async Task ExecuteIfConnected(CommandContext ctx, Func<LavalinkGuildConnection, Task> action)
+        {
+            var conn = await IsConnected(ctx).ConfigureAwait(false);
+            if (conn == null) return;
 
-    
+            await action(conn).ConfigureAwait(false);
+        }
+
+    }
 }
