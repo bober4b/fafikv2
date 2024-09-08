@@ -1,5 +1,4 @@
-﻿using DSharpPlus;
-using DSharpPlus.CommandsNext;
+﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.Lavalink;
 using DSharpPlus.Lavalink.EventArgs;
@@ -31,7 +30,7 @@ namespace Fafikv2.Services.CommandService
 
         public async Task JoinAsync(CommandContext ctx, DiscordChannel? channel = null)
         {
-            if(!await IsConnected(ctx).ConfigureAwait(false)) return;
+            if(await IsConnected(ctx).ConfigureAwait(false)==null) return;
 
 
             var node = ctx
@@ -44,11 +43,23 @@ namespace Fafikv2.Services.CommandService
             {
                 node.PlaybackFinished += Node_PlaybackFinished;
                 node.GuildConnectionRemoved += Node_disconnected;
+                
 
 
             }
+            
+            if (node != null)
+                try
+                {
+                    await node.ConnectAsync(channel).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    await ctx.RespondAsync("Wystąpił błąd z połączeniem, spróbuj ponownie później").ConfigureAwait(false);
+                    Console.WriteLine(ex.Message);
+                    return;
+                }
 
-            if (node != null) await node.ConnectAsync(channel).ConfigureAwait(false);
             await ctx.RespondAsync($"Joined {channel?.Name}!").ConfigureAwait(false);
 
             _songServiceDictionaries[ctx.Guild.Id] = new SongServiceDictionary { Queue = new List<LavalinkTrack>() ,Genre = string.Empty,AutoPlayOn = false};
@@ -133,31 +144,33 @@ namespace Fafikv2.Services.CommandService
 
         public async Task LeaveAsync(CommandContext ctx)
         {
-            if(!await IsConnected(ctx).ConfigureAwait(false)) return;
 
-            var conn = ctx
-                .Client
-                .GetLavalink()
-                .ConnectedNodes
-                .Values
-                .First()
-                .GetGuildConnection(ctx.Member?.VoiceState.Guild);
 
+            var conn = await IsConnected(ctx).ConfigureAwait(false);
+            if (conn == null) return;
+
+
+            try
+            {
+                await conn.DisconnectAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                await ctx.RespondAsync("Wystąpił błąd podczas opuszczania pokoju.").ConfigureAwait(false);
+                Console.WriteLine(ex.Message);
+                return;
+            }
             await conn.DisconnectAsync().ConfigureAwait(false);
             await ctx.RespondAsync($"Left {ctx.Guild.CurrentMember.VoiceState.Channel.Name}").ConfigureAwait(false);
         }
 
         public async Task PlayAsync(CommandContext ctx, string search)
         {
-            if(!await IsConnected(ctx).ConfigureAwait(false)) return;
 
-            var conn = ctx
-                .Client
-                .GetLavalink()
-                .ConnectedNodes
-                .Values
-                .First()
-                .GetGuildConnection(ctx.Member?.VoiceState.Guild);
+            var conn = await IsConnected(ctx).ConfigureAwait(false);
+            if(conn== null) return;
+
+
             var node = ctx.Client.GetLavalink().ConnectedNodes.Values.First();
 
 
@@ -166,12 +179,33 @@ namespace Fafikv2.Services.CommandService
             if (Uri.TryCreate(search, UriKind.Absolute, out var uri))
             {
                 // If search is a valid URL, use the URI overload
-                loadResult = await node.Rest.GetTracksAsync(uri).ConfigureAwait(false);
+                try
+                {
+                    loadResult = await node.Rest.GetTracksAsync(uri).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+
+                    await ctx.RespondAsync("Wystąpił błąd podczas pobierania piosenki. Spróbuj ponownie później.").ConfigureAwait(false);
+                    Console.WriteLine(ex.Message);
+                    return;
+                }
+                
             }
             else
             {
                 // Otherwise, treat it as a search query
-                loadResult = await node.Rest.GetTracksAsync(search,LavalinkSearchType.SoundCloud).ConfigureAwait(false);
+                try
+                {
+                    loadResult = await node.Rest.GetTracksAsync(search, LavalinkSearchType.SoundCloud).ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    await ctx.RespondAsync("Wystąpił błąd podczas pobierania piosenki. Spróbuj ponownie później.").ConfigureAwait(false);
+                    Console.WriteLine(e.Message);
+                    return;
+                }
+
             }
             // node.Rest.GetTracksAsync()
 
@@ -188,6 +222,7 @@ namespace Fafikv2.Services.CommandService
             }
             catch (Exception ex)
             {
+                await ctx.RespondAsync("Wystąpił błąd podczas pobierania piosenki. Spróbuj ponownie później.").ConfigureAwait(false);
                 Console.WriteLine(ex.Message);
                 return;
             }
@@ -215,7 +250,9 @@ namespace Fafikv2.Services.CommandService
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"{e.InnerException?.Message}");
+                    await ctx.RespondAsync("Wystąpił błąd podczas odtwarzania piosenki. Spróbuj ponownie później.").ConfigureAwait(false);
+                    Console.WriteLine($"{e.Message}");
+                    return;
                 }
                 dictionary.Queue.Add(track);
                 await ctx.RespondAsync($"now playing {track.Title}!").ConfigureAwait(false);
@@ -223,33 +260,34 @@ namespace Fafikv2.Services.CommandService
             else
             {
 
-                var timeLeftAll = dictionary.Queue.Select(lavalinkTrack => lavalinkTrack.Length).ToList();
 
-                TimeSpan timeLeft = new();
-
-
-                timeLeft = timeLeftAll.Aggregate(timeLeft, (current, songTime) => current + songTime);
+                
                 Console.WriteLine($"{track.Title}");
                 dictionary.Queue.Add(track);
-                await ctx.RespondAsync($"Added {track.Title} to the queue!\n" + $"Song will be played in: {timeLeft.Minutes},{timeLeft.Seconds:D2}").ConfigureAwait(false);
-            
+
+
+                var timeLeft = dictionary.Queue.Aggregate(TimeSpan.Zero, (total, lavalinkTrack) => total + lavalinkTrack.Length);
+                await ctx.RespondAsync($"Utwór {track.Title} zostanie odtworzony za: {timeLeft.Minutes}:{timeLeft.Seconds:D2}.").ConfigureAwait(false);
+
             }
 
             if (_songCollectionService != null)
-                await _songCollectionService.AddToBase(track, ctx).ConfigureAwait(false);
+                try
+                {
+                    await _songCollectionService.AddToBase(track, ctx).ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+                
         }
 
         public async Task PauseAsync(CommandContext ctx)
         {
-            if(!await IsConnected(ctx).ConfigureAwait(false)) return;
 
-            var conn = ctx
-                .Client
-                .GetLavalink()
-                .ConnectedNodes
-                .Values
-                .First()
-                .GetGuildConnection(ctx.Member?.VoiceState.Guild);
+            var conn = await IsConnected(ctx).ConfigureAwait(false);
+            if(conn == null) return;
 
             if (conn.CurrentState.CurrentTrack == null)
             {
@@ -257,7 +295,16 @@ namespace Fafikv2.Services.CommandService
                 return;
             }
 
-            await conn.PauseAsync().ConfigureAwait(false);
+            try
+            {
+                await conn.PauseAsync().ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                await ctx.RespondAsync("Wystąpił błąd podczas pauzowania piosenki. Spróbuj ponownie później.").ConfigureAwait(false);
+                Console.WriteLine($"{e.Message}");
+                return;
+            }
             await ctx.RespondAsync("music is paused.").ConfigureAwait(false);
 
 
@@ -267,15 +314,9 @@ namespace Fafikv2.Services.CommandService
         {
 
             
-            if (! await IsConnected(ctx).ConfigureAwait(false)) return;
 
-            var conn = ctx
-                .Client
-                .GetLavalink()
-                .ConnectedNodes
-                .Values
-                .First()
-                .GetGuildConnection(ctx.Member?.VoiceState.Guild);
+            var conn = await IsConnected(ctx).ConfigureAwait(false);
+            if(conn==null) return;
 
 
             if (conn.CurrentState.CurrentTrack == null)
@@ -284,7 +325,16 @@ namespace Fafikv2.Services.CommandService
                 return;
             }
 
-            await conn.ResumeAsync().ConfigureAwait(false);
+            try
+            {
+                await conn.ResumeAsync().ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                await ctx.RespondAsync("Wystąpił błąd podczas wznawiania piosenki. Spróbuj ponownie później.").ConfigureAwait(false);
+                Console.WriteLine($"{e.Message}");
+                return;
+            }
             await ctx.RespondAsync("music is playing again.").ConfigureAwait(false);
         }
 
@@ -292,18 +342,14 @@ namespace Fafikv2.Services.CommandService
         {
 
 
-            if(!await IsConnected(ctx).ConfigureAwait(false)) return;
-
-            var guildId = ctx.Channel.Guild.Id;
-            var lava = ctx.Client.GetLavalink();
-            var node = lava.ConnectedNodes.Values.First();
-            var conn = node.GetGuildConnection(ctx.Member?.VoiceState.Guild);
+            var conn = await IsConnected(ctx).ConfigureAwait(false);
+            if(conn==null) return;
 
 
 
 
 
-            if (_songServiceDictionaries.TryGetValue(guildId, out var dictionary) && dictionary.Queue!.Count > 0)
+            if (_songServiceDictionaries.TryGetValue(ctx.Channel.Guild.Id, out var dictionary) && dictionary.Queue!.Count > 0)
             {
                 var finishedTrack = dictionary.Queue.First();
                 dictionary.Queue.RemoveAt(0);
@@ -313,7 +359,17 @@ namespace Fafikv2.Services.CommandService
                 {
                     var nextTrack = dictionary.Queue.First();
                     nextTrackMessage = $"Next track: {nextTrack.Title}";
-                    await conn.PlayAsync(nextTrack).ConfigureAwait(false);
+                    try
+                    {
+                        await conn.PlayAsync(nextTrack).ConfigureAwait(false);
+                    }
+                    catch (Exception e)
+                    {
+                        await ctx.RespondAsync("Wystąpił błąd podczas pomijania piosenki. Spróbuj ponownie później.").ConfigureAwait(false);
+                        Console.WriteLine($"{e.Message}");
+                        
+                    }
+
                 }
 
 
@@ -322,7 +378,20 @@ namespace Fafikv2.Services.CommandService
                     if (_songCollectionService != null)
                     {
                         var autoNextTrack = await _songCollectionService.AutoPlayByGenre(conn, dictionary.Genre).ConfigureAwait(false);
-                        await conn.PlayAsync(autoNextTrack).ConfigureAwait(false);
+
+
+                        try
+                        {
+                            await conn.PlayAsync(autoNextTrack).ConfigureAwait(false);
+                        }
+                        catch (Exception e)
+                        {
+                            await ctx.RespondAsync("Wystąpił błąd podczas pomijania piosenki. Spróbuj ponownie później.").ConfigureAwait(false);
+                            Console.WriteLine($"{e.Message}");
+
+                        }
+
+
                         nextTrackMessage = $"Next track: {autoNextTrack.Title}";
                         dictionary.Queue.Add(autoNextTrack);
                     }
@@ -332,7 +401,18 @@ namespace Fafikv2.Services.CommandService
                     if (_songCollectionService != null)
                     {
                         var autoNextTrack = await _songCollectionService.AutoPlay(conn, finishedTrack).ConfigureAwait(false);
-                        await conn.PlayAsync(autoNextTrack).ConfigureAwait(false);
+
+                        try
+                        {
+                            await conn.PlayAsync(autoNextTrack).ConfigureAwait(false);
+                        }
+                        catch (Exception e)
+                        {
+                            await ctx.RespondAsync("Wystąpił błąd podczas pomijania piosenki. Spróbuj ponownie później.").ConfigureAwait(false);
+                            Console.WriteLine($"{e.Message}");
+
+                        }
+
                         nextTrackMessage = $"Next track: {autoNextTrack.Title}";
                         dictionary.Queue.Add(autoNextTrack);
                     }
@@ -351,26 +431,17 @@ namespace Fafikv2.Services.CommandService
         {
 
 
-            var guildId = ctx.Channel.Guild.Id;
-
-
-
-            if (_songServiceDictionaries.TryGetValue(guildId, out var dictionary) && dictionary.Queue?.Count > 0)
+            if (!_songServiceDictionaries.TryGetValue(ctx.Guild.Id, out var dictionary) || dictionary.Queue == null || dictionary.Queue.Count==0)
             {
-                var songTitles = dictionary.Queue.Select(track => track.Title).ToList();
-                var titles = "Songs Queue: \n";
-                var i = 0;
-                foreach (var song in songTitles)
-                {
-                    titles += $"{i}. {song}\n";
-                    i++;
-                }
-
-                var textChannel = ctx.Guild.SystemChannel;
-                await textChannel.SendMessageAsync(titles).ConfigureAwait(false);
+                await ctx.RespondAsync("Queue is empty").ConfigureAwait(false);
+                return;
             }
 
-            await ctx.RespondAsync("Queue Is empty").ConfigureAwait(false);
+            var songTitles = dictionary.Queue.Select((track, index) => $"{index + 1}. {track.Title}").ToList();
+            var titles = string.Join("\n", songTitles);
+
+            var textChannel = ctx.Guild.SystemChannel;
+            await textChannel.SendMessageAsync($"Songs Queue:\n{titles}").ConfigureAwait(false);
 
 
 
@@ -379,24 +450,25 @@ namespace Fafikv2.Services.CommandService
         public  async Task VolumeAsync(CommandContext ctx, int vol)
         {
 
-            if(!await IsConnected(ctx).ConfigureAwait(false)) return;
-            
-
             if (vol is < 0 or > 100)
             {
                 await ctx.RespondAsync("volume must be between 0 and 100").ConfigureAwait(false);
                 return;
             }
 
-            await ctx
-                .Client
-                .GetLavalink()
-                .ConnectedNodes
-                .Values
-                .First()
-                .GetGuildConnection(ctx.Member?.VoiceState.Guild)
-                .SetVolumeAsync(vol)
-                .ConfigureAwait(false);
+            var conn=await IsConnected(ctx).ConfigureAwait(false);
+            if(conn==null) return;
+
+            try
+            {
+                await conn.SetVolumeAsync(vol).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                await ctx.RespondAsync("Wystąpił błąd podczas ustawiania głośności. Spróbuj ponownie później.").ConfigureAwait(false);
+                Console.WriteLine($"{e.Message}");
+                return;
+            }
 
             await ctx.RespondAsync($"Volume changed to: {vol}").ConfigureAwait(false);
         }
@@ -434,27 +506,19 @@ namespace Fafikv2.Services.CommandService
                 return false;
             }
 
-            if (ctx.Member?.VoiceState == null || ctx.Member.VoiceState.Channel == null)
-            {
-                await ctx.RespondAsync("You are not in a voice channel.").ConfigureAwait(false);
-                return false;
-            }
-            var lava = ctx.Client.GetLavalink();
-            var node = lava.ConnectedNodes.Values.First();
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
-            if (conn != null) return true;
-            await ctx.RespondAsync("Lavalink is not connected").ConfigureAwait(false);
-            return false;
+            if(await IsConnected(ctx).ConfigureAwait(false)==null) return false;
+
+            return true;
 
         }
-        private async Task<bool> IsConnected(CommandContext ctx)
+        private async Task<LavalinkGuildConnection?> IsConnected(CommandContext ctx)
         {
             var lava = ctx.Client.GetLavalink();
 
             if (!lava.ConnectedNodes.Any())
             {
                 await ctx.RespondAsync("The Lavalink connection is not established").ConfigureAwait(false);
-                return false;
+                return null;
             }
 
             var node = lava.ConnectedNodes.Values.First();
@@ -465,13 +529,13 @@ namespace Fafikv2.Services.CommandService
             {
                 Console.WriteLine($"{ctx.Member?.VoiceState?.Channel}");
                 await ctx.RespondAsync("You need to be in a voice channel to use this command.").ConfigureAwait(false);
-                return false;
+                return null;
             }
             var conn = node.GetGuildConnection(ctx.Member?.VoiceState.Guild);
 
-            if (conn != null) return true;
+            if (conn != null) return conn;
             await ctx.RespondAsync("Lavalink is not connected.").ConfigureAwait(false);
-            return false;
+            return null;
 
         }
 
