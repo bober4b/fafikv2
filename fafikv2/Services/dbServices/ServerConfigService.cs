@@ -24,9 +24,9 @@ namespace Fafikv2.Services.dbServices
             }
 
 
-            await _serverConfigRepository.AddServerConfig(serverConfig).ConfigureAwait(false);
+            await _serverConfigRepository.AddServerConfig(serverConfig) ;
 
-            await Task.CompletedTask.ConfigureAwait(false);
+            await Task.CompletedTask ;
         }
 
         public Task RemoveServerConfig(ServerConfig serverConfig)
@@ -50,48 +50,48 @@ namespace Fafikv2.Services.dbServices
 
         public async Task EnableBans(Guid server)
         {
-            await _serverConfigRepository.EnableDisableBans(server,true).ConfigureAwait(false);
+            await _serverConfigRepository.EnableDisableBans(server,true) ;
         }
 
         public async Task DisableBans(Guid server)
         {
-            await _serverConfigRepository.EnableDisableBans(server, false).ConfigureAwait(false);
+            await _serverConfigRepository.EnableDisableBans(server, false) ;
         }
 
         public async Task EnableKicks(Guid server)
         {
-            await _serverConfigRepository.EnableDisableKicks(server, true).ConfigureAwait(false);
+            await _serverConfigRepository.EnableDisableKicks(server, true) ;
         }
 
         public async Task DisableKicks(Guid server)
         {
-            await _serverConfigRepository.EnableDisableKicks(server, false).ConfigureAwait(false);
+            await _serverConfigRepository.EnableDisableKicks(server, false) ;
         }
 
         public async Task EnableAutoModerator(Guid server)
         {
-            await _serverConfigRepository.EnableDisableAutoModerator(server, true).ConfigureAwait(false);
+            await _serverConfigRepository.EnableDisableAutoModerator(server, true) ;
         }
 
         public async Task DisableAutoModerator(Guid server)
         {
-            await _serverConfigRepository.EnableDisableAutoModerator(server, false).ConfigureAwait(false);
+            await _serverConfigRepository.EnableDisableAutoModerator(server, false) ;
         }
 
         public async Task EnableAutoPlay(Guid server)
         {
-            await _serverConfigRepository.EnableDisableAutoPlay(server, true).ConfigureAwait(false);
+            await _serverConfigRepository.EnableDisableAutoPlay(server, true) ;
         }
 
         public async Task DisableAutoPlay(Guid server)
         {
-            await _serverConfigRepository.EnableDisableAutoPlay(server, false).ConfigureAwait(false);
+            await _serverConfigRepository.EnableDisableAutoPlay(server, false) ;
             
         }
 
         public async Task<bool> IsAutoPlayEnable(Guid server)
         {
-            return await _serverConfigRepository.IsAutoPlayEnable(server).ConfigureAwait(false);
+            return await _serverConfigRepository.IsAutoPlayEnable(server) ;
         }
     }
 }

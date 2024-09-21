@@ -28,13 +28,15 @@ namespace Fafikv2.Configuration.BotConfig
             {
                 try
                 {
-                    T result= await task().ConfigureAwait(false);
+                    T result= await task() ;
                     tcs.SetResult(result);
                 }
                 catch (Exception ex)
                 {
                     
                     tcs.SetException(ex);
+                    Console.WriteLine(ex.Message);
+
                 }
             });
             _signal.Release();
@@ -43,7 +45,7 @@ namespace Fafikv2.Configuration.BotConfig
 
         public async Task<Func<Task>> DequeueAsync(CancellationToken cancellationToken)
         {
-            await _signal.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _signal.WaitAsync(cancellationToken) ;
             _taskQueue.TryDequeue(out var task);
             return task;
         }

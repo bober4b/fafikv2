@@ -17,17 +17,17 @@ namespace Fafikv2
                 .AddServices()
                 .BuildServiceProvider();
 
-            await InitializeDatabase(servicesProvider).ConfigureAwait(false);
+            await InitializeDatabase(servicesProvider);
 
             await new BotClient(servicesProvider)
-                    .Initialize().ConfigureAwait(false);
+                    .Initialize();
         }
         private static async Task InitializeDatabase(IServiceProvider servicesProvider)
         {
             using var scope = servicesProvider.CreateScope();
             var database = scope.ServiceProvider.GetRequiredService<DiscordBotDbContext>();
-            await database.Database.MigrateAsync().ConfigureAwait(false);
-            await Task.Delay(1000).ConfigureAwait(false);
+            await database.Database.MigrateAsync();
+            await Task.Delay(1000);
         }
     }
 }

@@ -26,7 +26,7 @@ namespace Fafikv2.Commands
                 Color = DiscordColor.Purple
             };
 
-            var message = await ctx.Channel.SendMessageAsync(embed).ConfigureAwait(false);
+            var message = await ctx.Channel.SendMessageAsync(embed) ;
             int j = 0;
             for (int i = 0; i <= 180; i++)
             {
@@ -38,12 +38,12 @@ namespace Fafikv2.Commands
                 string progressBar = CreateProgressBar(j, totalBars);
                 embed.Description = $"`[{progressBar}] {currentTime:mm\\:ss} / {duration:mm\\:ss}`";
 
-                await message.ModifyAsync(embed: new Optional<DiscordEmbed>(embed)).ConfigureAwait(false);
-                await Task.Delay(1000 ).ConfigureAwait(false); // Delay proportional to song duration
+                await message.ModifyAsync(embed: new Optional<DiscordEmbed>(embed)) ;
+                await Task.Delay(1000 ) ; // Delay proportional to song duration
             }
 
             embed.Description = "Piosenka zakończona!";
-            await message.ModifyAsync(embed: new Optional<DiscordEmbed>(embed)).ConfigureAwait(false);
+            await message.ModifyAsync(embed: new Optional<DiscordEmbed>(embed)) ;
         }
 
         private string CreateProgressBar(int progress, int total)
@@ -57,19 +57,19 @@ namespace Fafikv2.Commands
         [Command("benc")]
         public async Task Benc(CommandContext ctx, int benc1, int benc2)
         {
-            await ctx.Channel.SendMessageAsync($"elo benc:{benc1+benc2*3.14} benc elo").ConfigureAwait(false);
+            await ctx.Channel.SendMessageAsync($"elo benc:{benc1+benc2*3.14} benc elo") ;
         }
 
         [Command("stats")]
         public async Task Stats(CommandContext ctx)
         {
-            await BaseCommandService!.Stats(ctx).ConfigureAwait(false);
+            await BaseCommandService!.Stats(ctx) ;
         }
 
         [Command("leaderboard")]
         public async Task Leaderboard(CommandContext ctx)
         {
-            await BaseCommandService!.Leaderboard(ctx).ConfigureAwait(false);
+            await BaseCommandService!.Leaderboard(ctx) ;
         }
 
     }

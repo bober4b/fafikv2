@@ -33,7 +33,7 @@ namespace Fafikv2.Repositories
             
             return await _context
                 .Users
-                .FirstOrDefaultAsync(x => x.Id == userId).ConfigureAwait(false);
+                .FirstOrDefaultAsync(x => x.Id == userId) ;
             
         }
 
@@ -51,7 +51,7 @@ namespace Fafikv2.Repositories
                 property.SetValue(existingUser, property.GetValue(user));
             }
 
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            await _context.SaveChangesAsync() ;
         }
 
         public IEnumerable<User> GetAll()
@@ -62,7 +62,7 @@ namespace Fafikv2.Repositories
 
         public async Task SaveChangesAsync()
         {
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            await _context.SaveChangesAsync() ;
         }
     }
 }

@@ -26,8 +26,7 @@ namespace Fafikv2.Services.OtherServices
 
         public async Task AddToBase(LavalinkTrack track, CommandContext ctx)
         {
-            var genresArray = await _spotifyApiService.GetGenresOfTrack(ctx.Message.Content.Remove(0, 6))
-                .ConfigureAwait(false);
+            var genresArray = await _spotifyApiService.GetGenresOfTrack(ctx.Message.Content.Remove(0, 6));
             var genres = string.Join(", ", genresArray);
             var songId = Guid.NewGuid();
             var song = new Song
@@ -43,38 +42,40 @@ namespace Fafikv2.Services.OtherServices
             var song1 = song;
             var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
             {
-                var wasAddedBefore = await _songsService.Add(song1).ConfigureAwait(false);
+                var wasAddedBefore = await _songsService.Add(song1);
                 return wasAddedBefore;
-            }).ConfigureAwait(false);
+            });
 
-            if (result)
+            if (!result)
             {
                 var song2 = song;
                 song = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
                 {
-                    var result1 = await _songsService.Get(song2.Title, song2.Artist).ConfigureAwait(false);
+                    var result1 = await _songsService.Get(song2.Title, song2.Artist);
                     return result1;
-                }).ConfigureAwait(false);
+                }) ;
             }
 
 
-            var playedSong = new UserPlayedSong
-            {
-                Id = Guid.NewGuid(),
-                UserId = Guid.Parse($"{ctx.Message.Author.Id:X32}"),
-                SongId = songId,
-                Song = song
+             var playedSong = new UserPlayedSong
+             {
+                 Id = Guid.NewGuid(),
+                 UserId = Guid.Parse($"{ctx.Message.Author.Id:X32}"),
+                 SongId = songId,
+                 Song = song
 
-            };
+             };
 
             await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
             {
-                await _userPlayedSongsService.Add(playedSong).ConfigureAwait(false);
-            }).ConfigureAwait(false);
+                await _userPlayedSongsService.Add(playedSong) ;
+            }) ;
+            
 
-            await _spotifyApiService
+           /* await _spotifyApiService
                 .GetRecommendationsBasedOnInput(ctx.Message.Content.Remove(0, 6))
-                .ConfigureAwait(false);
+                 ;*/
+           
         }
 
         public async Task<LavalinkTrack> AutoPlay(LavalinkGuildConnection node, LavalinkTrack track)
@@ -86,10 +87,11 @@ namespace Fafikv2.Services.OtherServices
 
             if (spotifyRecommendationOrDatabase < 40) //do przebudowy, lepiej to będzie działać, jeżeli będzie pobierać piosenki w tym samym typie, a nie losowo
             {
-                return await AutoPlayFromDatabaseSongs(node,track).ConfigureAwait(false);
+                return await AutoPlayFromDatabaseSongs(node,track);
             }
 
-            return await AutoPlayFromSpotifyRecommendation(node, track).ConfigureAwait(false);
+            return await AutoPlayFromDatabaseSongs(node, track);
+            //return await AutoPlayFromSpotifyRecommendation(node, track);
 
 
 
@@ -101,9 +103,9 @@ namespace Fafikv2.Services.OtherServices
 
             return spotifyRecommendationOrDatabase switch
             {
-                < 2 => await AutoPlayFromDatabaseSongsByGenre(node, genre).ConfigureAwait(false),
-                >= 2 and < 4 => await AutoPlayFromSpotifyRecommendationByGenre(node, genre).ConfigureAwait(false),
-                >= 4 => await AutoPlayFromDatabaseSongsOnlyByGenre(node, genre).ConfigureAwait(false)
+                < 2 => await AutoPlayFromDatabaseSongsByGenre(node, genre),
+                >= 2 and < 4 => await AutoPlayFromSpotifyRecommendationByGenre(node, genre),
+                >= 4 => await AutoPlayFromDatabaseSongsOnlyByGenre(node, genre)
             };
         }
 
@@ -111,10 +113,22 @@ namespace Fafikv2.Services.OtherServices
             LavalinkTrack track)
         {
             var nextSongName =
-                await _spotifyApiService.GetRecommendationsBasedOnInput(track.Title).ConfigureAwait(false);
+                await _spotifyApiService.GetRecommendationsBasedOnInput(track.Title);
+
+            if (nextSongName.IsNullOrEmpty())
+            {
+                throw new InvalidOperationException("Brak rekomendacji z Spotify.");
+            }
 
             var nextSongResult =
-                await node.GetTracksAsync(nextSongName, LavalinkSearchType.SoundCloud).ConfigureAwait(false);
+                await node.GetTracksAsync(nextSongName, LavalinkSearchType.SoundCloud);
+
+            var recommendedTrack = nextSongResult.Tracks.FirstOrDefault();
+            if (recommendedTrack == null)
+            {
+                // Obsłuż sytuację, gdy nie znaleziono żadnych rekomendacji
+                throw new InvalidOperationException("Brak rekomendacji z Spotify.");
+            }
 
             return nextSongResult.Tracks.First();
         }
@@ -126,38 +140,49 @@ namespace Fafikv2.Services.OtherServices
 
             var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
             {
-                var genre=_spotifyApiService.GetGenresOfTrack(track.Title).Result.First();
+                string[] genresResult= _spotifyApiService.GetGenresOfTrack(track.Title).Result;
 
+                string genre = string.Join(", ", genresResult);
 
                 foreach (var user in membersInChannel)
                 {
                     if (user.IsBot) continue;
                     IEnumerable<Song> temporary;
-                    if(genre==null)
-                     temporary = await _songsService.GetSongsByUser(Guid.Parse($"{user.Id:X32}"))
-                        .ConfigureAwait(false);
+                    if(genre.Length==0)
+                     temporary = await _songsService.GetSongsByUser(Guid.Parse($"{user.Id:X32}"));
                     else
                     {
-                        temporary = await _songsService.GetSongsByGenreAndUser(genre, Guid.Parse($"{user.Id:X32}"))
-                            .ConfigureAwait(false);
+                        temporary = await _songsService.GetSongsByGenreAndUser(genre, Guid.Parse($"{user.Id:X32}"));
                     }
                     temporary = temporary.Randomize(5);
-                    songs.AddRange(temporary);
+                    if(!temporary.IsNullOrEmpty())
+                        songs.AddRange(temporary);
 
 
                 }
 
+                if (songs.Count == 0 && !string.IsNullOrEmpty(genre))
+                {
+                    songs.AddRange(await _songsService.GetSongByGenre(genre));
+                }
+
+                if (songs.Count == 0)
+                {
+                    var temporary = await _songsService.GetRandomSong();
+                    songs.Add(temporary);
+                }
+
                 return true;
-            }).ConfigureAwait(false);
+            });
 
             if (result)
             {
                 Console.WriteLine("SongsFound");
             }
 
-            var nextTrack = songs.Randomize(1).First();
+            var nextTrack = songs.Randomize(1).FirstOrDefault();
             Console.WriteLine(nextTrack.Title);
-            var nextSongResult = await node.GetTracksAsync(nextTrack.LinkUri).ConfigureAwait(false);
+            var nextSongResult = await node.GetTracksAsync(nextTrack.LinkUri);
 
             return nextSongResult.Tracks.First();
         }
@@ -166,14 +191,13 @@ namespace Fafikv2.Services.OtherServices
             string? genre) 
         {
             var nextSongName =
-                await _spotifyApiService.GetRecommendationBasenOnGenre(genre).ConfigureAwait(false);
+                await _spotifyApiService.GetRecommendationBasenOnGenre(genre);
 
 
             if (nextSongName.IsNullOrEmpty())
-                return await AutoPlayFromSpotifyRecommendation(node, node.CurrentState.CurrentTrack)
-                    .ConfigureAwait(false);
+                return await AutoPlayFromSpotifyRecommendation(node, node.CurrentState.CurrentTrack);
             var nextSongResult =
-                await node.GetTracksAsync(nextSongName, LavalinkSearchType.SoundCloud).ConfigureAwait(false);
+                await node.GetTracksAsync(nextSongName, LavalinkSearchType.SoundCloud);
 
             return nextSongResult.Tracks.First();
         }
@@ -191,8 +215,7 @@ namespace Fafikv2.Services.OtherServices
                 {
                     if (user.IsBot) continue;
 
-                    var temporary = await _songsService.GetSongsByGenreAndUser(genre,Guid.Parse($"{user.Id:X32}"))
-                        .ConfigureAwait(false);
+                    var temporary = await _songsService.GetSongsByGenreAndUser(genre,Guid.Parse($"{user.Id:X32}"));
                     temporary = temporary.Randomize(5);
                     songs.AddRange(temporary);
 
@@ -200,7 +223,7 @@ namespace Fafikv2.Services.OtherServices
                 }
 
                 return true;
-            }).ConfigureAwait(false);
+            });
 
             if (result)
             {
@@ -209,13 +232,13 @@ namespace Fafikv2.Services.OtherServices
 
             if (songs.Count == 0)
             {
-                return await AutoPlayFromSpotifyRecommendationByGenre(node, genre).ConfigureAwait(false);
+                return await AutoPlayFromSpotifyRecommendationByGenre(node, genre);
 
             }
 
             var nextTrack = songs.Randomize(1).First();
             Console.WriteLine(nextTrack.Title);
-            var nextSongResult = await node.GetTracksAsync(nextTrack.LinkUri).ConfigureAwait(false);
+            var nextSongResult = await node.GetTracksAsync(nextTrack.LinkUri);
 
             return nextSongResult.Tracks.First();
         }
@@ -227,13 +250,12 @@ namespace Fafikv2.Services.OtherServices
 
             var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
             {
-                var temporary = await _songsService.GetSongByGenre(genre)
-                    .ConfigureAwait(false);
+                var temporary = await _songsService.GetSongByGenre(genre);
                 temporary = temporary.Randomize(1);
                 songs.AddRange(temporary);
 
                 return true;
-            }).ConfigureAwait(false);
+            });
 
             if (result)
             {
@@ -242,13 +264,13 @@ namespace Fafikv2.Services.OtherServices
 
             if (songs.Count == 0)
             {
-                return await AutoPlayFromSpotifyRecommendationByGenre(node, genre).ConfigureAwait(false);
+                return await AutoPlayFromSpotifyRecommendationByGenre(node, genre);
                 
             }
 
             var nextTrack = songs.Randomize(1).First();
             Console.WriteLine(nextTrack.Title);
-            var nextSongResult = await node.GetTracksAsync(nextTrack.LinkUri).ConfigureAwait(false);
+            var nextSongResult = await node.GetTracksAsync(nextTrack.LinkUri);
 
             return nextSongResult.Tracks.First();
         }

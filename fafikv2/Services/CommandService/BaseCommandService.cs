@@ -29,16 +29,16 @@ namespace Fafikv2.Services.CommandService
                 {
 
 
-                    var user = await _userService.GetUser(Guid.Parse($"{ctx.User.Id:X32}")).ConfigureAwait(false);
+                    var user = await _userService.GetUser(Guid.Parse($"{ctx.User.Id:X32}")) ;
                     var userStats = await _userServerStatsService
                         .GetUserStats(Guid.Parse($"{ctx.User.Id:X32}"), Guid.Parse($"{ctx.Guild.Id:X32}"))
-                        .ConfigureAwait(false);
+                         ;
                     if (user != null && userStats != null)
                     {
-                        await ctx.RespondAsync(_levelSys.UserInfo(user, userStats)).ConfigureAwait(false);
+                        await ctx.RespondAsync(_levelSys.UserInfo(user, userStats)) ;
                         
                     }
-                }).ConfigureAwait(false);
+                }) ;
 
 
             }
@@ -50,17 +50,17 @@ namespace Fafikv2.Services.CommandService
             {
                 var serverUserStats = (await _userServerStatsService!
                     .GetUsersStatsByServer(Guid.Parse($"{ctx.Guild.Id:X32}"))
-                    .ConfigureAwait(false)).ToList();
+                     ).ToList();
 
                 if (serverUserStats.Count < 3)
                 {
-                    await ctx.RespondAsync("Na serwerze jest mniej niż 3 użytkowników.").ConfigureAwait(false);
+                    await ctx.RespondAsync("Na serwerze jest mniej niż 3 użytkowników.") ;
                     return;
                 }
 
                 var userStats = await _userServerStatsService
                     .GetUserStats(Guid.Parse($"{ctx.User.Id:X32}"), Guid.Parse($"{ctx.Guild.Id:X32}"))
-                    .ConfigureAwait(false);
+                     ;
 
                 var index = serverUserStats.FindIndex(x => x.Id == userStats?.Id);
 
@@ -71,9 +71,9 @@ namespace Fafikv2.Services.CommandService
                                  $"Twoja Pozycja: {index+1}\n" +
                                  $"{userStats?.DisplayName}: {userStats?.MessagesCountServer}"
                                  );
-               await ctx.RespondAsync(response).ConfigureAwait(false);
+               await ctx.RespondAsync(response) ;
 
-            }).ConfigureAwait(false);
+            }) ;
 
 
         }

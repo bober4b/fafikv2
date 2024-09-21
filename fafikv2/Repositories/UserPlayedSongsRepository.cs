@@ -27,11 +27,11 @@ namespace Fafikv2.Repositories
                 Console.WriteLine("Adding UserPlayedSong to the database.");
 
                 // Dodanie obiektu do kontekstu
-                await _context.UserPlayedSongs.AddAsync(userPlayedSong).ConfigureAwait(false);
+                await _context.UserPlayedSongs.AddAsync(userPlayedSong) ;
                 Console.WriteLine("UserPlayedSong added to the context.");
 
                 // Zapisanie zmian do bazy danych
-                await _context.SaveChangesAsync().ConfigureAwait(false);
+                await _context.SaveChangesAsync() ;
                 Console.WriteLine("Changes saved to the database.");
             }
             catch (Exception ex)
@@ -53,7 +53,7 @@ namespace Fafikv2.Repositories
         {
             var result=await _context.UserPlayedSongs
                 .AnyAsync(x=>x.Song.Title==userPlayedSong.Song.Title && x.Song.Artist ==userPlayedSong.Song.Artist &&x.User.Id==userPlayedSong.UserId)
-                .ConfigureAwait(false);
+                 ;
             return result;
         }
     }

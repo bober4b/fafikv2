@@ -23,10 +23,10 @@ namespace Fafikv2.Services.dbServices
             {
                 return;
             }
-            await _userRepository.AddUser(user).ConfigureAwait(false);
+            await _userRepository.AddUser(user) ;
             
 
-            await Task.CompletedTask.ConfigureAwait(false);
+            await Task.CompletedTask ;
         }
 
         public Task UpdateUser(User user)
@@ -36,13 +36,13 @@ namespace Fafikv2.Services.dbServices
 
         public async Task UpdateUserMessageCount(Guid userId)
         {
-            var user = await _userRepository.GetUserById(userId).ConfigureAwait(false) 
+            var user = await _userRepository.GetUserById(userId)  
                        ?? throw new InvalidOperationException("user not found");
 
             
             user.MessagesCountGlobal++;
 
-            await _userRepository.SaveChangesAsync().ConfigureAwait(false);
+            await _userRepository.SaveChangesAsync() ;
 
 
 
@@ -50,12 +50,12 @@ namespace Fafikv2.Services.dbServices
 
         public async Task UpdateUserBotInteractionsCount(Guid userId)
         {
-            var user = await _userRepository.GetUserById(userId).ConfigureAwait(false)
+            var user = await _userRepository.GetUserById(userId) 
                        ?? throw new InvalidOperationException("user not found");
 
             user.BotInteractionGlobal++;
 
-            await _userRepository.SaveChangesAsync().ConfigureAwait(false);
+            await _userRepository.SaveChangesAsync() ;
         }
 
         public Task<User?> GetUser(Guid userId)

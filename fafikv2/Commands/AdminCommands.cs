@@ -11,13 +11,13 @@ public class AdminCommands : BaseCommandModule
     [Command("banned")]
     public async Task Banned(CommandContext ctx, string bannedWord, int time=0)
     {
-        await AdminCommandService.AddBannedWord(ctx, bannedWord, time).ConfigureAwait(false);
+        await AdminCommandService.AddBannedWord(ctx, bannedWord, time) ;
     }
 
     [Command("rbanned")]
     public async Task RBanned(CommandContext ctx, string delbanned)
     {
-        await AdminCommandService.DelBannedWord(ctx, delbanned).ConfigureAwait(false);
+        await AdminCommandService.DelBannedWord(ctx, delbanned) ;
     }
 
     [Command("kick_enable")]

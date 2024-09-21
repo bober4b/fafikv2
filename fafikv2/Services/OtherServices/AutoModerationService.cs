@@ -32,14 +32,14 @@ namespace Fafikv2.Services.OtherServices
             {
                 var badWords = await _banWordsService
                     .GetAllByServer(Guid.Parse($"{message.Guild.Id:X32}"))
-                    .ConfigureAwait(false);
+                     ;
 
                 var bannedWordsEnumerable = badWords as BannedWords[] ?? badWords.ToArray();
 
                 return bannedWordsEnumerable
                     .Any(word => message.Message.Content
                         .Contains(word.BannedWord));
-            }).ConfigureAwait(false);
+            }) ;
 
             if (!result)
                 return new CheckMessagesResult
@@ -52,13 +52,13 @@ namespace Fafikv2.Services.OtherServices
             {
                 var badWords = await _banWordsService
                     .GetAllByServer(Guid.Parse($"{message.Guild.Id:X32}"))
-                    .ConfigureAwait(false);
+                     ;
 
                 var containWords = badWords
                     .Where(word => message.Message.Content.Contains(word.BannedWord));
 
                 return containWords;
-            }).ConfigureAwait(false);
+            }) ;
 
             return new CheckMessagesResult()
             {
@@ -74,21 +74,21 @@ namespace Fafikv2.Services.OtherServices
             {
                 var config = await _serverConfigService
                     .GetServerConfig(Guid.Parse($"{message.Guild.Id:X32}"))
-                    .ConfigureAwait(false);
+                     ;
 
 
                 return config.AutoModeratorEnabled;
-            }).ConfigureAwait(false);
+            }) ;
 
             if (!enable) return true;
-            var banned = await CheckMessagesAsync(message).ConfigureAwait(false);
+            var banned = await CheckMessagesAsync(message) ;
 
             if (!banned.Result) return true;
 
             if (banned.Words.All(x => x.Time != 0))
             {
                 var timeout = banned.Words.Max(x => x.Time);
-                await Timeout(message, timeout).ConfigureAwait(false);
+                await Timeout(message, timeout) ;
                 return false;
             }
 
@@ -98,28 +98,28 @@ namespace Fafikv2.Services.OtherServices
                 var user = await _userServerStatsService
                     .GetUserStats(Guid.Parse($"{message.Author.Id:X32}"),
                         Guid.Parse($"{message.Guild.Id:X32}"))
-                    .ConfigureAwait(false);
+                     ;
 
                 if (user == null) return false;
                 switch (user.Penalties)
                 {
                     case 0:
-                        await Warning(message).ConfigureAwait(false);
+                        await Warning(message) ;
                         break;
                     case 1:
-                        await Timeout(message, 1).ConfigureAwait(false);
+                        await Timeout(message, 1) ;
                         break;
                     case 2:
-                        await Timeout(message, 10).ConfigureAwait(false);
+                        await Timeout(message, 10) ;
                         break;
                     case 3:
-                        await Timeout(message, 60).ConfigureAwait(false);
+                        await Timeout(message, 60) ;
                         break;
                     case 4:
-                        await Kick(message).ConfigureAwait(false);
+                        await Kick(message) ;
                         break;
                     default:
-                        await TimeoutKickOrBan(message).ConfigureAwait(false);
+                        await TimeoutKickOrBan(message) ;
                         break;
 
                 }
@@ -127,22 +127,22 @@ namespace Fafikv2.Services.OtherServices
 
                 await _userServerStatsService
                     .AddPenalty(Guid.Parse($"{message.Author.Id:X32}"),
-                        Guid.Parse($"{message.Guild.Id:X32}")).ConfigureAwait(false);
+                        Guid.Parse($"{message.Guild.Id:X32}")) ;
 
                 return true;
-            }).ConfigureAwait(false);
+            }) ;
 
             return false;
         }
 
         private static async Task Warning(MessageCreateEventArgs message)
         {
-            await message.Message.DeleteAsync().ConfigureAwait(false);
+            await message.Message.DeleteAsync() ;
             await SendPrivateMessage(message.Guild,
                     message.Author,
                     "folguj się kolego, te słowo które napisałeś było zakazane, otrzymujesz pierwsze " +
                     "ostrzeżenie, ale kolejne złamanie regulaminu może mieć większe konsekwencje.")
-                .ConfigureAwait(false);
+                 ;
         }
 
         private static async Task Timeout(MessageCreateEventArgs message, int time)
@@ -152,62 +152,62 @@ namespace Fafikv2.Services.OtherServices
 
 
 
-            var member = await message.Guild.GetMemberAsync(message.Author.Id).ConfigureAwait(false);
+            var member = await message.Guild.GetMemberAsync(message.Author.Id) ;
 
 
 
-            //await member.TimeoutAsync(timeout).ConfigureAwait(false);
+            //await member.TimeoutAsync(timeout) ;
 
-            await message.Message.DeleteAsync().ConfigureAwait(false);
+            await message.Message.DeleteAsync() ;
             await SendPrivateMessage(message.Guild,
                     message.Author,
                     $"kolego, to twoje kolejne ostrzeżenie. tym razem idziesz na przerwę na {time} minut")
-                .ConfigureAwait(false);
+                 ;
         }
 
         private async Task Kick(MessageCreateEventArgs message)
         {
             var config = await _serverConfigService.GetServerConfig(Guid.Parse($"{message.Guild.Id:X32}"))
-                .ConfigureAwait(false);
+                 ;
             if (!config.KicksEnabled) return;
-            //var member = await message.Guild.GetMemberAsync(message.Author.Id).ConfigureAwait(false);
-            await message.Message.DeleteAsync().ConfigureAwait(false);
+            //var member = await message.Guild.GetMemberAsync(message.Author.Id) ;
+            await message.Message.DeleteAsync() ;
 
-            // await member.RemoveAsync().ConfigureAwait(false);
+            // await member.RemoveAsync() ;
 
             await SendPrivateMessage(message.Guild,
                     message.Author,
                     $"Pofolgowaliście sobie kolego?, " +
                     $"tym razem dostałeś tylko kick, dalej możecie dołączyć do serwera poprzez zaproszenie, " +
                     $"ale kolejne złamanie regulaminu może zakończyć się banicją, więc uważaj na przyszłości, bo pożegnamy się na dłużej. ")
-                .ConfigureAwait(false);
+                 ;
         }
 
         private static async Task Ban(MessageCreateEventArgs message)
         {
-            var member = await message.Guild.GetMemberAsync(message.Author.Id).ConfigureAwait(false);
-            await message.Message.DeleteAsync().ConfigureAwait(false);
+            var member = await message.Guild.GetMemberAsync(message.Author.Id) ;
+            await message.Message.DeleteAsync() ;
 
-            //await member.BanAsync().ConfigureAwait(false);
+            //await member.BanAsync() ;
 
             await SendPrivateMessage(message.Guild,
                     message.Author,
                     "Oj kolego, teraz to już przesadziłeś. Twoja ostatnia wiadomość zakończyła się banicją, teraz to masz problem," +
                     " proś o wybaczenie, ale nie wiem czy zda się to ci na wiele.  ")
-                .ConfigureAwait(false);
+                 ;
         }
 
         private async Task TimeoutKickOrBan(MessageCreateEventArgs message)
         {
             var config = await _serverConfigService.GetServerConfig(Guid.Parse($"{message.Guild.Id:X32}"))
-                .ConfigureAwait(false);
+                 ;
 
 
 
             var user = await _userServerStatsService
                 .GetUserStats(Guid.Parse($"{message.Author.Id:X32}"),
                     Guid.Parse($"{message.Guild.Id:X32}"))
-                .ConfigureAwait(false);
+                 ;
 
             var date = user?.LastPenaltyDate;
 
@@ -217,15 +217,15 @@ namespace Fafikv2.Services.OtherServices
             switch (difference.Value.TotalDays)
             {
                 case >= 5:
-                    await Timeout(message, 60).ConfigureAwait(false);
+                    await Timeout(message, 60) ;
                     return;
                 case >= 2:
                     if (config.KicksEnabled) return;
-                    await Kick(message).ConfigureAwait(false);
+                    await Kick(message) ;
                     return;
                 default:
                     if (config.BansEnabled) return;
-                    await Ban(message).ConfigureAwait(false);
+                    await Ban(message) ;
                     return;
 
             }
@@ -237,16 +237,16 @@ namespace Fafikv2.Services.OtherServices
         {
             var member = await guild
                 .GetMemberAsync(user.Id)
-                .ConfigureAwait(false);
+                 ;
 
             var dmChannel = await member
                 .CreateDmChannelAsync()
-                .ConfigureAwait(false);
+                 ;
 
 
             await dmChannel
                 .SendMessageAsync(message)
-                .ConfigureAwait(false);
+                 ;
         }
     }
 

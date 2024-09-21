@@ -14,38 +14,38 @@ namespace Fafikv2.Commands
         public async Task Join(CommandContext ctx, DiscordChannel? channel=null)
         {
 
-            await MusicService.JoinAsync(ctx, channel).ConfigureAwait(false);
+            await MusicService.JoinAsync(ctx, channel) ;
 
         }
 
         [Command]
         public async Task Leave(CommandContext ctx)
         {
-            await MusicService.LeaveAsync(ctx).ConfigureAwait(false);
+            await MusicService.LeaveAsync(ctx) ;
         }
 
         [Command]
         public async Task Play(CommandContext ctx, [RemainingText] string search)
         {
-            await MusicService.PlayAsync(ctx, search).ConfigureAwait(false);
+            await MusicService.PlayAsync(ctx, search) ;
         }
 
         [Command]
         public async Task Pause(CommandContext ctx)
         {
-            await MusicService.PauseAsync(ctx).ConfigureAwait(false);
+            await MusicService.PauseAsync(ctx) ;
         }
 
         [Command]
         public async Task Resume(CommandContext ctx)
         {
-            await MusicService.ResumeAsync(ctx).ConfigureAwait(false);
+            await MusicService.ResumeAsync(ctx) ;
         }
 
         [Command]
         public async Task Skip(CommandContext ctx)
         {
-            await MusicService.SkipAsync(ctx).ConfigureAwait(false);
+            await MusicService.SkipAsync(ctx) ;
         }
 
         [Command]
@@ -63,12 +63,12 @@ namespace Fafikv2.Commands
         [Command("AutoPlay")]
         public async Task AutoPlay(CommandContext ctx)
         {
-            await MusicService.StartAutoplay(ctx).ConfigureAwait(false);
+            await MusicService.StartAutoplay(ctx) ;
         }
         [Command("AutoPlayByGenre")]
         public async Task AutoPlayByGenre(CommandContext ctx, [RemainingText] string genre)
         {
-            await MusicService.StartAutoPlayByGenre(ctx,genre).ConfigureAwait(false);
+            await MusicService.StartAutoPlayByGenre(ctx,genre) ;
         }
     }
 }

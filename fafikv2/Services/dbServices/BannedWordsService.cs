@@ -15,13 +15,13 @@ public class BannedWordsService : IBannedWordsService
     public async Task<bool> Add(BannedWords bannedWords)
     {
         
-        return await _bannedWordsRepository.Add(bannedWords).ConfigureAwait(false);
+        return await _bannedWordsRepository.Add(bannedWords) ;
          
     }
 
     public async Task<bool> Remove(string bannedWords, Guid server)
     {
-        return await _bannedWordsRepository.Remove(bannedWords,server).ConfigureAwait(false);
+        return await _bannedWordsRepository.Remove(bannedWords,server) ;
         
     }
 

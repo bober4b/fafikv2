@@ -13,7 +13,7 @@ namespace Fafikv2.Configuration.ConfigJSON
         {
             using (StreamReader sr = new StreamReader("config.json"))
             {
-                var json = await sr.ReadToEndAsync().ConfigureAwait(false);
+                var json = await sr.ReadToEndAsync() ;
                 var data = JsonConvert.DeserializeObject<JsonStructure>(json);
 
                 Token = data.Token;

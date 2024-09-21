@@ -18,19 +18,19 @@ namespace Fafikv2.Services.dbServices
             if (userServerStats.ServerUsers != null)
             {
                 var newStats = await _userServerRepository.GetUserStatsByUserAndServerId(userServerStats.ServerUsers.UserId,
-                    userServerStats.ServerUsers.ServerId).ConfigureAwait(false);
+                    userServerStats.ServerUsers.ServerId) ;
                 
 
                 if (newStats != null)
                 {
                     return;
                 }
-                await _userServerRepository.AddUserServerStats(userServerStats).ConfigureAwait(false);
+                await _userServerRepository.AddUserServerStats(userServerStats) ;
             }
 
             
 
-            await Task.CompletedTask.ConfigureAwait(false);
+            await Task.CompletedTask ;
         }
 
         public Task UpdateUserServerStats(UserServerStats userServerStats)
@@ -40,57 +40,57 @@ namespace Fafikv2.Services.dbServices
 
         public async Task UpdateUserMessageServerCount(Guid userId, Guid serverId)
         {
-            var user = await _userServerRepository.GetUserStatsByUserAndServerId(userId, serverId).ConfigureAwait(false)
+            var user = await _userServerRepository.GetUserStatsByUserAndServerId(userId, serverId) 
                        ?? throw new InvalidOperationException("user not found");
             
 
             user.MessagesCountServer++;
 
-            await _userServerRepository.SaveChangesAsync().ConfigureAwait(false);
+            await _userServerRepository.SaveChangesAsync() ;
             Console.WriteLine(user.DisplayName + " stats: " + user.BotInteractionServer + " " + user.MessagesCountServer);
         }
 
         public async Task UpdateUserBotInteractionsServerCount(Guid userId, Guid serverId)
         {
-            var user = await _userServerRepository.GetUserStatsByUserAndServerId(userId, serverId).ConfigureAwait(false)
+            var user = await _userServerRepository.GetUserStatsByUserAndServerId(userId, serverId) 
                        ?? throw new InvalidOperationException("user not found");
 
             user.BotInteractionServer++;
 
-            await _userServerRepository.SaveChangesAsync().ConfigureAwait(false);
+            await _userServerRepository.SaveChangesAsync() ;
             Console.WriteLine(user.DisplayName+" stats: "+user.BotInteractionServer+" "+user.MessagesCountServer);
         }
 
         public async Task<UserServerStats?> GetUserStats(Guid userId, Guid serverId)
         {
-           return await _userServerRepository.GetUserStatsByUserAndServerId(userId, serverId).ConfigureAwait(false);
+           return await _userServerRepository.GetUserStatsByUserAndServerId(userId, serverId) ;
         }
 
         public async Task AddPenalty(Guid userId, Guid serverId)
         {
             var user = await _userServerRepository
                 .GetUserStatsByUserAndServerId(userId, serverId)
-                .ConfigureAwait(false);
+                 ;
             if (user != null)
             {
                 user.LastPenaltyDate = DateTime.Now;
                 user.Penalties++;
                 try
                 {
-                    await _userServerRepository.SaveChangesAsync().ConfigureAwait(false);
+                    await _userServerRepository.SaveChangesAsync() ;
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e.Message);
                     throw;
                 }
-                //await _userServerRepository.SaveChangesAsync().ConfigureAwait(false);
+                //await _userServerRepository.SaveChangesAsync() ;
             }
         }
 
         public async Task<IEnumerable<UserServerStats>> GetUsersStatsByServer(Guid serverId)
         {
-            return  await _userServerRepository.GetUsersStatsByServer(serverId).ConfigureAwait(false);
+            return  await _userServerRepository.GetUsersStatsByServer(serverId) ;
         }
     }
 }

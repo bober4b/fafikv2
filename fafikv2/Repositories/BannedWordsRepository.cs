@@ -22,7 +22,7 @@ public class BannedWordsRepository : IBannedWordsRepository
 
 
         _context.BannedWords.Add(bannedWords);
-        await _context.SaveChangesAsync().ConfigureAwait(false);
+        await _context.SaveChangesAsync() ;
         return true;
 
 
@@ -34,10 +34,10 @@ public class BannedWordsRepository : IBannedWordsRepository
             .Where(x => x.ServerId == server)
             .SelectMany(sc => sc.BannedWords)
             .FirstOrDefaultAsync(bw => bw.BannedWord == bannedWords)
-            .ConfigureAwait(false);
+             ;
         if (del == null) return false;
         _context.BannedWords.Remove(del);
-        await _context.SaveChangesAsync().ConfigureAwait(false);
+        await _context.SaveChangesAsync() ;
         return true;
 
     }

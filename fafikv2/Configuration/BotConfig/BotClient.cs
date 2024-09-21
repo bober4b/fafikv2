@@ -56,7 +56,7 @@ namespace Fafikv2.Configuration.BotConfig
         {
 
             var jsonReader = new JsonReader();
-            await jsonReader.ReadJson().ConfigureAwait(false);
+            await jsonReader.ReadJson() ;
 
 
             var discordConfig = new DiscordConfiguration()
@@ -112,16 +112,16 @@ namespace Fafikv2.Configuration.BotConfig
 
             var lavalink = Client.UseLavalink();
 
-            await Client.ConnectAsync().ConfigureAwait(false);
+            await Client.ConnectAsync() ;
 
-            await lavalink.ConnectAsync(lavalinkConfig).ConfigureAwait(false);
+            await lavalink.ConnectAsync(lavalinkConfig) ;
 
 
             _ = Task.Run(async () =>
             {
                 while (true)
                 {
-                    var task = await _databaseContextQueueService.DequeueDatabaseTask(CancellationToken.None).ConfigureAwait(false); 
+                    var task = await _databaseContextQueueService.DequeueDatabaseTask(CancellationToken.None) ; 
                     if (task != null)
                     {
 
@@ -131,13 +131,13 @@ namespace Fafikv2.Configuration.BotConfig
                     else
                     {
                         
-                        await Task.Delay(1000).ConfigureAwait(false);
+                        await Task.Delay(1000) ;
                     }
                 }
             });
 
 
-            await Task.Delay(-1).ConfigureAwait(false);
+            await Task.Delay(-1) ;
         }
 
         private static Task Client_UnknownEvent(DiscordClient sender, UnknownEventArgs args)
@@ -154,12 +154,12 @@ namespace Fafikv2.Configuration.BotConfig
 
         private async Task Client_GuildAvailable(DiscordClient sender, GuildCreateEventArgs args)
         {
-            var users = await args.Guild.GetAllMembersAsync().ConfigureAwait(false);
+            var users = await args.Guild.GetAllMembersAsync() ;
             var server =  args.Guild;
 
 
 
-            await (_databaseContextQueueService?.EnqueueDatabaseTask(async () => await UpdateDatabaseOnConnect(users, server).ConfigureAwait(false))!).ConfigureAwait(false);
+            await (_databaseContextQueueService?.EnqueueDatabaseTask(async () => await UpdateDatabaseOnConnect(users, server) )!) ;
 
 
 
@@ -182,8 +182,8 @@ namespace Fafikv2.Configuration.BotConfig
                 ConfigId = sConfig.Id
             };
             
-            await (_serverService?.AddServer(server1)!).ConfigureAwait(false);
-            await (_serverConfigService?.AddServerConfig(sConfig)!).ConfigureAwait(false);
+            await (_serverService?.AddServer(server1)!) ;
+            await (_serverConfigService?.AddServerConfig(sConfig)!) ;
             foreach (var user in users)
             {
                 if (user.IsBot) continue;
@@ -200,7 +200,7 @@ namespace Fafikv2.Configuration.BotConfig
                     UserLevel = 0
 
                 };
-                await (_userService?.AddUser(useradd)!).ConfigureAwait(false);
+                await (_userService?.AddUser(useradd)!) ;
                 Console.WriteLine($"dodano: {user.Username} {user.Id} {server.Name}");
                    
                     
@@ -227,10 +227,10 @@ namespace Fafikv2.Configuration.BotConfig
                     ServerUserId = serverUser.Id
                 };
 
-                await (_serverUsersService?.AddServerUsers(serverUser)!).ConfigureAwait(false);
+                await (_serverUsersService?.AddServerUsers(serverUser)!) ;
 
 
-                await (_userServerStatsService?.AddUserServerStats(userStats)!).ConfigureAwait(false);
+                await (_userServerStatsService?.AddUserServerStats(userStats)!) ;
             }
 
             
@@ -246,7 +246,7 @@ namespace Fafikv2.Configuration.BotConfig
             Console.WriteLine($"[{args.Message.CreationTimestamp}] {args.Message.Author.Username}: {args.Message.Content}");
             if(args.Channel.IsPrivate)return;
             if(args.Author.IsBot) return;
-            var result = _autoModerationService != null && await _autoModerationService.AutoModerator(args).ConfigureAwait(false);
+            var result = _autoModerationService != null && await _autoModerationService.AutoModerator(args) ;
             if(!result)return;
 
             await _databaseContextQueueService!.EnqueueDatabaseTask(async () =>
@@ -259,14 +259,14 @@ namespace Fafikv2.Configuration.BotConfig
                         var serverId = args.Guild.Id;
                         var sformatted = $"{serverId:X32}";
 
-                        await _userService!.UpdateUserBotInteractionsCount(Guid.Parse(formatted)).ConfigureAwait(false);
+                        await _userService!.UpdateUserBotInteractionsCount(Guid.Parse(formatted)) ;
                         await _userServerStatsService!
                             .UpdateUserMessageServerCount(Guid.Parse(formatted), Guid.Parse(sformatted))
-                            .ConfigureAwait(false);
+                             ;
 
-                        await _userService.UpdateUserMessageCount(Guid.Parse(formatted)).ConfigureAwait(false);
+                        await _userService.UpdateUserMessageCount(Guid.Parse(formatted)) ;
                         await _userServerStatsService.UpdateUserBotInteractionsServerCount(Guid.Parse(formatted),
-                            Guid.Parse(sformatted)).ConfigureAwait(false);
+                            Guid.Parse(sformatted)) ;
                      
                     }
                     else
@@ -276,14 +276,14 @@ namespace Fafikv2.Configuration.BotConfig
 
                         var serverId = args.Guild.Id;
                         var sformatted = $"{serverId:X32}";
-                        await _userService!.UpdateUserMessageCount(Guid.Parse(formatted)).ConfigureAwait(false);
+                        await _userService!.UpdateUserMessageCount(Guid.Parse(formatted)) ;
 
                         await _userServerStatsService!
                             .UpdateUserMessageServerCount(Guid.Parse(formatted), Guid.Parse(sformatted))
-                            .ConfigureAwait(false);
+                             ;
                     }
 
-                }).ConfigureAwait(false);
+                }) ;
             
             
 

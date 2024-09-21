@@ -2,6 +2,7 @@
 using System.Text.Json;
 using Fafikv2.Configuration.ConfigJSON;
 using Fafikv2.Services.OtherServices.Interfaces;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Fafikv2.Services.OtherServices
 {
@@ -34,10 +35,10 @@ namespace Fafikv2.Services.OtherServices
                 Content = new StringContent("grant_type=client_credentials", Encoding.UTF8, "application/x-www-form-urlencoded")
             };
 
-            var response = await client.SendAsync(request).ConfigureAwait(false);
+            var response = await client.SendAsync(request);
             response.EnsureSuccessStatusCode();
 
-            var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var responseBody = await response.Content.ReadAsStringAsync();
             var responseJson = JsonDocument.Parse(responseBody);
             return responseJson.RootElement.GetProperty("access_token").GetString();
         }
@@ -51,10 +52,10 @@ namespace Fafikv2.Services.OtherServices
             var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
-            var response = await client.GetAsync(builder.Uri).ConfigureAwait(false);
+            var response = await client.GetAsync(builder.Uri);
             response.EnsureSuccessStatusCode();
 
-            var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var responseBody = await response.Content.ReadAsStringAsync();
             return JsonDocument.Parse(responseBody);
         }
 
@@ -64,10 +65,10 @@ namespace Fafikv2.Services.OtherServices
             var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
-            var response = await client.GetAsync(url).ConfigureAwait(false);
+            var response = await client.GetAsync(url);
             response.EnsureSuccessStatusCode();
 
-            var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var responseBody = await response.Content.ReadAsStringAsync();
             return JsonDocument.Parse(responseBody);
         }
 
@@ -77,10 +78,10 @@ namespace Fafikv2.Services.OtherServices
             var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
-            var response = await client.GetAsync(url).ConfigureAwait(false);
+            var response = await client.GetAsync(url);
             response.EnsureSuccessStatusCode();
 
-            var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var responseBody = await response.Content.ReadAsStringAsync();
             return JsonDocument.Parse(responseBody);
         }
 
@@ -90,16 +91,16 @@ namespace Fafikv2.Services.OtherServices
             var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
-            var response = await client.GetAsync(url).ConfigureAwait(false);
+            var response = await client.GetAsync(url);
             response.EnsureSuccessStatusCode();
 
-            var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var responseBody = await response.Content.ReadAsStringAsync();
             return JsonDocument.Parse(responseBody);
         }
 
         public async Task<string?[]> GetGenresOfTrack(string query)
         {
-            var accessToken = await GetAccessToken().ConfigureAwait(false);
+            var accessToken = await GetAccessToken();
             JsonDocument searchResult;
 
             if (_converter.ContainsPolishChars(query)) query=_converter.ReplacePolishChars(query);
@@ -113,7 +114,7 @@ namespace Fafikv2.Services.OtherServices
 
             try
             {
-                searchResult = await SearchTrack(query, accessToken).ConfigureAwait(false);
+                searchResult = await SearchTrack(query, accessToken);
             }
             catch (Exception ex)
             {
@@ -150,7 +151,7 @@ namespace Fafikv2.Services.OtherServices
             JsonDocument trackDetails;
             try
             {
-                trackDetails = await GetTrackDetails(trackId, accessToken).ConfigureAwait(false);
+                trackDetails = await GetTrackDetails(trackId, accessToken);
             }
             catch (Exception ex)
             {
@@ -175,7 +176,7 @@ namespace Fafikv2.Services.OtherServices
             JsonDocument artistDetails;
             try
             {
-                artistDetails = await GetArtistDetails(artistId, accessToken).ConfigureAwait(false);
+                artistDetails = await GetArtistDetails(artistId, accessToken);
             }
             catch (Exception ex)
             {
@@ -203,7 +204,7 @@ namespace Fafikv2.Services.OtherServices
             string? accessToken;
             try
             {
-                accessToken = await GetAccessToken().ConfigureAwait(false);
+                accessToken = await GetAccessToken();
             }
             catch (Exception ex)
             {
@@ -216,7 +217,7 @@ namespace Fafikv2.Services.OtherServices
                 try
                 {
                     var genre = userInput[(userInput.IndexOf(":", StringComparison.Ordinal) + 1)..].Trim();
-                    var recommendations = await GetRecommendations(string.Empty, string.Empty, genre, accessToken).ConfigureAwait(false);
+                    var recommendations = await GetRecommendations(string.Empty, string.Empty, genre, accessToken);
                     return ExtractTrackDetails(recommendations);
                 }
                 catch (HttpRequestException httpEx)
@@ -238,7 +239,7 @@ namespace Fafikv2.Services.OtherServices
 
             try
             {
-                var searchResult = await SearchTrack(userInput, accessToken).ConfigureAwait(false);
+                var searchResult = await SearchTrack(userInput, accessToken);
 
                 if (searchResult.RootElement.GetProperty("tracks").GetProperty("items").GetArrayLength() == 0)
                 {
@@ -251,18 +252,17 @@ namespace Fafikv2.Services.OtherServices
                     .GetProperty("id")
                     .GetString();
 
-                var trackDetails = await GetTrackDetails(trackId, accessToken).ConfigureAwait(false);
+                var trackDetails = await GetTrackDetails(trackId, accessToken);
                 var artistId = trackDetails.RootElement
                     .GetProperty("artists")[0]
                     .GetProperty("id")
                     .GetString();
 
-                var recommendations = await GetRecommendations(trackId!, artistId!, string.Empty, accessToken).ConfigureAwait(false);
+                var recommendations = await GetRecommendations(trackId!, artistId!, string.Empty, accessToken);
                 return ExtractTrackDetails(recommendations);
             }
             catch (HttpRequestException httpEx)
-            {
-                Console.WriteLine($"HTTP request error: {httpEx.Message}");
+            { Console.WriteLine($"HTTP request error: {httpEx.Message}");
                 return "Błąd podczas wykonywania żądania HTTP.";
             }
             catch (JsonException jsonEx)
@@ -282,7 +282,7 @@ namespace Fafikv2.Services.OtherServices
             string? accessToken;
             try
             {
-                accessToken = await GetAccessToken().ConfigureAwait(false);
+                accessToken = await GetAccessToken();
             }
             catch (Exception ex)
             {
@@ -293,13 +293,16 @@ namespace Fafikv2.Services.OtherServices
             try
             {
                 var genre = userInput.Trim(' '); // Użycie całego inputu jako nazwy gatunku
-                var recommendations = await GetRecommendations(string.Empty, string.Empty, genre, accessToken).ConfigureAwait(false);
+                var recommendations = await GetRecommendations(string.Empty, string.Empty, genre, accessToken);
                 return ExtractTrackDetails(recommendations);
             }
             catch (HttpRequestException httpEx)
             {
                 Console.WriteLine($"HTTP request error: {httpEx.Message}");
+
+
                 return "Błąd podczas wykonywania żądania HTTP.";
+
             }
             catch (JsonException jsonEx)
             {

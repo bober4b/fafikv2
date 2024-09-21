@@ -25,27 +25,27 @@ namespace Fafikv2.Services.CommandService
         {
             try
             {
-                var songId = await GetSongId(_apiKey, title, artist).ConfigureAwait(false);
+                var songId = await GetSongId(_apiKey, title, artist) ;
                 if (!string.IsNullOrEmpty(songId))
                 {
-                    var lyrics = await GetLyrics(_apiKey, songId).ConfigureAwait(false);
+                    var lyrics = await GetLyrics(_apiKey, songId) ;
                     if (lyrics is { Length: >= 2000 })
                     {
                         var chunks = Enumerable.Range(0, (int)Math.Ceiling((double)lyrics.Length / 2000))
                             .Select(i => lyrics.Substring(i * 2000, Math.Min(2000, lyrics.Length - i * 2000)));
                         foreach (var partial in chunks )
                         {
-                            await ctx.RespondAsync(partial).ConfigureAwait(false);
+                            await ctx.RespondAsync(partial) ;
                         }
                     }
                     else
                     {
-                        if (lyrics != null) await ctx.RespondAsync(lyrics).ConfigureAwait(false);
+                        if (lyrics != null) await ctx.RespondAsync(lyrics) ;
                     }
                 }
                 else
                 {
-                    await ctx.RespondAsync("Nie znaleziono piosenki.").ConfigureAwait(false);
+                    await ctx.RespondAsync("Nie znaleziono piosenki.") ;
                     Console.WriteLine("Nie znaleziono piosenki.");
                 }
             }
@@ -60,14 +60,14 @@ namespace Fafikv2.Services.CommandService
             Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
             var url = $"https://api.genius.com/search?q={Uri.EscapeDataString(songTitle + " " + artist)}";
-            var response = await Client.GetAsync(url).ConfigureAwait(false);
+            var response = await Client.GetAsync(url) ;
 
             if (!response.IsSuccessStatusCode)
             {
                 throw new Exception($"Błąd HTTP: {response.StatusCode}");
             }
 
-            var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var responseBody = await response.Content.ReadAsStringAsync() ;
             var json = JObject.Parse(responseBody);
             var song = json["response"]?["hits"]?.First?["result"];
 
@@ -79,33 +79,33 @@ namespace Fafikv2.Services.CommandService
             Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
             var url = $"https://api.genius.com/songs/{songId}";
-            var response = await Client.GetAsync(url).ConfigureAwait(false);
+            var response = await Client.GetAsync(url) ;
 
             if (!response.IsSuccessStatusCode)
             {
                 throw new Exception($"Błąd HTTP: {response.StatusCode}");
             }
 
-            var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var responseBody = await response.Content.ReadAsStringAsync() ;
             var json = JObject.Parse(responseBody);
             var lyricsPath = json["response"]?["song"]?["path"]?.ToString();
 
             if (string.IsNullOrEmpty(lyricsPath)) return null;
             var lyricsUrl = "https://genius.com" + lyricsPath;
-            return await GetLyricsFromPage(lyricsUrl).ConfigureAwait(false);
+            return await GetLyricsFromPage(lyricsUrl) ;
 
         }
 
         private static async Task<string?> GetLyricsFromPage(string url)
         {
-            var response = await Client.GetAsync(url).ConfigureAwait(false);
+            var response = await Client.GetAsync(url) ;
 
             if (!response.IsSuccessStatusCode)
             {
                 throw new Exception($"Błąd HTTP: {response.StatusCode}");
             }
 
-            var pageContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var pageContent = await response.Content.ReadAsStringAsync() ;
             var htmlDoc = new HtmlDocument();
             htmlDoc.LoadHtml(pageContent);
 

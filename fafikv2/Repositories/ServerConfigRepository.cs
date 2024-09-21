@@ -50,13 +50,13 @@ namespace Fafikv2.Repositories
         {
             var config = await _context.ServerConfigs
                 .FirstOrDefaultAsync(x => x.ServerId == server)
-                .ConfigureAwait(false);
+                 ;
             if (config != null)
             {
                 config.BansEnabled=enableDisable;
                 try
                 {
-                    await _context.SaveChangesAsync().ConfigureAwait(false);
+                    await _context.SaveChangesAsync() ;
                 }
                 catch (Exception ex)
                 {
@@ -69,13 +69,13 @@ namespace Fafikv2.Repositories
         {
             var config = await _context.ServerConfigs
                 .FirstOrDefaultAsync(x => x.ServerId == server)
-                .ConfigureAwait(false);
+                 ;
             if (config != null)
             {
                 config.KicksEnabled = enableDisable;
                 try
                 {
-                    await _context.SaveChangesAsync().ConfigureAwait(false);
+                    await _context.SaveChangesAsync() ;
                 }
                 catch (Exception ex)
                 {
@@ -88,13 +88,13 @@ namespace Fafikv2.Repositories
         {
             var config = await _context.ServerConfigs
                 .FirstOrDefaultAsync(x => x.ServerId == server)
-                .ConfigureAwait(false);
+                 ;
             if (config != null)
             {
                 config.AutoModeratorEnabled = enableDisable;
                 try
                 {
-                    await _context.SaveChangesAsync().ConfigureAwait(false);
+                    await _context.SaveChangesAsync() ;
                 }
                 catch (Exception ex)
                 {
@@ -107,13 +107,13 @@ namespace Fafikv2.Repositories
         {
             var config = await _context.ServerConfigs
                 .FirstOrDefaultAsync(x => x.ServerId == server)
-                .ConfigureAwait(false);
+                 ;
             if (config != null)
             {
                 config.AutoplayEnabled = enableDisable;
                 try
                 {
-                    await _context.SaveChangesAsync().ConfigureAwait(false);
+                    await _context.SaveChangesAsync() ;
                 }
                 catch (Exception ex)
                 {
@@ -126,7 +126,7 @@ namespace Fafikv2.Repositories
         {
             var result = await _context.ServerConfigs
                 .FirstOrDefaultAsync(x => x.ServerId == server)
-                .ConfigureAwait(false);
+                 ;
             return result is { AutoplayEnabled: true };
         }
     }

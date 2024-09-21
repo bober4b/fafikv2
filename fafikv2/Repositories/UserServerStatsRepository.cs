@@ -33,7 +33,7 @@ namespace Fafikv2.Repositories
         public async Task UpdateUserServerStats(UserServerStats userServerStats)
         {
             _context.ServerUsersStats.Update(userServerStats);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            await _context.SaveChangesAsync() ;
         }
 
         public Task DeleteUserServerStats(UserServerStats userServerStats)
@@ -73,13 +73,13 @@ namespace Fafikv2.Repositories
             var result = await _context.ServerUsersStats
                 .Where(uss => serverUsers.Any(su => su.Id == uss.ServerUserId))
                 .OrderByDescending(stats=> stats.MessagesCountServer)
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync() ;
             return result;
         }
 
         public async Task SaveChangesAsync()
         {
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            await _context.SaveChangesAsync() ;
         }
 
         
