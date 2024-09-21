@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using Fafikv2.Data.DataContext;
+﻿using Fafikv2.Data.DataContext;
 using Fafikv2.Data.Models;
 using Fafikv2.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -60,10 +59,27 @@ namespace Fafikv2.Repositories
 
         }
 
-        public Task<IEnumerable<Song>> GetSongByGenre(string? genre)
+        public async Task<IEnumerable<Song>> GetSongByGenre(string? genre)
         {
-            var result =  _context.Songs.Where(x => x.Genres.Contains(genre) );
-            return Task.FromResult(result.AsEnumerable());
+            if (string.IsNullOrEmpty(genre))
+            {
+                return Enumerable.Empty<Song>();
+            }
+
+            // Surowe zapytanie SQL
+            var query = @"
+                        SELECT s.*
+                        FROM UserPlayedSongs ups
+                        JOIN Songs s ON ups.SongId = s.Id
+                        CROSS APPLY STRING_SPLIT(s.Genres, ',') AS genre_split
+                        WHERE LTRIM(RTRIM(genre_split.value)) = {1}"
+            ;
+
+            var result = await _context.Songs
+                .FromSqlRaw(query, genre)
+                .ToListAsync();
+
+            return result;
         }
 
         public async Task<IEnumerable<Song?>> GetSongsByGenreAndUser(string? genre, Guid userId)
@@ -106,9 +122,9 @@ namespace Fafikv2.Repositories
             return Task.FromResult(result.AsEnumerable());
         }
 
-        public async Task<IEnumerable<Song>> GetAll()
+        public async Task<IEnumerable<Song>?> GetAll()
         {
-            return  _context.Songs;
+            return Task.FromResult(_context.Songs) as IEnumerable<Song>;
         }
     }
 }
