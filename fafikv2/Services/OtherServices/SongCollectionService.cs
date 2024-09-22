@@ -78,7 +78,7 @@ namespace Fafikv2.Services.OtherServices
            
         }
 
-        public async Task<LavalinkTrack> AutoPlay(LavalinkGuildConnection node, LavalinkTrack track)
+        public async Task<LavalinkTrack?> AutoPlay(LavalinkGuildConnection node, LavalinkTrack track)
         {
 
             var random = new Random();
@@ -90,13 +90,12 @@ namespace Fafikv2.Services.OtherServices
                 return await AutoPlayFromDatabaseSongs(node,track);
             }
 
-            return await AutoPlayFromDatabaseSongs(node, track);
-            //return await AutoPlayFromSpotifyRecommendation(node, track);
+            return await AutoPlayFromSpotifyRecommendation(node, track);
 
 
 
         }
-        public async Task<LavalinkTrack> AutoPlayByGenre(LavalinkGuildConnection node, string? genre)
+        public async Task<LavalinkTrack?> AutoPlayByGenre(LavalinkGuildConnection node, string? genre)
         {
             var random = new Random();
             var spotifyRecommendationOrDatabase = random.Next(0, 6);
@@ -109,28 +108,41 @@ namespace Fafikv2.Services.OtherServices
             };
         }
 
-        private async Task<LavalinkTrack> AutoPlayFromSpotifyRecommendation(LavalinkGuildConnection node,
+        private async Task<LavalinkTrack?> AutoPlayFromSpotifyRecommendation(LavalinkGuildConnection node,
             LavalinkTrack track)
         {
-            var nextSongName =
+            var searchQuery =
                 await _spotifyApiService.GetRecommendationsBasedOnInput(track.Title);
 
-            if (nextSongName.IsNullOrEmpty())
+            if (searchQuery.IsNullOrEmpty())
             {
                 throw new InvalidOperationException("Brak rekomendacji z Spotify.");
             }
 
-            var nextSongResult =
-                await node.GetTracksAsync(nextSongName, LavalinkSearchType.SoundCloud);
+            LavalinkLoadResult nextSongResult = new LavalinkLoadResult();
 
-            var recommendedTrack = nextSongResult.Tracks.FirstOrDefault();
+            LavalinkTrack recommendedTrack = new LavalinkTrack();
+
+            int i = 0;
+            foreach (var nextSong in searchQuery)
+            {
+                nextSongResult = await node.GetTracksAsync(nextSong, LavalinkSearchType.SoundCloud);
+
+                recommendedTrack = nextSongResult.Tracks.FirstOrDefault();
+                i++;
+
+                
+                
+            }
+            Console.WriteLine("Wpadło za " + i + " razem");
+            //var recommendedTrack = nextSongResult.Tracks.FirstOrDefault();
             if (recommendedTrack == null)
             {
                 // Obsłuż sytuację, gdy nie znaleziono żadnych rekomendacji
                 throw new InvalidOperationException("Brak rekomendacji z Spotify.");
             }
 
-            return nextSongResult.Tracks.First();
+            return nextSongResult.Tracks.FirstOrDefault();
         }
         private async Task<LavalinkTrack> AutoPlayFromDatabaseSongs(LavalinkGuildConnection node, LavalinkTrack track)
         {
@@ -161,9 +173,9 @@ namespace Fafikv2.Services.OtherServices
 
                 }
 
-                if (songs.Count == 0 && !string.IsNullOrEmpty(genre))
+                if (!string.IsNullOrEmpty(genre))
                 {
-                    songs.AddRange(await _songsService.GetSongByGenre(genre));
+                    songs.AddRange((await _songsService.GetSongByGenre(genre)).Randomize(2));
                 }
 
                 if (songs.Count == 0)
@@ -187,22 +199,39 @@ namespace Fafikv2.Services.OtherServices
             return nextSongResult.Tracks.First();
         }
 
-        private async Task<LavalinkTrack> AutoPlayFromSpotifyRecommendationByGenre(LavalinkGuildConnection node,
+        private async Task<LavalinkTrack?> AutoPlayFromSpotifyRecommendationByGenre(LavalinkGuildConnection node,
             string? genre) 
         {
-            var nextSongName =
+            var searchQuery =
                 await _spotifyApiService.GetRecommendationBasenOnGenre(genre);
 
 
-            if (nextSongName.IsNullOrEmpty())
-                return await AutoPlayFromSpotifyRecommendation(node, node.CurrentState.CurrentTrack);
-            var nextSongResult =
-                await node.GetTracksAsync(nextSongName, LavalinkSearchType.SoundCloud);
+            LavalinkLoadResult nextSongResult = new LavalinkLoadResult();
 
-            return nextSongResult.Tracks.First();
+            LavalinkTrack recommendedTrack = new LavalinkTrack();
+
+
+            foreach (var nextSong in searchQuery)
+            {
+                nextSongResult = await node.GetTracksAsync(nextSong, LavalinkSearchType.SoundCloud);
+
+                recommendedTrack = nextSongResult.Tracks.FirstOrDefault();
+
+                if (recommendedTrack != null) break;
+
+            }
+
+            //var recommendedTrack = nextSongResult.Tracks.FirstOrDefault();
+            if (recommendedTrack == null)
+            {
+                // Obsłuż sytuację, gdy nie znaleziono żadnych rekomendacji
+                throw new InvalidOperationException("Brak rekomendacji z Spotify.");
+            }
+
+            return nextSongResult.Tracks.FirstOrDefault();
         }
 
-        private async Task<LavalinkTrack> AutoPlayFromDatabaseSongsByGenre(LavalinkGuildConnection node,string? genre)
+        private async Task<LavalinkTrack?> AutoPlayFromDatabaseSongsByGenre(LavalinkGuildConnection node,string? genre)
         {
             var voiceChannel = node.Channel;
             var membersInChannel = voiceChannel.Users;
@@ -243,7 +272,7 @@ namespace Fafikv2.Services.OtherServices
             return nextSongResult.Tracks.First();
         }
 
-        private async Task<LavalinkTrack> AutoPlayFromDatabaseSongsOnlyByGenre(LavalinkGuildConnection node, string? genre)
+        private async Task<LavalinkTrack?> AutoPlayFromDatabaseSongsOnlyByGenre(LavalinkGuildConnection node, string? genre)
         {
             
             List<Song> songs = new();

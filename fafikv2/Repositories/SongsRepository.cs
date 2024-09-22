@@ -67,13 +67,20 @@ namespace Fafikv2.Repositories
             }
 
             // Surowe zapytanie SQL
-            var query = @"
-                        SELECT s.*
+            var genres = genre.Split(',')
+                .Select(g => g.Trim())
+                .ToArray(); // Ensure array of genres
+
+            // Convert genres into a SQL-friendly format for `IN` clause
+            var genreParameter = string.Join(",", genres.Select(g => $"'{g}'")); // SQL injection safe, as genres are known to be strings
+
+            // Optimized query that matches any genre in the list
+            var query = $@"
+                        SELECT DISTINCT  s.*
                         FROM UserPlayedSongs ups
                         JOIN Songs s ON ups.SongId = s.Id
                         CROSS APPLY STRING_SPLIT(s.Genres, ',') AS genre_split
-                        WHERE LTRIM(RTRIM(genre_split.value)) = {1}"
-            ;
+                        WHERE LTRIM(RTRIM(genre_split.value)) IN ({genreParameter})";
 
             var result = await _context.Songs
                 .FromSqlRaw(query, genre)
@@ -124,7 +131,7 @@ namespace Fafikv2.Repositories
 
         public async Task<IEnumerable<Song>?> GetAll()
         {
-            return Task.FromResult(_context.Songs) as IEnumerable<Song>;
+            return _context.Songs;
         }
     }
 }

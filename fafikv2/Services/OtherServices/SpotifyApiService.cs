@@ -199,7 +199,7 @@ namespace Fafikv2.Services.OtherServices
             return result;
         }
 
-        public async Task<string> GetRecommendationsBasedOnInput(string userInput)
+        public async Task<List<string>> GetRecommendationsBasedOnInput(string userInput)
         {
             string? accessToken;
             try
@@ -209,7 +209,7 @@ namespace Fafikv2.Services.OtherServices
             catch (Exception ex)
             {
                 Console.WriteLine($"Error obtaining access token: {ex.Message}");
-                return "Error obtaining access token.";
+                return new List<string>();
             }
 
             if (userInput.ToLower().Contains("gatunek:"))
@@ -223,17 +223,17 @@ namespace Fafikv2.Services.OtherServices
                 catch (HttpRequestException httpEx)
                 {
                     Console.WriteLine($"HTTP request error: {httpEx.Message}");
-                    return "Błąd podczas wykonywania żądania HTTP.";
+                    return new List<string>();
                 }
                 catch (JsonException jsonEx)
                 {
                     Console.WriteLine($"JSON parsing error: {jsonEx.Message}");
-                    return "Błąd podczas przetwarzania danych JSON.";
+                    return new List<string>();
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Unexpected error: {ex.Message}");
-                    return "Wystąpił nieoczekiwany błąd.";
+                    return new List<string>();
                 }
             }
 
@@ -243,7 +243,7 @@ namespace Fafikv2.Services.OtherServices
 
                 if (searchResult.RootElement.GetProperty("tracks").GetProperty("items").GetArrayLength() == 0)
                 {
-                    return "Nie znaleziono utworów pasujących do zapytania.";
+                    return new List<string>();
                 }
 
                 var trackId = searchResult.RootElement
@@ -263,21 +263,21 @@ namespace Fafikv2.Services.OtherServices
             }
             catch (HttpRequestException httpEx)
             { Console.WriteLine($"HTTP request error: {httpEx.Message}");
-                return "Błąd podczas wykonywania żądania HTTP.";
+                return new List<string>();
             }
             catch (JsonException jsonEx)
             {
                 Console.WriteLine($"JSON parsing error: {jsonEx.Message}");
-                return "Błąd podczas przetwarzania danych JSON.";
+                return new List<string>();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Unexpected error: {ex.Message}");
-                return "Wystąpił nieoczekiwany błąd.";
+                return new List<string>();
             }
         }
 
-        public async Task<string> GetRecommendationBasenOnGenre(string? userInput)
+        public async Task<List<string>> GetRecommendationBasenOnGenre(string? userInput)
         {
             string? accessToken;
             try
@@ -287,7 +287,7 @@ namespace Fafikv2.Services.OtherServices
             catch (Exception ex)
             {
                 Console.WriteLine($"Error obtaining access token: {ex.Message}");
-                return "Error obtaining access token.";
+                return new List<string>();
             }
 
             try
@@ -301,31 +301,29 @@ namespace Fafikv2.Services.OtherServices
                 Console.WriteLine($"HTTP request error: {httpEx.Message}");
 
 
-                return "Błąd podczas wykonywania żądania HTTP.";
+                return new List<string>();
 
             }
             catch (JsonException jsonEx)
             {
                 Console.WriteLine($"JSON parsing error: {jsonEx.Message}");
-                return "Błąd podczas przetwarzania danych JSON.";
+                return new List<string>();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Unexpected error: {ex.Message}");
-                return "Wystąpił nieoczekiwany błąd.";
+                return new List<string>();
             }
         }
 
-        private static string ExtractTrackDetails(JsonDocument recommendations)
+        private static List<string> ExtractTrackDetails(JsonDocument recommendations)
         {
             var tracks = recommendations.RootElement.GetProperty("tracks").EnumerateArray();
-            var firstTrack = tracks.FirstOrDefault(); // Pobierz pierwszy element lub null, jeśli lista jest pusta
 
-            if (firstTrack.ValueKind == JsonValueKind.Undefined) return string.Empty;
-
-            var title = firstTrack.GetProperty("name").GetString();
-            var artist = firstTrack.GetProperty("artists")[0].GetProperty("name").GetString();
-            return $"{artist} - {title}";
+            return (from track in tracks.Take(10) 
+                let title = track.GetProperty("name").GetString() 
+                let artist = track.GetProperty("artists")[0].GetProperty("name").GetString() 
+                select $"{artist} - {title}").ToList();
 
         }
     }
