@@ -175,8 +175,19 @@ namespace Fafikv2.Services.OtherServices
 
                 if (songs.Count == 0)
                 {
-                    var temporary = await _songsService.GetRandomSong();
-                    if (temporary != null) songs.Add(temporary);
+                    while (true)
+                    {
+                        var temporary = await _songsService.GetRandomSong();
+
+                        
+
+                        if (temporary == null)  continue;
+
+                        if (node.GetTracksAsync(temporary.LinkUri) == null) continue;
+                        songs.Add(temporary);
+                        break;
+
+                    }
                 }
 
                 return true;
@@ -191,7 +202,7 @@ namespace Fafikv2.Services.OtherServices
             Console.WriteLine(nextTrack?.Title);
             var nextSongResult = await node.GetTracksAsync(nextTrack?.LinkUri);
 
-            return nextSongResult.Tracks.First();
+            return nextSongResult.Tracks.FirstOrDefault();
         }
 
         private async Task<LavalinkTrack?> AutoPlayFromSpotifyRecommendationByGenre(LavalinkGuildConnection node,

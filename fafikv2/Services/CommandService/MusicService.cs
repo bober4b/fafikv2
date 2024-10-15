@@ -14,17 +14,17 @@ namespace Fafikv2.Services.CommandService
 {
     public class MusicService
     {
-        private readonly ISongCollectionService? _songCollectionService;
-        private readonly IServerConfigService? _serverConfigService;
-        private readonly IDatabaseContextQueueService? _databaseContextQueueService;
+        private readonly ISongCollectionService _songCollectionService;
+        private readonly IServerConfigService _serverConfigService;
+        private readonly IDatabaseContextQueueService _databaseContextQueueService;
         private readonly Dictionary<ulong, SongServiceDictionary> _songServiceDictionaries = new();
 
 
         public MusicService(IServiceProvider servicesProvider)
         {
-            _songCollectionService = servicesProvider.GetService<ISongCollectionService>();
-            _serverConfigService = servicesProvider.GetService<IServerConfigService>();
-            _databaseContextQueueService = servicesProvider.GetService<IDatabaseContextQueueService>();
+            _songCollectionService = servicesProvider.GetService<ISongCollectionService>() ?? throw new InvalidOperationException();
+            _serverConfigService = servicesProvider.GetService<IServerConfigService>() ?? throw new InvalidOperationException();
+            _databaseContextQueueService = servicesProvider.GetService<IDatabaseContextQueueService>() ?? throw new InvalidOperationException();
         }
 
 
@@ -123,26 +123,24 @@ namespace Fafikv2.Services.CommandService
 
                 if (dictionary.AutoPlayOn && dictionary.Queue.Count == 0 && !dictionary.Genre.IsNullOrEmpty())
                 {
-                    if (_songCollectionService != null)
-                    {
-                        var autoNextTrack = await _songCollectionService.AutoPlayByGenre(node, dictionary.Genre);
-                        await node.PlayAsync(autoNextTrack);
-                        nextTrackMessage = $"Next track: {autoNextTrack?.Title}";
-                        if (autoNextTrack != null) dictionary.Queue.Add(autoNextTrack);
-                    }
+                    
+                    var autoNextTrack = await _songCollectionService.AutoPlayByGenre(node, dictionary.Genre);
+                    await node.PlayAsync(autoNextTrack);
+                    nextTrackMessage = $"Next track: {autoNextTrack?.Title}";
+                    if (autoNextTrack != null) dictionary.Queue.Add(autoNextTrack);
+                    
                 }
                 else if (dictionary.AutoPlayOn && dictionary.Queue.Count == 0)
                 {
-                    if (_songCollectionService != null )
+                    
+                    var autoNextTrack = await _songCollectionService.AutoPlay(node, finishedTrack);
+                    await node.PlayAsync(autoNextTrack);
+                    if (autoNextTrack != null)
                     {
-                        var autoNextTrack = await _songCollectionService.AutoPlay(node, finishedTrack);
-                        await node.PlayAsync(autoNextTrack);
-                        if (autoNextTrack != null)
-                        {
-                            nextTrackMessage = $"Next track: {autoNextTrack.Title}";
-                            dictionary.Queue.Add(autoNextTrack);
-                        }
+                        nextTrackMessage = $"Next track: {autoNextTrack.Title}";
+                        dictionary.Queue.Add(autoNextTrack);
                     }
+                    
                 }
 
                 var finishedTrackMessage = $"Finished playing: {finishedTrack.Title}";
@@ -282,15 +280,14 @@ namespace Fafikv2.Services.CommandService
                     }
                 }
 
-                if (_songCollectionService != null)
-                    try
-                    {
-                        await _songCollectionService.AddToBase(track, ctx);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e.Message);
-                    }
+                try
+                {
+                    await _songCollectionService.AddToBase(track, ctx);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
             });
         }
 
@@ -334,10 +331,10 @@ namespace Fafikv2.Services.CommandService
         {
             if (!string.IsNullOrEmpty(dictionary.Genre))
             {
-                return await _songCollectionService!.AutoPlayByGenre(conn, dictionary.Genre);
+                return await _songCollectionService.AutoPlayByGenre(conn, dictionary.Genre);
             }
 
-            return await _songCollectionService!.AutoPlay(conn, finishedTrack);
+            return await _songCollectionService.AutoPlay(conn, finishedTrack);
         }
 
         public static async Task PauseAsync(CommandContext ctx)
@@ -470,18 +467,12 @@ namespace Fafikv2.Services.CommandService
 
         private async Task<bool> IsAutoplayEnabled(CommandContext ctx)
         {
-            var result = await (_databaseContextQueueService?.EnqueueDatabaseTask(async () =>
-                _serverConfigService != null && await _serverConfigService.IsAutoPlayEnable(Guid.Parse($"{ctx.Guild.Id:X32}")))!);
+            var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
+                await _serverConfigService.IsAutoPlayEnable(Guid.Parse($"{ctx.Guild.Id:X32}")));
 
-            if (!result)
-            {
-                await ctx.RespondAsync("Auto Play is disabled on this server.");
-                return false;
-            }
-
-            if (await IsConnected(ctx) == null) return false;
-
-            return true;
+            if (result) return await IsConnected(ctx) != null;
+            await ctx.RespondAsync("Auto Play is disabled on this server.");
+            return false;
 
         }
         private static async Task<LavalinkGuildConnection?> IsConnected(CommandContext ctx)
