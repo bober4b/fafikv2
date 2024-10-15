@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 
 namespace Fafikv2.Services.OtherServices
 {
     public class PolishLettersConverter
     {
-        private static readonly Dictionary<char, char> PolishToEnglishMap = new Dictionary<char, char>
+        private static readonly Dictionary<char, char> PolishToEnglishMap = new()
         {
             { 'ą', 'a' }, { 'ć', 'c' }, { 'ę', 'e' }, { 'ł', 'l' }, { 'ń', 'n' },
             { 'ó', 'o' }, { 'ś', 's' }, { 'ź', 'z' }, { 'ż', 'z' },
@@ -18,12 +14,12 @@ namespace Fafikv2.Services.OtherServices
 
 
 
-        public bool ContainsPolishChars(string input)
+        public static bool ContainsPolishChars(string input)
         {
             return input.Any(c => PolishToEnglishMap.ContainsKey(c));
         }
 
-        public string ReplacePolishChars(string input)
+        public static string ReplacePolishChars(string input)
         {
             var sb = new StringBuilder(input.Length);
             foreach (var c in input)

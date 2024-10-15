@@ -57,14 +57,14 @@ namespace Fafikv2.Services.OtherServices
             }
 
 
-             var playedSong = new UserPlayedSong
-             {
-                 Id = Guid.NewGuid(),
-                 UserId = Guid.Parse($"{ctx.Message.Author.Id:X32}"),
-                 SongId = songId,
-                 Song = song
+            var playedSong = new UserPlayedSong
+            {
+                Id = Guid.NewGuid(),
+                UserId = Guid.Parse($"{ctx.Message.Author.Id:X32}"),
+                SongId = songId,
+                Song = song
 
-             };
+            };
 
             await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
             {
@@ -91,9 +91,6 @@ namespace Fafikv2.Services.OtherServices
             }
 
             return await AutoPlayFromSpotifyRecommendation(node, track);
-
-
-
         }
         public async Task<LavalinkTrack?> AutoPlayByGenre(LavalinkGuildConnection node, string? genre)
         {

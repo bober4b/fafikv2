@@ -5,7 +5,8 @@ namespace Fafikv2.Commands
 {
     public class AdditionalMusicCommands : BaseCommandModule
     {
-        public static AdditionalMusicService AdditionalMusicService;
+        public static AdditionalMusicService Service { get; set; } = null!;
+
         [Command("lyric")]
         public async Task Lyric(CommandContext ctx, [RemainingText] string titleAndArtist)
         {
@@ -14,7 +15,7 @@ namespace Fafikv2.Commands
                 var standardisation = titleAndArtist.Split('|');
                 if (standardisation.Length == 2)
                 {
-                    await AdditionalMusicService.FindLyric(ctx, standardisation[0], standardisation[1]) ;
+                    await Service.FindLyric(ctx, standardisation[0], standardisation[1]) ;
                     return;
                 }
             }
@@ -24,7 +25,7 @@ namespace Fafikv2.Commands
 
         [Command("Help")]
 
-        public async Task Help(CommandContext ctx)
+        public Task Help(CommandContext ctx)
         {
             ctx.RespondAsync(
                 "lyric-słowa piosenki" +
@@ -33,11 +34,11 @@ namespace Fafikv2.Commands
                 "\r\nkick_enable- Włącz kicki na serwerze" +
                 "\r\nkick_disable- wyłącz kicki na serwerze" +
                 "\r\nban_enable- włącz bany na serwerze" +
-                "\r\nban_disabled- wyłacz bany na serwerze" +
+                "\r\nban_disabled- wyłącz bany na serwerze" +
                 "\r\nauto_moderator_enable-włącz automatycznego moderatora" +
                 "\r\nauto_moderator_disable- wyłącz automatycznego moderatora" +
-                "\r\nauto_play_enable- włącz autokolejkę na serwerze" +
-                "\r\nauto_play_disable- wyłącz autokolejkę na serwerze" +
+                "\r\nauto_play_enable- włącz auto kolejkę na serwerze" +
+                "\r\nauto_play_disable- wyłącz auto kolejkę na serwerze" +
                 "\r\nstats- wyświetl swoje statystyki" +
                 "\r\nleaderboard- pokarz top 3 osoby na serwerze" +
                 "\r\nJoin: Dołącza do wybranego kanału." +
@@ -50,6 +51,7 @@ namespace Fafikv2.Commands
                 "\r\nVolume: Ustawia głośność odtwarzania." +
                 "\r\nAutoPlay: Automatycznie odtwarza muzykę." +
                 "\r\nAutoPlayByGenre: Automatyczne odtwarzanie według gatunku.");
+            return Task.CompletedTask;
         }
     }
 }

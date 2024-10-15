@@ -7,14 +7,14 @@ namespace Fafikv2.Commands
 {
     public class MusicCommands : BaseCommandModule
     {
-        public static MusicService? MusicService;
-        
+        public static MusicService Service { get; set; } = null!;
+
 
         [Command]
         public async Task Join(CommandContext ctx, DiscordChannel? channel=null)
         {
 
-            await MusicService.JoinAsync(ctx, channel) ;
+            await Service.JoinAsync(ctx, channel) ;
 
         }
 
@@ -27,7 +27,7 @@ namespace Fafikv2.Commands
         [Command]
         public async Task Play(CommandContext ctx, [RemainingText] string search)
         {
-            await MusicService.PlayAsync(ctx, search) ;
+            await Service.PlayAsync(ctx, search) ;
         }
 
         [Command]
@@ -45,13 +45,13 @@ namespace Fafikv2.Commands
         [Command]
         public async Task Skip(CommandContext ctx)
         {
-            await MusicService.SkipAsync(ctx) ;
+            await Service.SkipAsync(ctx) ;
         }
 
         [Command]
         public async Task Queue(CommandContext ctx)
         {
-            await MusicService.QueueAsync(ctx);
+            await Service.QueueAsync(ctx);
         }
 
         [Command]
@@ -63,12 +63,12 @@ namespace Fafikv2.Commands
         [Command("AutoPlay")]
         public async Task AutoPlay(CommandContext ctx)
         {
-            await MusicService.StartAutoplay(ctx) ;
+            await Service.StartAutoplay(ctx) ;
         }
         [Command("AutoPlayByGenre")]
         public async Task AutoPlayByGenre(CommandContext ctx, [RemainingText] string genre)
         {
-            await MusicService.StartAutoPlayByGenre(ctx,genre) ;
+            await Service.StartAutoPlayByGenre(ctx,genre) ;
         }
     }
 }

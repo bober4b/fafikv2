@@ -37,7 +37,7 @@ namespace Fafikv2.Services.OtherServices
                 var bannedWordsEnumerable = badWords as BannedWords[] ?? badWords.ToArray();
 
                 return bannedWordsEnumerable
-                    .Any(word => message.Message.Content
+                    .Any(word => word.BannedWord != null && message.Message.Content
                         .Contains(word.BannedWord));
             }) ;
 
@@ -55,7 +55,7 @@ namespace Fafikv2.Services.OtherServices
                      ;
 
                 var containWords = badWords
-                    .Where(word => message.Message.Content.Contains(word.BannedWord));
+                    .Where(word => word.BannedWord != null && message.Message.Content.Contains(word.BannedWord));
 
                 return containWords;
             }) ;
@@ -77,7 +77,7 @@ namespace Fafikv2.Services.OtherServices
                      ;
 
 
-                return config.AutoModeratorEnabled;
+                return config is { AutoModeratorEnabled: true };
             }) ;
 
             if (!enable) return true;
@@ -169,7 +169,7 @@ namespace Fafikv2.Services.OtherServices
         {
             var config = await _serverConfigService.GetServerConfig(Guid.Parse($"{message.Guild.Id:X32}"))
                  ;
-            if (!config.KicksEnabled) return;
+            if (config is { KicksEnabled: false }) return;
             //var member = await message.Guild.GetMemberAsync(message.Author.Id) ;
             await message.Message.DeleteAsync() ;
 
@@ -220,11 +220,11 @@ namespace Fafikv2.Services.OtherServices
                     await Timeout(message, 60) ;
                     return;
                 case >= 2:
-                    if (config.KicksEnabled) return;
+                    if (config is { KicksEnabled: true }) return;
                     await Kick(message) ;
                     return;
                 default:
-                    if (config.BansEnabled) return;
+                    if (config is { BansEnabled: true }) return;
                     await Ban(message) ;
                     return;
 

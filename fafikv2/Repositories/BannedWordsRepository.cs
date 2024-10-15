@@ -16,7 +16,7 @@ public class BannedWordsRepository : IBannedWordsRepository
     public async Task<bool> Add(BannedWords bannedWords)
     {
         var result= _context.BannedWords
-            .Any(x => x.ServerConfigId == bannedWords.ServerConfig.Id && x.BannedWord == bannedWords.BannedWord);
+            .Any(x => bannedWords.ServerConfig != null && x.ServerConfigId == bannedWords.ServerConfig.Id && x.BannedWord == bannedWords.BannedWord);
 
         if (result) return false;
 
@@ -32,7 +32,7 @@ public class BannedWordsRepository : IBannedWordsRepository
     {
         var del = await _context.ServerConfigs
             .Where(x => x.ServerId == server)
-            .SelectMany(sc => sc.BannedWords)
+            .SelectMany(sc => sc.BannedWords!)
             .FirstOrDefaultAsync(bw => bw.BannedWord == bannedWords)
              ;
         if (del == null) return false;
@@ -46,7 +46,7 @@ public class BannedWordsRepository : IBannedWordsRepository
     {
         var result = _context.ServerConfigs
             .Where(x => x.ServerId == server)
-            .SelectMany(x => x.BannedWords);
+            .SelectMany(x => x.BannedWords!);
         return result.AsEnumerable();
     }
 }

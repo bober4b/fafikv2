@@ -34,8 +34,7 @@ public class AdminCommandService
                 };
 
                 var result=await _bannedWordsService
-                    .Add(bannedWords)
-                     ;
+                    .Add(bannedWords);
                 return result;
 
             }) ;

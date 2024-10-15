@@ -47,7 +47,7 @@ namespace Fafikv2.Configuration.BotConfig
         {
             await _signal.WaitAsync(cancellationToken) ;
             _taskQueue.TryDequeue(out var task);
-            return task;
+            return task!;
         }
 
         public void FuncNumberInQueue()

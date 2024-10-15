@@ -23,7 +23,7 @@ namespace Fafikv2.Repositories
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.InnerException.Message+ " xDDDDDDDD21312DDDDDDDDD");
+                throw new Exception("Error AddServerUser" + ex.Message);
             }
             //_context.SaveChanges();
 

@@ -39,13 +39,13 @@ namespace Fafikv2.Services.dbServices
             throw new NotImplementedException();
         }
 
-        public async Task<ServerConfig?> GetServerConfig(Guid server)
+        public Task<ServerConfig?> GetServerConfig(Guid server)
         {
             var result= _serverConfigRepository
                 .GetAll()
                 .FirstOrDefault(x => x.ServerId == server);
 
-            return result;
+            return Task.FromResult(result);
         }
 
         public async Task EnableBans(Guid server)

@@ -23,7 +23,7 @@ namespace Fafikv2.Services.dbServices
             {
                 return;
             }
-            _serverRepository.AddServer(server);
+            await _serverRepository.AddServer(server).ConfigureAwait(false);
 
             await Task.CompletedTask;
 

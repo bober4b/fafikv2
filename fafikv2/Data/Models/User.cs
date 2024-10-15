@@ -1,4 +1,6 @@
-﻿namespace Fafikv2.Data.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Fafikv2.Data.Models
 {
     public class User
     {
@@ -8,6 +10,7 @@
 
         //DiscordData
         public Guid Id { get; set; }
+        [MaxLength(32)]
         public string? Name { get; set; }
         
 

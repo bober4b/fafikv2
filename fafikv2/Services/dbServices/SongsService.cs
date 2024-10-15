@@ -40,14 +40,14 @@ namespace Fafikv2.Services.dbServices
 
         public async Task<IEnumerable<Song>> GetSongsByGenreAndUser(string? genre, Guid userId)
         {
-            var result = await _songsRepository.GetSongsByGenreAndUser(genre, userId) ;
+            IEnumerable<Song> result = (await _songsRepository.GetSongsByGenreAndUser(genre, userId))! ;
             return result ;
         }
 
         public async Task<IEnumerable<Song>> GetSongsByUser(Guid userId)
         {
             var result = await _songsRepository.GetSongsByUser(userId) ;
-            return result ;
+            return result! ;
         }
 
         public async Task<Song?> GetRandomSong()
@@ -55,7 +55,7 @@ namespace Fafikv2.Services.dbServices
             var result = await _songsRepository.GetAll();
 
 
-            return result.Randomize(1).FirstOrDefault();
+            return result!.Randomize(1).FirstOrDefault();
         }
     }
 }

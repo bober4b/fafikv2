@@ -127,19 +127,21 @@ namespace Fafikv2.Services.CommandService
                     {
                         var autoNextTrack = await _songCollectionService.AutoPlayByGenre(node, dictionary.Genre);
                         await node.PlayAsync(autoNextTrack);
-                        nextTrackMessage = $"Next track: {autoNextTrack.Title}";
-                        dictionary.Queue.Add(autoNextTrack);
-
+                        nextTrackMessage = $"Next track: {autoNextTrack?.Title}";
+                        if (autoNextTrack != null) dictionary.Queue.Add(autoNextTrack);
                     }
                 }
                 else if (dictionary.AutoPlayOn && dictionary.Queue.Count == 0)
                 {
-                    if (_songCollectionService != null)
+                    if (_songCollectionService != null )
                     {
                         var autoNextTrack = await _songCollectionService.AutoPlay(node, finishedTrack);
                         await node.PlayAsync(autoNextTrack);
-                        nextTrackMessage = $"Next track: {autoNextTrack.Title}";
-                        dictionary.Queue.Add(autoNextTrack);
+                        if (autoNextTrack != null)
+                        {
+                            nextTrackMessage = $"Next track: {autoNextTrack.Title}";
+                            dictionary.Queue.Add(autoNextTrack);
+                        }
                     }
                 }
 
@@ -256,7 +258,7 @@ namespace Fafikv2.Services.CommandService
                 }
 
 
-                if (dictionary.Queue.Count == 0)
+                if (dictionary is { Queue.Count: 0 })
                 {
                     await PlayTrack(ctx, conn, track);
                     dictionary.Queue.Add(track);
@@ -266,16 +268,18 @@ namespace Fafikv2.Services.CommandService
                 }
                 else
                 {
-
-                    var timeLeft = TimeSpan.FromMilliseconds(dictionary.Queue.Sum(timeSpan => timeSpan.Length.TotalMilliseconds));
-                    Console.WriteLine($"{track.Title}");
-                    dictionary.Queue.Add(track);
+                    if (dictionary?.Queue != null)
+                    {
+                        var timeLeft = TimeSpan.FromMilliseconds(dictionary.Queue.Sum(timeSpan => timeSpan.Length.TotalMilliseconds));
+                        Console.WriteLine($"{track.Title}");
+                        dictionary.Queue.Add(track);
 
 
                    
 
-                    await ctx.RespondAsync(
+                        await ctx.RespondAsync(
                             $"Utwór {track.Title} zostanie odtworzony za: {timeLeft.Minutes}:{timeLeft.Seconds:D2}.");
+                    }
                 }
 
                 if (_songCollectionService != null)

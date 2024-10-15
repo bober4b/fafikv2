@@ -25,17 +25,17 @@ public class BannedWordsService : IBannedWordsService
         
     }
 
-    public async Task<bool> IsBanned(string bannedWord, Guid server)
+    public Task<bool> IsBanned(string bannedWord, Guid server)
     {
         var res= _bannedWordsRepository.GetBannedWordsByServer(server).FirstOrDefault(x=>x.BannedWord==bannedWord);
         
-        return res != null;
+        return Task.FromResult(res != null);
         
     }
 
-    public async Task<IEnumerable<BannedWords>> GetAllByServer(Guid server)
+    public Task<IEnumerable<BannedWords>> GetAllByServer(Guid server)
     {
        var result= _bannedWordsRepository.GetBannedWordsByServer(server);
-       return result;
+       return Task.FromResult(result);
     }
 }

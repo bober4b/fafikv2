@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
-using Fafikv2.Data.DataContext;
+﻿using Fafikv2.Data.DataContext;
 using Fafikv2.Data.Models;
 using Fafikv2.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -52,8 +46,7 @@ namespace Fafikv2.Repositories
         public async Task<bool> HasBeenAdded(UserPlayedSong userPlayedSong)
         {
             var result=await _context.UserPlayedSongs
-                .AnyAsync(x=>x.Song.Title==userPlayedSong.Song.Title && x.Song.Artist ==userPlayedSong.Song.Artist &&x.User.Id==userPlayedSong.UserId)
-                 ;
+                .AnyAsync(x=>x.User != null && userPlayedSong.Song != null && x.Song != null && x.Song.Title==userPlayedSong.Song.Title && x.Song.Artist ==userPlayedSong.Song.Artist && x.User.Id==userPlayedSong.UserId);
             return result;
         }
     }

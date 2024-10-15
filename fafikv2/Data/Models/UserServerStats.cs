@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualBasic;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Fafikv2.Data.Models
 {
@@ -15,6 +15,7 @@ namespace Fafikv2.Data.Models
         public int BotInteractionServer { get; set; }
 
         //server info
+        [MaxLength(32)]
         public string? DisplayName { get; set; }
 
         //server strikes

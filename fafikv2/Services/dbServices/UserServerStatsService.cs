@@ -69,23 +69,19 @@ namespace Fafikv2.Services.dbServices
         public async Task AddPenalty(Guid userId, Guid serverId)
         {
             var user = await _userServerRepository
-                .GetUserStatsByUserAndServerId(userId, serverId)
-                 ;
-            if (user != null)
+                .GetUserStatsByUserAndServerId(userId, serverId);
+            user.LastPenaltyDate = DateTime.Now;
+            user.Penalties++;
+            try
             {
-                user.LastPenaltyDate = DateTime.Now;
-                user.Penalties++;
-                try
-                {
-                    await _userServerRepository.SaveChangesAsync() ;
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.Message);
-                    throw;
-                }
-                //await _userServerRepository.SaveChangesAsync() ;
+                await _userServerRepository.SaveChangesAsync() ;
             }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                throw;
+            }
+            //await _userServerRepository.SaveChangesAsync() ;
         }
 
         public async Task<IEnumerable<UserServerStats>> GetUsersStatsByServer(Guid serverId)

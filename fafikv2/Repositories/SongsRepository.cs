@@ -129,9 +129,9 @@ namespace Fafikv2.Repositories
             return Task.FromResult(result.AsEnumerable());
         }
 
-        public async Task<IEnumerable<Song>?> GetAll()
+        public Task<IEnumerable<Song>?> GetAll()
         {
-            return _context.Songs;
+            return Task.FromResult<IEnumerable<Song>?>(_context.Songs);
         }
     }
 }

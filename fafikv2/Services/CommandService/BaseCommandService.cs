@@ -9,8 +9,8 @@ namespace Fafikv2.Services.CommandService
 {
     public class BaseCommandService
     {
-        private readonly IUserService? _userService;
-        private readonly IUserServerStatsService? _userServerStatsService;
+        private readonly IUserService _userService;
+        private readonly IUserServerStatsService _userServerStatsService;
         private readonly LevelSys _levelSys;
         private readonly IDatabaseContextQueueService _databaseContextQueueService;
         public BaseCommandService(IServiceProvider serviceProvider)
@@ -18,37 +18,32 @@ namespace Fafikv2.Services.CommandService
             _userService = serviceProvider.GetRequiredService<IUserService>();
             _userServerStatsService = serviceProvider.GetRequiredService<IUserServerStatsService>();
             _databaseContextQueueService = serviceProvider.GetRequiredService<IDatabaseContextQueueService>();
-            _levelSys = new();
+            _levelSys = new LevelSys();
         }
 
         public async Task Stats(CommandContext ctx)
         {
-            if (_userService != null && _userServerStatsService != null)
+            await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
             {
-                await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
-                {
 
 
-                    var user = await _userService.GetUser(Guid.Parse($"{ctx.User.Id:X32}")) ;
-                    var userStats = await _userServerStatsService
+                var user = await _userService.GetUser(Guid.Parse($"{ctx.User.Id:X32}")) ;
+                var userStats = await _userServerStatsService
                         .GetUserStats(Guid.Parse($"{ctx.User.Id:X32}"), Guid.Parse($"{ctx.Guild.Id:X32}"))
-                         ;
-                    if (user != null && userStats != null)
-                    {
-                        await ctx.RespondAsync(_levelSys.UserInfo(user, userStats)) ;
+                    ;
+                if (user != null && userStats != null)
+                {
+                    await ctx.RespondAsync(_levelSys.UserInfo(user, userStats)) ;
                         
-                    }
-                }) ;
-
-
-            }
+                }
+            }) ;
         }
 
         public async Task Leaderboard(CommandContext ctx)
         {
             await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
             {
-                var serverUserStats = (await _userServerStatsService!
+                var serverUserStats = (await _userServerStatsService
                     .GetUsersStatsByServer(Guid.Parse($"{ctx.Guild.Id:X32}"))
                      ).ToList();
 

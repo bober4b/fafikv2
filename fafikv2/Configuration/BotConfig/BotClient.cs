@@ -20,13 +20,13 @@ namespace Fafikv2.Configuration.BotConfig
         private static DiscordClient? Client { get; set; }
         private static CommandsNextExtension? Commands { get; set; }
 
-        private readonly IUserService? _userService;
-        private readonly IServerService? _serverService;
-        private readonly IServerUsersService? _serverUsersService;
-        private readonly IServerConfigService? _serverConfigService;
-        private readonly IUserServerStatsService? _userServerStatsService;
-        private readonly IDatabaseContextQueueService? _databaseContextQueueService;
-        private readonly IAutoModerationService? _autoModerationService;
+        private readonly IUserService _userService;
+        private readonly IServerService _serverService;
+        private readonly IServerUsersService _serverUsersService;
+        private readonly IServerConfigService _serverConfigService;
+        private readonly IUserServerStatsService _userServerStatsService;
+        private readonly IDatabaseContextQueueService _databaseContextQueueService;
+        private readonly IAutoModerationService _autoModerationService;
         private readonly ServiceProvider _serviceProvider;
 
 
@@ -37,13 +37,13 @@ namespace Fafikv2.Configuration.BotConfig
         {
             
             
-            _userService = servicesProvider.GetRequiredService(typeof(IUserService)) as IUserService;
-            _serverService = servicesProvider.GetRequiredService(typeof(IServerService)) as IServerService;
-            _serverUsersService = servicesProvider.GetRequiredService(typeof(IServerUsersService)) as IServerUsersService;
-            _serverConfigService = servicesProvider.GetRequiredService(typeof(IServerConfigService)) as IServerConfigService; 
-            _userServerStatsService=servicesProvider.GetRequiredService(typeof(IUserServerStatsService)) as IUserServerStatsService;
-            _databaseContextQueueService = servicesProvider.GetRequiredService(typeof(IDatabaseContextQueueService)) as IDatabaseContextQueueService;
-            _autoModerationService = servicesProvider.GetService<IAutoModerationService>();
+            _userService = servicesProvider.GetRequiredService(typeof(IUserService)) as IUserService ?? throw new InvalidOperationException();
+            _serverService = servicesProvider.GetRequiredService(typeof(IServerService)) as IServerService ?? throw new InvalidOperationException();
+            _serverUsersService = servicesProvider.GetRequiredService(typeof(IServerUsersService)) as IServerUsersService ?? throw new InvalidOperationException();
+            _serverConfigService = servicesProvider.GetRequiredService(typeof(IServerConfigService)) as IServerConfigService ?? throw new InvalidOperationException(); 
+            _userServerStatsService=servicesProvider.GetRequiredService(typeof(IUserServerStatsService)) as IUserServerStatsService ?? throw new InvalidOperationException();
+            _databaseContextQueueService = servicesProvider.GetRequiredService(typeof(IDatabaseContextQueueService)) as IDatabaseContextQueueService ?? throw new InvalidOperationException();
+            _autoModerationService = servicesProvider.GetService<IAutoModerationService>() ?? throw new InvalidOperationException();
             _serviceProvider = servicesProvider;
             
 
@@ -93,9 +93,9 @@ namespace Fafikv2.Configuration.BotConfig
             Commands.RegisterCommands<AdditionalMusicCommands>();
 
             BaseCommands.BaseCommandService = new BaseCommandService(_serviceProvider);
-            AdminCommands.AdminCommandService = new AdminCommandService(_serviceProvider);
-            MusicCommands.MusicService = new MusicService(_serviceProvider);
-            AdditionalMusicCommands.AdditionalMusicService = new AdditionalMusicService(jsonReader);
+            AdminCommands.CommandService = new AdminCommandService(_serviceProvider);
+            MusicCommands.Service = new MusicService(_serviceProvider);
+            AdditionalMusicCommands.Service = new AdditionalMusicService(jsonReader);
 
             var endpoint = new ConnectionEndpoint
             {

@@ -2,7 +2,7 @@
 using System.Text.Json;
 using Fafikv2.Configuration.ConfigJSON;
 using Fafikv2.Services.OtherServices.Interfaces;
-using Microsoft.IdentityModel.Tokens;
+
 
 namespace Fafikv2.Services.OtherServices
 {
@@ -103,7 +103,7 @@ namespace Fafikv2.Services.OtherServices
             var accessToken = await GetAccessToken();
             JsonDocument searchResult;
 
-            if (_converter.ContainsPolishChars(query)) query=_converter.ReplacePolishChars(query);
+            if (PolishLettersConverter.ContainsPolishChars(query)) query= PolishLettersConverter.ReplacePolishChars(query);
 
             if ( Uri.TryCreate(query, UriKind.Absolute, out _))
             {
@@ -287,8 +287,8 @@ namespace Fafikv2.Services.OtherServices
 
             try
             {
-                var genre = userInput.Trim(' '); // Użycie całego inputu jako nazwy gatunku
-                var recommendations = await GetRecommendations(string.Empty, string.Empty, genre, accessToken);
+                var genre = userInput?.Trim(' '); // Użycie całego inputu jako nazwy gatunku
+                var recommendations = await GetRecommendations(string.Empty, string.Empty, genre!, accessToken);
                 return ExtractTrackDetails(recommendations);
             }
             catch (HttpRequestException httpEx)
