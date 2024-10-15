@@ -27,7 +27,29 @@ namespace Fafikv2.Commands
         public async Task Help(CommandContext ctx)
         {
             ctx.RespondAsync(
-                "lyric-słowa piosenki\r\nbanned-dodaj zakazane słowo\r\nrbanned- usuń zakazane słowo\r\nkick_enable- Włącz kicki na serwerze\r\nkick_disable- wyłącz kicki na serwerze\r\nban_enable- włącz bany na serwerze\r\nban_disabled- wyłacz bany na serwerze\r\nauto_moderator_enable-włącz automatycznego moderatora\r\nauto_moderator_disable- wyłącz automatycznego moderatora\r\nauto_play_enable- włącz autokolejkę na serwerze\r\nauto_play_disable- wyłącz autokolejkę na serwerze\r\nstats- wyświetl swoje statystyki\r\nleaderboard- pokarz top 3 osoby na serwerze\r\nJoin: Dołącza do wybranego kanału.\r\nLeave: Opuść aktualny kanał.\r\nPlay: Odtwarza utwór na podstawie wyszukiwania.\r\nPause: Pauzuje aktualnie odtwarzany utwór.\r\nResume: Wznawia odtwarzanie utworu.\r\nSkip: Przechodzi do następnego utworu.\r\nQueue: Wyświetla listę odtwarzanych utworów.\r\nVolume: Ustawia głośność odtwarzania.\r\nAutoPlay: Automatycznie odtwarza muzykę.\r\nAutoPlayByGenre: Automatyczne odtwarzanie według gatunku.");
+                "lyric-słowa piosenki" +
+                "\r\nbanned-dodaj zakazane słowo" +
+                "\r\nrbanned- usuń zakazane słowo" +
+                "\r\nkick_enable- Włącz kicki na serwerze" +
+                "\r\nkick_disable- wyłącz kicki na serwerze" +
+                "\r\nban_enable- włącz bany na serwerze" +
+                "\r\nban_disabled- wyłacz bany na serwerze" +
+                "\r\nauto_moderator_enable-włącz automatycznego moderatora" +
+                "\r\nauto_moderator_disable- wyłącz automatycznego moderatora" +
+                "\r\nauto_play_enable- włącz autokolejkę na serwerze" +
+                "\r\nauto_play_disable- wyłącz autokolejkę na serwerze" +
+                "\r\nstats- wyświetl swoje statystyki" +
+                "\r\nleaderboard- pokarz top 3 osoby na serwerze" +
+                "\r\nJoin: Dołącza do wybranego kanału." +
+                "\r\nLeave: Opuść aktualny kanał." +
+                "\r\nPlay: Odtwarza utwór na podstawie wyszukiwania." +
+                "\r\nPause: Pauzuje aktualnie odtwarzany utwór." +
+                "\r\nResume: Wznawia odtwarzanie utworu." +
+                "\r\nSkip: Przechodzi do następnego utworu." +
+                "\r\nQueue: Wyświetla listę odtwarzanych utworów." +
+                "\r\nVolume: Ustawia głośność odtwarzania." +
+                "\r\nAutoPlay: Automatycznie odtwarza muzykę." +
+                "\r\nAutoPlayByGenre: Automatyczne odtwarzanie według gatunku.");
         }
     }
 }

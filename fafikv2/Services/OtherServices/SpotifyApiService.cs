@@ -107,7 +107,6 @@ namespace Fafikv2.Services.OtherServices
 
             if ( Uri.TryCreate(query, UriKind.Absolute, out _))
             {
-                // If search is a valid URL, use the URI overload
                 var sort = query.Split('/');
                 query = sort.Last();
             }
@@ -123,10 +122,6 @@ namespace Fafikv2.Services.OtherServices
             }
 
             
-            
-            
-
-
             if (searchResult.RootElement.GetProperty("tracks").GetProperty("items").GetArrayLength() == 0)
             {
                 Console.WriteLine("No tracks found matching the query.");

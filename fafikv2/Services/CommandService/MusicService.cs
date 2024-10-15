@@ -117,7 +117,7 @@ namespace Fafikv2.Services.CommandService
                         Console.WriteLine(ex.Message);
                         return;
                     }
-                    await node.PlayAsync(nextTrack);
+                    
                 }
 
 
@@ -192,9 +192,8 @@ namespace Fafikv2.Services.CommandService
             try
             {
                 await conn.PlayAsync(track);
-                /*var lavalinkTracks = _songServiceDictionaries[ctx.Guild.Id].Queue;
-                lavalinkTracks?.Add(track);*/
-                await ctx.RespondAsync($"Now playing {track.Title}!");
+
+                //await ctx.RespondAsync($"Now playing {track.Title}!");
             }
             catch (Exception e)
             {
@@ -257,21 +256,24 @@ namespace Fafikv2.Services.CommandService
                 }
 
 
-                if (dictionary!.Queue!.Count == 0)
+                if (dictionary.Queue.Count == 0)
                 {
                     await PlayTrack(ctx, conn, track);
                     dictionary.Queue.Add(track);
 
-                    //await ctx.RespondAsync($"now playing {track.Title}!");
+
+                    await ctx.RespondAsync($"now playing {track.Title}!");
                 }
                 else
                 {
+
+                    var timeLeft = TimeSpan.FromMilliseconds(dictionary.Queue.Sum(timeSpan => timeSpan.Length.TotalMilliseconds));
                     Console.WriteLine($"{track.Title}");
                     dictionary.Queue.Add(track);
 
 
-                    var timeLeft = dictionary.Queue.Aggregate(TimeSpan.Zero,
-                        (total, lavalinkTrack) => total + lavalinkTrack.Length);
+                   
+
                     await ctx.RespondAsync(
                             $"Utwór {track.Title} zostanie odtworzony za: {timeLeft.Minutes}:{timeLeft.Seconds:D2}.");
                 }
@@ -304,7 +306,7 @@ namespace Fafikv2.Services.CommandService
                     {
                         await PlayTrack(ctx, conn, dictionary.Queue[0]);
                     }
-                    else if (dictionary.AutoPlayOn)
+                    else if (dictionary.AutoPlayOn && dictionary.Queue.Count == 0)
                     {
                         var autoNextTrack = await GetAutoNextTrack(conn, dictionary, finishedTrack);
                         if (autoNextTrack != null)
