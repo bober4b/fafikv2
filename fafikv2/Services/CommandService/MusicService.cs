@@ -187,7 +187,7 @@ namespace Fafikv2.Services.CommandService
             });
         }
 
-        private async Task PlayTrack(CommandContext ctx, LavalinkGuildConnection conn, LavalinkTrack track)
+        private static async Task PlayTrack(CommandContext ctx, LavalinkGuildConnection conn, LavalinkTrack track)
         {
             try
             {

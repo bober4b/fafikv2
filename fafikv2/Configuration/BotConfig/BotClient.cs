@@ -75,6 +75,7 @@ namespace Fafikv2.Configuration.BotConfig
             Client.GuildAvailable += Client_GuildAvailable;
             Client.GuildMemberAdded += Client_GuildMemberAdded;
             Client.UnknownEvent += Client_UnknownEvent;
+            Client.VoiceStateUpdated += Client_VoiceStateUpdated;
 
 
             var commandsConfig = new CommandsNextConfiguration()
@@ -139,6 +140,29 @@ namespace Fafikv2.Configuration.BotConfig
 
 
             await Task.Delay(-1);
+        }
+
+        private static async Task Client_VoiceStateUpdated(DiscordClient sender, VoiceStateUpdateEventArgs args)
+        {
+            var botVoiceState = args.Guild.CurrentMember?.VoiceState;
+            if (botVoiceState?.Channel != null || botVoiceState==null)
+            {
+                return;
+            }
+            var botChannel = botVoiceState.Channel;
+            var usersInChannel = botChannel.Users.Count(user => !user.IsBot);
+
+            if (usersInChannel == 0)
+            {
+                var lavalink = Client.GetLavalink();
+                var nodeConnection = lavalink.GetGuildConnection(botChannel.Guild);
+                if (nodeConnection != null)
+                {
+                    await nodeConnection.DisconnectAsync();
+                    var textChannel = args.Guild.SystemChannel;
+                    await textChannel.SendMessageAsync("Bot left the channel due to inactivity.");
+                }
+            }
         }
 
         private static Task Client_UnknownEvent(DiscordClient sender, UnknownEventArgs args)

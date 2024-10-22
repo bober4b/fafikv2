@@ -10,7 +10,6 @@ namespace Fafikv2.Services.OtherServices
     {
         private readonly string _clientId;
         private readonly string _clientSecret;
-        private readonly PolishLettersConverter _converter = new();
 
         public SpotifyApiService()
         {
