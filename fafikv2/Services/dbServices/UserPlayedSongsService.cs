@@ -15,11 +15,11 @@ namespace Fafikv2.Services.dbServices
 
         public async Task Add(UserPlayedSong userPlayedSong)
         {
-            var added = await _userPlayedSongsRepository.HasBeenAdded(userPlayedSong) ;
+            var added = await _userPlayedSongsRepository.HasBeenAdded(userPlayedSong);
             if (added) return;
-            
-            await _userPlayedSongsRepository.Add(userPlayedSong) ;
-            
+
+            await _userPlayedSongsRepository.Add(userPlayedSong);
+
         }
     }
 }

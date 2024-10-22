@@ -15,17 +15,17 @@ namespace Fafikv2.Repositories
         }
         public async Task Add(UserPlayedSong userPlayedSong)
         {
-            
+
             try
             {
                 Console.WriteLine("Adding UserPlayedSong to the database.");
 
                 // Dodanie obiektu do kontekstu
-                await _context.UserPlayedSongs.AddAsync(userPlayedSong) ;
+                await _context.UserPlayedSongs.AddAsync(userPlayedSong);
                 Console.WriteLine("UserPlayedSong added to the context.");
 
                 // Zapisanie zmian do bazy danych
-                await _context.SaveChangesAsync() ;
+                await _context.SaveChangesAsync();
                 Console.WriteLine("Changes saved to the database.");
             }
             catch (Exception ex)
@@ -45,8 +45,8 @@ namespace Fafikv2.Repositories
 
         public async Task<bool> HasBeenAdded(UserPlayedSong userPlayedSong)
         {
-            var result=await _context.UserPlayedSongs
-                .AnyAsync(x=>x.User != null && userPlayedSong.Song != null && x.Song != null && x.Song.Title==userPlayedSong.Song.Title && x.Song.Artist ==userPlayedSong.Song.Artist && x.User.Id==userPlayedSong.UserId);
+            var result = await _context.UserPlayedSongs
+                .AnyAsync(x => x.User != null && userPlayedSong.Song != null && x.Song != null && x.Song.Title == userPlayedSong.Song.Title && x.Song.Artist == userPlayedSong.Song.Artist && x.User.Id == userPlayedSong.UserId);
             return result;
         }
     }

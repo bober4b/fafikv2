@@ -15,12 +15,12 @@ namespace Fafikv2.Commands
                 var standardisation = titleAndArtist.Split('|');
                 if (standardisation.Length == 2)
                 {
-                    await Service.FindLyric(ctx, standardisation[0], standardisation[1]) ;
+                    await Service.FindLyric(ctx, standardisation[0], standardisation[1]);
                     return;
                 }
             }
 
-            await ctx.RespondAsync("zły format!!") ;
+            await ctx.RespondAsync("zły format!!");
         }
 
         [Command("Help")]

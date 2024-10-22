@@ -24,7 +24,7 @@ namespace Fafikv2.Services.dbServices
                 return;
             }
 
-            await _serverUsersRepository.AddServerUser(serverUsers) ;
+            await _serverUsersRepository.AddServerUser(serverUsers);
         }
 
         public Task UpdateServerUsers(ServerUsers serverUsers)

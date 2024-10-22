@@ -6,12 +6,8 @@ namespace Fafikv2.CountSystem
     {
         public bool LevelUp(User user)
         {
-            var nextlevel=10+user.UserLevel*1.5;
-            if(nextlevel<=user.MessagesCountGlobal)
-            {
-                return true;
-            }
-            return false;
+            var nextLevel = 10 + user.UserLevel * 1.5;
+            return nextLevel <= user.MessagesCountGlobal;
         }
 
         public string UserInfo(User user, UserServerStats userServerStats)
@@ -21,10 +17,10 @@ namespace Fafikv2.CountSystem
                          $"Interakcje z botem na wszystkich serwerach: {user.BotInteractionGlobal}\n" +
                          $"Interakcje z botem na  serwerze: {userServerStats.BotInteractionServer}\n" +
                          $"Poziom: {user.UserLevel}\n" +
-                         $"Następny poziom: {user.MessagesCountGlobal/(10+user.UserLevel*1.5)}\n" +
+                         $"Następny poziom: {user.MessagesCountGlobal / (10 + user.UserLevel * 1.5)}\n" +
                          $"Karma globalna: {user.GlobalKarma} \n" +
                          $"Karma serwera: {userServerStats.ServerKarma}";
-                         
+
 
             return result;
         }

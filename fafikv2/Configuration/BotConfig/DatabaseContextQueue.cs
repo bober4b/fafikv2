@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Concurrent;
+
 
 namespace Fafikv2.Configuration.BotConfig
 {
     public class DatabaseContextQueue
     {
         private readonly ConcurrentQueue<Func<Task>> _taskQueue = new();
-        private readonly SemaphoreSlim _signal=new(0);
+        private readonly SemaphoreSlim _signal = new(0);
 
         public Task Enqueue(Func<Task> task)
         {
@@ -28,12 +24,12 @@ namespace Fafikv2.Configuration.BotConfig
             {
                 try
                 {
-                    T result= await task() ;
+                    T result = await task();
                     tcs.SetResult(result);
                 }
                 catch (Exception ex)
                 {
-                    
+
                     tcs.SetException(ex);
                     Console.WriteLine(ex.Message);
 
@@ -45,14 +41,14 @@ namespace Fafikv2.Configuration.BotConfig
 
         public async Task<Func<Task>> DequeueAsync(CancellationToken cancellationToken)
         {
-            await _signal.WaitAsync(cancellationToken) ;
+            await _signal.WaitAsync(cancellationToken);
             _taskQueue.TryDequeue(out var task);
             return task!;
         }
 
         public void FuncNumberInQueue()
         {
-            Console.WriteLine("Liczba tasków w kolejce: "+ _taskQueue.Count);
+            Console.WriteLine("Liczba task w kolejce: " + _taskQueue.Count);
         }
     }
 }

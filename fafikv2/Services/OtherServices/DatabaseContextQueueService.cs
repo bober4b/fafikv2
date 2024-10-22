@@ -12,7 +12,7 @@ namespace Fafikv2.Services.OtherServices
             return _queue.Enqueue(task);
         }
 
-        public  Task<T> EnqueueDatabaseTask<T>(Func<Task<T>> task)
+        public Task<T> EnqueueDatabaseTask<T>(Func<Task<T>> task)
         {
             return _queue.Enqueue(task);
         }

@@ -31,32 +31,32 @@ namespace Fafikv2.Configuration.BotConfig
 
 
 
-        
+
 
         public BotClient(ServiceProvider servicesProvider)
         {
-            
-            
+
+
             _userService = servicesProvider.GetRequiredService(typeof(IUserService)) as IUserService ?? throw new InvalidOperationException();
             _serverService = servicesProvider.GetRequiredService(typeof(IServerService)) as IServerService ?? throw new InvalidOperationException();
             _serverUsersService = servicesProvider.GetRequiredService(typeof(IServerUsersService)) as IServerUsersService ?? throw new InvalidOperationException();
-            _serverConfigService = servicesProvider.GetRequiredService(typeof(IServerConfigService)) as IServerConfigService ?? throw new InvalidOperationException(); 
-            _userServerStatsService=servicesProvider.GetRequiredService(typeof(IUserServerStatsService)) as IUserServerStatsService ?? throw new InvalidOperationException();
+            _serverConfigService = servicesProvider.GetRequiredService(typeof(IServerConfigService)) as IServerConfigService ?? throw new InvalidOperationException();
+            _userServerStatsService = servicesProvider.GetRequiredService(typeof(IUserServerStatsService)) as IUserServerStatsService ?? throw new InvalidOperationException();
             _databaseContextQueueService = servicesProvider.GetRequiredService(typeof(IDatabaseContextQueueService)) as IDatabaseContextQueueService ?? throw new InvalidOperationException();
             _autoModerationService = servicesProvider.GetService<IAutoModerationService>() ?? throw new InvalidOperationException();
             _serviceProvider = servicesProvider;
-            
+
 
         }
 
-       
 
-        
+
+
         public async Task Initialize()
         {
 
             var jsonReader = new JsonReader();
-            await jsonReader.ReadJson() ;
+            await jsonReader.ReadJson();
 
 
             var discordConfig = new DiscordConfiguration()
@@ -68,14 +68,14 @@ namespace Fafikv2.Configuration.BotConfig
             };
 
             Client = new DiscordClient(discordConfig);
-            
+
 
             Client.Ready += Client_Ready;
             Client.MessageCreated += Client_MessageCreated;
             Client.GuildAvailable += Client_GuildAvailable;
             Client.GuildMemberAdded += Client_GuildMemberAdded;
             Client.UnknownEvent += Client_UnknownEvent;
-            
+
 
             var commandsConfig = new CommandsNextConfiguration()
             {
@@ -92,7 +92,7 @@ namespace Fafikv2.Configuration.BotConfig
             Commands.RegisterCommands<AdminCommands>();
             Commands.RegisterCommands<AdditionalMusicCommands>();
 
-            BaseCommands.BaseCommandService = new BaseCommandService(_serviceProvider);
+            BaseCommands.CommandService = new BaseCommandService(_serviceProvider);
             AdminCommands.CommandService = new AdminCommandService(_serviceProvider);
             MusicCommands.Service = new MusicService(_serviceProvider);
             AdditionalMusicCommands.Service = new AdditionalMusicService(jsonReader);
@@ -112,16 +112,16 @@ namespace Fafikv2.Configuration.BotConfig
 
             var lavalink = Client.UseLavalink();
 
-            await Client.ConnectAsync() ;
+            await Client.ConnectAsync();
 
-            await lavalink.ConnectAsync(lavalinkConfig) ;
+            await lavalink.ConnectAsync(lavalinkConfig);
 
 
             _ = Task.Run(async () =>
             {
                 while (true)
                 {
-                    var task = await _databaseContextQueueService.DequeueDatabaseTask(CancellationToken.None) ; 
+                    var task = await _databaseContextQueueService.DequeueDatabaseTask(CancellationToken.None);
                     if (task != null)
                     {
 
@@ -130,14 +130,15 @@ namespace Fafikv2.Configuration.BotConfig
                     }
                     else
                     {
-                        
-                        await Task.Delay(1000) ;
+
+                        await Task.Delay(1000);
                     }
                 }
+                // ReSharper disable once FunctionNeverReturns
             });
 
 
-            await Task.Delay(-1) ;
+            await Task.Delay(-1);
         }
 
         private static Task Client_UnknownEvent(DiscordClient sender, UnknownEventArgs args)
@@ -154,12 +155,12 @@ namespace Fafikv2.Configuration.BotConfig
 
         private async Task Client_GuildAvailable(DiscordClient sender, GuildCreateEventArgs args)
         {
-            var users = await args.Guild.GetAllMembersAsync() ;
-            var server =  args.Guild;
+            var users = await args.Guild.GetAllMembersAsync();
+            var server = args.Guild;
 
 
 
-            await (_databaseContextQueueService?.EnqueueDatabaseTask(async () => await UpdateDatabaseOnConnect(users, server) )!) ;
+            await _databaseContextQueueService.EnqueueDatabaseTask(async () => await UpdateDatabaseOnConnect(users, server));
 
 
 
@@ -181,9 +182,9 @@ namespace Fafikv2.Configuration.BotConfig
                 Id = Guid.Parse(toFormatted),
                 ConfigId = sConfig.Id
             };
-            
-            await (_serverService?.AddServer(server1)!) ;
-            await (_serverConfigService?.AddServerConfig(sConfig)!) ;
+
+            await _serverService.AddServer(server1);
+            await _serverConfigService.AddServerConfig(sConfig);
             foreach (var user in users)
             {
                 if (user.IsBot) continue;
@@ -200,10 +201,10 @@ namespace Fafikv2.Configuration.BotConfig
                     UserLevel = 0
 
                 };
-                await (_userService?.AddUser(useradd)!) ;
+                await _userService.AddUser(useradd);
                 Console.WriteLine($"dodano: {user.Username} {user.Id} {server.Name}");
-                   
-                    
+
+
 
                 var serverUser = new ServerUsers
                 {
@@ -227,13 +228,13 @@ namespace Fafikv2.Configuration.BotConfig
                     ServerUserId = serverUser.Id
                 };
 
-                await (_serverUsersService?.AddServerUsers(serverUser)!) ;
+                await _serverUsersService.AddServerUsers(serverUser);
 
 
-                await (_userServerStatsService?.AddUserServerStats(userStats)!) ;
+                await _userServerStatsService.AddUserServerStats(userStats);
             }
 
-            
+
         }
 
         private static Task Client_Ready(DiscordClient sender, ReadyEventArgs args)
@@ -244,12 +245,12 @@ namespace Fafikv2.Configuration.BotConfig
         private async Task Client_MessageCreated(DiscordClient sender, MessageCreateEventArgs args)
         {
             Console.WriteLine($"[{args.Message.CreationTimestamp}] {args.Message.Author.Username}: {args.Message.Content}");
-            if(args.Channel.IsPrivate)return;
-            if(args.Author.IsBot) return;
-            var result = _autoModerationService != null && await _autoModerationService.AutoModerator(args) ;
-            if(!result)return;
+            if (args.Channel.IsPrivate) return;
+            if (args.Author.IsBot) return;
+            var result = await _autoModerationService.AutoModerator(args);
+            if (!result) return;
 
-            await _databaseContextQueueService!.EnqueueDatabaseTask(async () =>
+            await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
                 {
                     if (args.Message.Content.StartsWith("!"))
                     {
@@ -259,15 +260,15 @@ namespace Fafikv2.Configuration.BotConfig
                         var serverId = args.Guild.Id;
                         var sformatted = $"{serverId:X32}";
 
-                        await _userService!.UpdateUserBotInteractionsCount(Guid.Parse(formatted)) ;
-                        await _userServerStatsService!
+                        await _userService.UpdateUserBotInteractionsCount(Guid.Parse(formatted));
+                        await _userServerStatsService
                             .UpdateUserMessageServerCount(Guid.Parse(formatted), Guid.Parse(sformatted))
                              ;
 
-                        await _userService.UpdateUserMessageCount(Guid.Parse(formatted)) ;
+                        await _userService.UpdateUserMessageCount(Guid.Parse(formatted));
                         await _userServerStatsService.UpdateUserBotInteractionsServerCount(Guid.Parse(formatted),
-                            Guid.Parse(sformatted)) ;
-                     
+                            Guid.Parse(sformatted));
+
                     }
                     else
                     {
@@ -276,16 +277,16 @@ namespace Fafikv2.Configuration.BotConfig
 
                         var serverId = args.Guild.Id;
                         var sformatted = $"{serverId:X32}";
-                        await _userService!.UpdateUserMessageCount(Guid.Parse(formatted)) ;
+                        await _userService.UpdateUserMessageCount(Guid.Parse(formatted));
 
-                        await _userServerStatsService!
+                        await _userServerStatsService
                             .UpdateUserMessageServerCount(Guid.Parse(formatted), Guid.Parse(sformatted))
                              ;
                     }
 
-                }) ;
-            
-            
+                });
+
+
 
 
         }

@@ -9,21 +9,21 @@ public class AdminCommands : BaseCommandModule
     public static AdminCommandService CommandService { get; set; } = null!;
 
     [Command("banned")]
-    public async Task Banned(CommandContext ctx, string bannedWord, int time=0)
+    public async Task Banned(CommandContext ctx, string bannedWord, int time = 0)
     {
-        await CommandService.AddBannedWord(ctx, bannedWord, time) ;
+        await CommandService.AddBannedWord(ctx, bannedWord, time);
     }
 
     [Command("rbanned")]
     public async Task RBanned(CommandContext ctx, string delbanned)
     {
-        await CommandService.DelBannedWord(ctx, delbanned) ;
+        await CommandService.DelBannedWord(ctx, delbanned);
     }
 
     [Command("kick_enable")]
     public async Task KickEnable(CommandContext ctx)
     {
-       await CommandService.KickEnable(ctx);
+        await CommandService.KickEnable(ctx);
     }
 
     [Command("kick_disable")]

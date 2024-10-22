@@ -1,5 +1,4 @@
-﻿using DSharpPlus;
-using DSharpPlus.CommandsNext;
+﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using Fafikv2.Services.CommandService;
@@ -9,11 +8,13 @@ namespace Fafikv2.Commands
 {
     public class BaseCommands : BaseCommandModule
     {
-        public static BaseCommandService? BaseCommandService; //do poprawy w przyszłości
+        public static BaseCommandService? CommandService { get; set; }
 
 
         [Command("ping")]
+#pragma warning disable CA1822
         public async Task Ping(CommandContext ctx)
+#pragma warning restore CA1822
         {
             string songTitle = "Super Song";
             TimeSpan duration = TimeSpan.FromSeconds(180); // 3 minutes song
@@ -26,27 +27,27 @@ namespace Fafikv2.Commands
                 Color = DiscordColor.Purple
             };
 
-            var message = await ctx.Channel.SendMessageAsync(embed) ;
+            var message = await ctx.Channel.SendMessageAsync(embed);
             int j = 0;
             for (int i = 0; i <= 180; i++)
             {
                 var currentTime = TimeSpan.FromSeconds(i);
-                if (i!=0 && i%(180/totalBars)==0)
+                if (i != 0 && i % (180 / totalBars) == 0)
                 {
                     j++;
                 }
                 string progressBar = CreateProgressBar(j, totalBars);
                 embed.Description = $"`[{progressBar}] {currentTime:mm\\:ss} / {duration:mm\\:ss}`";
 
-                await message.ModifyAsync(embed: new Optional<DiscordEmbed>(embed)) ;
-                await Task.Delay(1000 ) ; // Delay proportional to song duration
+                await message.ModifyAsync(embed: new Optional<DiscordEmbed>(embed));
+                await Task.Delay(1000); // Delay proportional to song duration
             }
 
             embed.Description = "Piosenka zakończona!";
-            await message.ModifyAsync(embed: new Optional<DiscordEmbed>(embed)) ;
+            await message.ModifyAsync(embed: new Optional<DiscordEmbed>(embed));
         }
 
-        private string CreateProgressBar(int progress, int total)
+        private static string CreateProgressBar(int progress, int total)
         {
             int completedBars = progress;
             int remainingBars = total - progress;
@@ -57,19 +58,19 @@ namespace Fafikv2.Commands
         [Command("benc")]
         public async Task Benc(CommandContext ctx, int benc1, int benc2)
         {
-            await ctx.Channel.SendMessageAsync($"elo benc:{benc1+benc2*3.14} benc elo") ;
+            await ctx.Channel.SendMessageAsync($"elo benc:{benc1 + benc2 * 3.14} benc elo");
         }
 
         [Command("stats")]
         public async Task Stats(CommandContext ctx)
         {
-            await BaseCommandService!.Stats(ctx) ;
+            await CommandService!.Stats(ctx);
         }
 
         [Command("leaderboard")]
         public async Task Leaderboard(CommandContext ctx)
         {
-            await BaseCommandService!.Leaderboard(ctx) ;
+            await CommandService!.Leaderboard(ctx);
         }
 
     }

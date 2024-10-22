@@ -1,5 +1,5 @@
-﻿using Fafikv2.Data.Models;
-using Fafikv2.Data.DataContext;
+﻿using Fafikv2.Data.DataContext;
+using Fafikv2.Data.Models;
 using Fafikv2.Repositories.Interfaces;
 
 namespace Fafikv2.Repositories

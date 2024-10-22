@@ -20,7 +20,7 @@ namespace Fafikv2.Data.Models
 
         //server strikes
         public int Penalties { get; set; }
-        public DateTime ? LastPenaltyDate { get; set;}
+        public DateTime? LastPenaltyDate { get; set; }
 
     }
 }

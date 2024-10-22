@@ -1,5 +1,5 @@
-﻿using Fafikv2.Data.Models;
-using Fafikv2.Data.DataContext;
+﻿using Fafikv2.Data.DataContext;
+using Fafikv2.Data.Models;
 using Fafikv2.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,7 +12,7 @@ namespace Fafikv2.Repositories
 
         public ServerConfigRepository(DiscordBotDbContext context)
         {
-            _context =context;
+            _context = context;
         }
 
         public Task AddServerConfig(ServerConfig serverConfig)
@@ -26,7 +26,7 @@ namespace Fafikv2.Repositories
             {
                 Console.WriteLine(ex.InnerException?.Message);
             }
-           
+
             return Task.CompletedTask;
         }
 
@@ -53,10 +53,10 @@ namespace Fafikv2.Repositories
                  ;
             if (config != null)
             {
-                config.BansEnabled=enableDisable;
+                config.BansEnabled = enableDisable;
                 try
                 {
-                    await _context.SaveChangesAsync() ;
+                    await _context.SaveChangesAsync();
                 }
                 catch (Exception ex)
                 {
@@ -75,7 +75,7 @@ namespace Fafikv2.Repositories
                 config.KicksEnabled = enableDisable;
                 try
                 {
-                    await _context.SaveChangesAsync() ;
+                    await _context.SaveChangesAsync();
                 }
                 catch (Exception ex)
                 {
@@ -94,7 +94,7 @@ namespace Fafikv2.Repositories
                 config.AutoModeratorEnabled = enableDisable;
                 try
                 {
-                    await _context.SaveChangesAsync() ;
+                    await _context.SaveChangesAsync();
                 }
                 catch (Exception ex)
                 {
@@ -113,7 +113,7 @@ namespace Fafikv2.Repositories
                 config.AutoplayEnabled = enableDisable;
                 try
                 {
-                    await _context.SaveChangesAsync() ;
+                    await _context.SaveChangesAsync();
                 }
                 catch (Exception ex)
                 {

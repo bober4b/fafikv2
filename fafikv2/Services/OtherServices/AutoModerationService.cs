@@ -39,7 +39,7 @@ namespace Fafikv2.Services.OtherServices
                 return bannedWordsEnumerable
                     .Any(word => word.BannedWord != null && message.Message.Content
                         .Contains(word.BannedWord));
-            }) ;
+            });
 
             if (!result)
                 return new CheckMessagesResult
@@ -58,7 +58,7 @@ namespace Fafikv2.Services.OtherServices
                     .Where(word => word.BannedWord != null && message.Message.Content.Contains(word.BannedWord));
 
                 return containWords;
-            }) ;
+            });
 
             return new CheckMessagesResult()
             {
@@ -78,17 +78,17 @@ namespace Fafikv2.Services.OtherServices
 
 
                 return config is { AutoModeratorEnabled: true };
-            }) ;
+            });
 
             if (!enable) return true;
-            var banned = await CheckMessagesAsync(message) ;
+            var banned = await CheckMessagesAsync(message);
 
             if (!banned.Result) return true;
 
             if (banned.Words.All(x => x.Time != 0))
             {
                 var timeout = banned.Words.Max(x => x.Time);
-                await Timeout(message, timeout) ;
+                await Timeout(message, timeout);
                 return false;
             }
 
@@ -104,22 +104,22 @@ namespace Fafikv2.Services.OtherServices
                 switch (user.Penalties)
                 {
                     case 0:
-                        await Warning(message) ;
+                        await Warning(message);
                         break;
                     case 1:
-                        await Timeout(message, 1) ;
+                        await Timeout(message, 1);
                         break;
                     case 2:
-                        await Timeout(message, 10) ;
+                        await Timeout(message, 10);
                         break;
                     case 3:
-                        await Timeout(message, 60) ;
+                        await Timeout(message, 60);
                         break;
                     case 4:
-                        await Kick(message) ;
+                        await Kick(message);
                         break;
                     default:
-                        await TimeoutKickOrBan(message) ;
+                        await TimeoutKickOrBan(message);
                         break;
 
                 }
@@ -127,17 +127,17 @@ namespace Fafikv2.Services.OtherServices
 
                 await _userServerStatsService
                     .AddPenalty(Guid.Parse($"{message.Author.Id:X32}"),
-                        Guid.Parse($"{message.Guild.Id:X32}")) ;
+                        Guid.Parse($"{message.Guild.Id:X32}"));
 
                 return true;
-            }) ;
+            });
 
             return false;
         }
 
         private static async Task Warning(MessageCreateEventArgs message)
         {
-            await message.Message.DeleteAsync() ;
+            await message.Message.DeleteAsync();
             await SendPrivateMessage(message.Guild,
                     message.Author,
                     "folguj się kolego, te słowo które napisałeś było zakazane, otrzymujesz pierwsze " +
@@ -152,13 +152,13 @@ namespace Fafikv2.Services.OtherServices
 
 
 
-            var member = await message.Guild.GetMemberAsync(message.Author.Id) ;
+            var member = await message.Guild.GetMemberAsync(message.Author.Id);
 
 
 
             //await member.TimeoutAsync(timeout) ;
 
-            await message.Message.DeleteAsync() ;
+            await message.Message.DeleteAsync();
             await SendPrivateMessage(message.Guild,
                     message.Author,
                     $"kolego, to twoje kolejne ostrzeżenie. tym razem idziesz na przerwę na {time} minut")
@@ -171,7 +171,7 @@ namespace Fafikv2.Services.OtherServices
                  ;
             if (config is { KicksEnabled: false }) return;
             //var member = await message.Guild.GetMemberAsync(message.Author.Id) ;
-            await message.Message.DeleteAsync() ;
+            await message.Message.DeleteAsync();
 
             // await member.RemoveAsync() ;
 
@@ -185,8 +185,8 @@ namespace Fafikv2.Services.OtherServices
 
         private static async Task Ban(MessageCreateEventArgs message)
         {
-            var member = await message.Guild.GetMemberAsync(message.Author.Id) ;
-            await message.Message.DeleteAsync() ;
+            var member = await message.Guild.GetMemberAsync(message.Author.Id);
+            await message.Message.DeleteAsync();
 
             //await member.BanAsync() ;
 
@@ -217,15 +217,15 @@ namespace Fafikv2.Services.OtherServices
             switch (difference.Value.TotalDays)
             {
                 case >= 5:
-                    await Timeout(message, 60) ;
+                    await Timeout(message, 60);
                     return;
                 case >= 2:
                     if (config is { KicksEnabled: true }) return;
-                    await Kick(message) ;
+                    await Kick(message);
                     return;
                 default:
                     if (config is { BansEnabled: true }) return;
-                    await Ban(message) ;
+                    await Ban(message);
                     return;
 
             }

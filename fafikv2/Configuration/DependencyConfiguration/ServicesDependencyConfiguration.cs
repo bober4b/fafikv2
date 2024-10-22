@@ -1,8 +1,8 @@
 ﻿using Fafikv2.Services.dbServices;
-using Microsoft.Extensions.DependencyInjection;
 using Fafikv2.Services.dbServices.Interfaces;
 using Fafikv2.Services.OtherServices;
 using Fafikv2.Services.OtherServices.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Fafikv2.Configuration.DependencyConfiguration
 {

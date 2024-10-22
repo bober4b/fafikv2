@@ -1,6 +1,6 @@
-﻿using Fafikv2.Repositories.Interfaces;
+﻿using Fafikv2.Data.DataContext;
 using Fafikv2.Data.Models;
-using Fafikv2.Data.DataContext;
+using Fafikv2.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fafikv2.Repositories;
@@ -15,14 +15,14 @@ public class BannedWordsRepository : IBannedWordsRepository
     }
     public async Task<bool> Add(BannedWords bannedWords)
     {
-        var result= _context.BannedWords
+        var result = _context.BannedWords
             .Any(x => bannedWords.ServerConfig != null && x.ServerConfigId == bannedWords.ServerConfig.Id && x.BannedWord == bannedWords.BannedWord);
 
         if (result) return false;
 
 
         _context.BannedWords.Add(bannedWords);
-        await _context.SaveChangesAsync() ;
+        await _context.SaveChangesAsync();
         return true;
 
 
@@ -37,7 +37,7 @@ public class BannedWordsRepository : IBannedWordsRepository
              ;
         if (del == null) return false;
         _context.BannedWords.Remove(del);
-        await _context.SaveChangesAsync() ;
+        await _context.SaveChangesAsync();
         return true;
 
     }

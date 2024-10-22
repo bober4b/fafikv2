@@ -1,8 +1,8 @@
 ﻿using Fafikv2.Configuration.BotConfig;
-using Microsoft.Extensions.DependencyInjection;
-using Fafikv2.Data.DataContext;
 using Fafikv2.Configuration.DependencyConfiguration;
+using Fafikv2.Data.DataContext;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Fafikv2
 {

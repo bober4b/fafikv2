@@ -12,7 +12,7 @@ namespace Fafikv2.Repositories
 
         public ServerRepository(DiscordBotDbContext context)
         {
-            _context= context;
+            _context = context;
         }
 
         public Task AddServer(Server server)
@@ -23,7 +23,7 @@ namespace Fafikv2.Repositories
             {
                 _context.SaveChanges();
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 Console.WriteLine($"An error occurred while saving server data: {ex.Message}");
                 if (ex.InnerException != null)
@@ -31,14 +31,14 @@ namespace Fafikv2.Repositories
                     Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
                 }
             }
-            
+
             Console.WriteLine("xD");
             return Task.CompletedTask;
         }
 
         public Task DeleteServer(Server server)
         {
-            throw new NotImplementedException(); 
+            throw new NotImplementedException();
         }
 
         public IEnumerable<Server> GetAll()

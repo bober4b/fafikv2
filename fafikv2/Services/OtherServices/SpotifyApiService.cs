@@ -1,7 +1,7 @@
-﻿using System.Text;
-using System.Text.Json;
-using Fafikv2.Configuration.ConfigJSON;
+﻿using Fafikv2.Configuration.ConfigJSON;
 using Fafikv2.Services.OtherServices.Interfaces;
+using System.Text;
+using System.Text.Json;
 
 
 namespace Fafikv2.Services.OtherServices
@@ -10,7 +10,7 @@ namespace Fafikv2.Services.OtherServices
     {
         private readonly string _clientId;
         private readonly string _clientSecret;
-        private readonly PolishLettersConverter _converter=new();
+        private readonly PolishLettersConverter _converter = new();
 
         public SpotifyApiService()
         {
@@ -103,9 +103,9 @@ namespace Fafikv2.Services.OtherServices
             var accessToken = await GetAccessToken();
             JsonDocument searchResult;
 
-            if (PolishLettersConverter.ContainsPolishChars(query)) query= PolishLettersConverter.ReplacePolishChars(query);
+            if (PolishLettersConverter.ContainsPolishChars(query)) query = PolishLettersConverter.ReplacePolishChars(query);
 
-            if ( Uri.TryCreate(query, UriKind.Absolute, out _))
+            if (Uri.TryCreate(query, UriKind.Absolute, out _))
             {
                 var sort = query.Split('/');
                 query = sort.Last();
@@ -121,7 +121,7 @@ namespace Fafikv2.Services.OtherServices
                 return Array.Empty<string>();
             }
 
-            
+
             if (searchResult.RootElement.GetProperty("tracks").GetProperty("items").GetArrayLength() == 0)
             {
                 Console.WriteLine("No tracks found matching the query.");
@@ -257,7 +257,8 @@ namespace Fafikv2.Services.OtherServices
                 return ExtractTrackDetails(recommendations);
             }
             catch (HttpRequestException httpEx)
-            { Console.WriteLine($"HTTP request error: {httpEx.Message}");
+            {
+                Console.WriteLine($"HTTP request error: {httpEx.Message}");
                 return new List<string>();
             }
             catch (JsonException jsonEx)
@@ -315,10 +316,10 @@ namespace Fafikv2.Services.OtherServices
         {
             var tracks = recommendations.RootElement.GetProperty("tracks").EnumerateArray();
 
-            return (from track in tracks.Take(10) 
-                let title = track.GetProperty("name").GetString() 
-                let artist = track.GetProperty("artists")[0].GetProperty("name").GetString() 
-                select $"{artist} - {title}").ToList();
+            return (from track in tracks.Take(10)
+                    let title = track.GetProperty("name").GetString()
+                    let artist = track.GetProperty("artists")[0].GetProperty("name").GetString()
+                    select $"{artist} - {title}").ToList();
 
         }
     }

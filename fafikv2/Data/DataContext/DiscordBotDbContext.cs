@@ -5,7 +5,7 @@ namespace Fafikv2.Data.DataContext
 {
     public class DiscordBotDbContext : DbContext
     {
-        private readonly string _conectionstring =
+        private readonly string _connectionString =
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog = DiscordBotDB; Integrated Security = True; Connect Timeout = 30; Encrypt=False;Trust Server Certificate=False;Application Intent = ReadWrite; Multi Subnet Failover=False";
         public DbSet<User> Users { get; set; }
         public DbSet<Server> Servers { get; set; }
@@ -16,7 +16,7 @@ namespace Fafikv2.Data.DataContext
         public DbSet<Song> Songs { get; set; }
         public DbSet<UserPlayedSong> UserPlayedSongs { get; set; }
 
-       public DiscordBotDbContext() {}
+        public DiscordBotDbContext() { }
 
         public DiscordBotDbContext(DbContextOptions<DiscordBotDbContext> options) : base(options) { }
 
@@ -26,10 +26,10 @@ namespace Fafikv2.Data.DataContext
 
             modelBuilder.Entity<ServerUsers>()
                 .HasOne(s => s.UserServerStats)
-                .WithOne(su=>su.ServerUsers)
-                .HasForeignKey<UserServerStats>(uss=>uss.ServerUserId);
-                
-                
+                .WithOne(su => su.ServerUsers)
+                .HasForeignKey<UserServerStats>(uss => uss.ServerUserId);
+
+
 
 
             modelBuilder.Entity<Server>()
@@ -42,13 +42,13 @@ namespace Fafikv2.Data.DataContext
                 .WithOne(b => b.ServerConfig)
                 .HasForeignKey(b => b.ServerConfigId);
 
-                base.OnModelCreating(modelBuilder);
+            base.OnModelCreating(modelBuilder);
 
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(_conectionstring);
+            optionsBuilder.UseSqlServer(_connectionString);
         }
 
 

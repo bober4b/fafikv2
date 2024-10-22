@@ -1,5 +1,5 @@
-﻿using Fafikv2.Data.Models;
-using Fafikv2.Data.DataContext;
+﻿using Fafikv2.Data.DataContext;
+using Fafikv2.Data.Models;
 using Fafikv2.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,7 +12,7 @@ namespace Fafikv2.Repositories
 
         public UserRepository(DiscordBotDbContext context)
         {
-            _context=context;
+            _context = context;
         }
 
         public Task AddUser(User user)
@@ -30,18 +30,18 @@ namespace Fafikv2.Repositories
 
         public async Task<User?> GetUserById(Guid userId)
         {
-            
+
             return await _context
                 .Users
-                .FirstOrDefaultAsync(x => x.Id == userId) ;
-            
+                .FirstOrDefaultAsync(x => x.Id == userId);
+
         }
 
         public async Task UpdateUser(User user)
         {
             var existingUser = _context.Users.FirstOrDefault(x => x.Id == user.Id) ?? throw new InvalidOperationException("user not found");
-            
-            
+
+
             var properties = typeof(User)
                 .GetProperties()
                 .Where(p => p.GetValue(user) != null);
@@ -51,7 +51,7 @@ namespace Fafikv2.Repositories
                 property.SetValue(existingUser, property.GetValue(user));
             }
 
-            await _context.SaveChangesAsync() ;
+            await _context.SaveChangesAsync();
         }
 
         public IEnumerable<User> GetAll()
@@ -62,7 +62,7 @@ namespace Fafikv2.Repositories
 
         public async Task SaveChangesAsync()
         {
-            await _context.SaveChangesAsync() ;
+            await _context.SaveChangesAsync();
         }
     }
 }

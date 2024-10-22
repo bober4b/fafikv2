@@ -1,5 +1,5 @@
-﻿using Fafikv2.Data.Models;
-using Fafikv2.Data.DataContext;
+﻿using Fafikv2.Data.DataContext;
+using Fafikv2.Data.Models;
 using Fafikv2.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,7 +33,7 @@ namespace Fafikv2.Repositories
         public async Task UpdateUserServerStats(UserServerStats userServerStats)
         {
             _context.ServerUsersStats.Update(userServerStats);
-            await _context.SaveChangesAsync() ;
+            await _context.SaveChangesAsync();
         }
 
         public Task DeleteUserServerStats(UserServerStats userServerStats)
@@ -49,7 +49,7 @@ namespace Fafikv2.Repositories
 
             if (serverUsers == null) return Task.FromResult<UserServerStats>(null!);
             {
-                var result= _context.ServerUsersStats.FirstOrDefault(x => x.ServerUserId == serverUsers.Id);
+                var result = _context.ServerUsersStats.FirstOrDefault(x => x.ServerUserId == serverUsers.Id);
 
                 if (result != null)
                 {
@@ -72,16 +72,16 @@ namespace Fafikv2.Repositories
             var serverUsers = _context.ServerUsers.Where(x => x.ServerId == serverId);
             var result = await _context.ServerUsersStats
                 .Where(uss => serverUsers.Any(su => su.Id == uss.ServerUserId))
-                .OrderByDescending(stats=> stats.MessagesCountServer)
-                .ToListAsync() ;
+                .OrderByDescending(stats => stats.MessagesCountServer)
+                .ToListAsync();
             return result;
         }
 
         public async Task SaveChangesAsync()
         {
-            await _context.SaveChangesAsync() ;
+            await _context.SaveChangesAsync();
         }
 
-        
+
     }
 }

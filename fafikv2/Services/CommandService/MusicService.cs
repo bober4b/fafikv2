@@ -117,22 +117,22 @@ namespace Fafikv2.Services.CommandService
                         Console.WriteLine(ex.Message);
                         return;
                     }
-                    
+
                 }
 
 
                 if (dictionary.AutoPlayOn && dictionary.Queue.Count == 0 && !dictionary.Genre.IsNullOrEmpty())
                 {
-                    
+
                     var autoNextTrack = await _songCollectionService.AutoPlayByGenre(node, dictionary.Genre);
                     await node.PlayAsync(autoNextTrack);
                     nextTrackMessage = $"Next track: {autoNextTrack?.Title}";
                     if (autoNextTrack != null) dictionary.Queue.Add(autoNextTrack);
-                    
+
                 }
                 else if (dictionary.AutoPlayOn && dictionary.Queue.Count == 0)
                 {
-                    
+
                     var autoNextTrack = await _songCollectionService.AutoPlay(node, finishedTrack);
                     await node.PlayAsync(autoNextTrack);
                     if (autoNextTrack != null)
@@ -140,7 +140,7 @@ namespace Fafikv2.Services.CommandService
                         nextTrackMessage = $"Next track: {autoNextTrack.Title}";
                         dictionary.Queue.Add(autoNextTrack);
                     }
-                    
+
                 }
 
                 var finishedTrackMessage = $"Finished playing: {finishedTrack.Title}";
@@ -273,7 +273,7 @@ namespace Fafikv2.Services.CommandService
                         dictionary.Queue.Add(track);
 
 
-                   
+
 
                         await ctx.RespondAsync(
                             $"Utwór {track.Title} zostanie odtworzony za: {timeLeft.Minutes}:{timeLeft.Seconds:D2}.");

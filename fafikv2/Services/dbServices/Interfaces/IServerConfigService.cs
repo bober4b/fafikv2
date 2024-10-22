@@ -20,5 +20,5 @@ namespace Fafikv2.Services.dbServices.Interfaces
 
     }
 
-    
+
 }

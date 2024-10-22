@@ -1,5 +1,4 @@
-﻿using DSharpPlus;
-using DSharpPlus.EventArgs;
+﻿using DSharpPlus.EventArgs;
 
 namespace Fafikv2.Services.OtherServices.Interfaces;
 

@@ -10,13 +10,13 @@ namespace Fafikv2.Repositories
         private readonly DiscordBotDbContext _context;
         public SongsRepository(DiscordBotDbContext context)
         {
-            _context=context;
+            _context = context;
         }
 
         public async Task AddSong(Song song)
         {
             _context.Songs.Add(song);
-            await _context.SaveChangesAsync() ;
+            await _context.SaveChangesAsync();
         }
 
 

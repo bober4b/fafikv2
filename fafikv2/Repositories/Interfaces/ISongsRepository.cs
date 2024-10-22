@@ -3,7 +3,7 @@ namespace Fafikv2.Repositories.Interfaces
 {
     public interface ISongsRepository
     {
-        public Task AddSong(Song  song);
+        public Task AddSong(Song song);
         public Task RemoveSong(Song song);
         public Task<Song?> Get(string? title, string? artist);
         public Task<bool> HasBeenAdded(string? title, string? artist);
