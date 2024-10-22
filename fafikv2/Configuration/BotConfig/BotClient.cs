@@ -2,13 +2,11 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.Lavalink;
 using DSharpPlus.Net;
 using Fafikv2.Commands;
 using Fafikv2.Configuration.ConfigJSON;
 using Fafikv2.Data.Models;
-using Fafikv2.Services.CommandService;
 using Fafikv2.Services.dbServices.Interfaces;
 using Fafikv2.Services.OtherServices.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -59,16 +57,6 @@ namespace Fafikv2.Configuration.BotConfig
 
             var jsonReader = new JsonReader();
             await jsonReader.ReadJson();
-
-
-            var discordConfig = new DiscordConfiguration()
-            {
-                Intents = DiscordIntents.All,
-                Token = jsonReader.Token,
-                TokenType = TokenType.Bot,
-                AutoReconnect = true
-            };
-
 
 
             _client.Ready += Client_Ready;
@@ -144,7 +132,7 @@ namespace Fafikv2.Configuration.BotConfig
         private async Task Client_VoiceStateUpdated(DiscordClient sender, VoiceStateUpdateEventArgs args)
         {
             var botVoiceState = args.Guild.CurrentMember?.VoiceState;
-            if (botVoiceState == null || botVoiceState?.Channel == null )
+            if (botVoiceState == null || botVoiceState.Channel == null )
             {
                 return;
             }
