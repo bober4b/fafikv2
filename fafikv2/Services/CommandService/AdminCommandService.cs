@@ -12,11 +12,12 @@ public class AdminCommandService
     private readonly IDatabaseContextQueueService _databaseContextQueueService;
     private readonly IServerConfigService _serverConfigService;
 
-    public AdminCommandService(ServiceProvider serviceProvider)
+    public AdminCommandService(IBannedWordsService bannedWordsService, IDatabaseContextQueueService databaseContextQueueService, IServerConfigService serverConfigService)
     {
-        _bannedWordsService = serviceProvider.GetRequiredService<IBannedWordsService>();
-        _databaseContextQueueService = serviceProvider.GetRequiredService<IDatabaseContextQueueService>();
-        _serverConfigService = serviceProvider.GetRequiredService<IServerConfigService>();
+
+        _bannedWordsService = bannedWordsService;
+        _databaseContextQueueService = databaseContextQueueService;
+        _serverConfigService = serverConfigService;
     }
     public async Task AddBannedWord(CommandContext ctx, string bannedWord, int time)
     {

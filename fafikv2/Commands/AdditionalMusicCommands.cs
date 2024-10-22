@@ -5,7 +5,13 @@ namespace Fafikv2.Commands
 {
     public class AdditionalMusicCommands : BaseCommandModule
     {
-        public static AdditionalMusicService Service { get; set; } = null!;
+        private readonly AdditionalMusicService _service;
+
+
+        public AdditionalMusicCommands(AdditionalMusicService service)
+        {
+            _service=service;
+        }
 
         [Command("lyric")]
         public async Task Lyric(CommandContext ctx, [RemainingText] string titleAndArtist)
@@ -15,7 +21,7 @@ namespace Fafikv2.Commands
                 var standardisation = titleAndArtist.Split('|');
                 if (standardisation.Length == 2)
                 {
-                    await Service.FindLyric(ctx, standardisation[0], standardisation[1]);
+                    await _service.FindLyric(ctx, standardisation[0], standardisation[1]);
                     return;
                 }
             }

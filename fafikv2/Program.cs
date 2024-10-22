@@ -1,4 +1,5 @@
 ﻿using Fafikv2.Configuration.BotConfig;
+using Fafikv2.Configuration.ConfigJSON;
 using Fafikv2.Configuration.DependencyConfiguration;
 using Fafikv2.Data.DataContext;
 using Microsoft.EntityFrameworkCore;
@@ -10,12 +11,17 @@ namespace Fafikv2
     {
         private static async Task Main()
         {
+            var jsonReader = new JsonReader();
+            await jsonReader.ReadJson();
 
             var servicesProvider = new ServiceCollection()
                 .AddDbContext<DiscordBotDbContext>()
                 .AddRepositories()
                 .AddServices()
+                .AddMusicService(jsonReader.Token)
                 .BuildServiceProvider();
+                
+
 
             await InitializeDatabase(servicesProvider);
 

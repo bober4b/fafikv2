@@ -2,6 +2,7 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.Lavalink;
 using DSharpPlus.Net;
 using Fafikv2.Commands;
@@ -17,7 +18,7 @@ namespace Fafikv2.Configuration.BotConfig
 {
     public class BotClient
     {
-        private static DiscordClient? Client { get; set; }
+        private readonly DiscordClient _client;
         private static CommandsNextExtension? Commands { get; set; }
 
         private readonly IUserService _userService;
@@ -46,6 +47,7 @@ namespace Fafikv2.Configuration.BotConfig
             _autoModerationService = servicesProvider.GetService<IAutoModerationService>() ?? throw new InvalidOperationException();
             _serviceProvider = servicesProvider;
 
+            _client = _serviceProvider.GetRequiredService<DiscordClient>();
 
         }
 
@@ -67,15 +69,14 @@ namespace Fafikv2.Configuration.BotConfig
                 AutoReconnect = true
             };
 
-            Client = new DiscordClient(discordConfig);
 
 
-            Client.Ready += Client_Ready;
-            Client.MessageCreated += Client_MessageCreated;
-            Client.GuildAvailable += Client_GuildAvailable;
-            Client.GuildMemberAdded += Client_GuildMemberAdded;
-            Client.UnknownEvent += Client_UnknownEvent;
-            Client.VoiceStateUpdated += Client_VoiceStateUpdated;
+            _client.Ready += Client_Ready;
+            _client.MessageCreated += Client_MessageCreated;
+            _client.GuildAvailable += Client_GuildAvailable;
+            _client.GuildMemberAdded += Client_GuildMemberAdded;
+            _client.UnknownEvent += Client_UnknownEvent;
+            _client.VoiceStateUpdated += Client_VoiceStateUpdated;
 
 
             var commandsConfig = new CommandsNextConfiguration()
@@ -87,16 +88,14 @@ namespace Fafikv2.Configuration.BotConfig
                 Services = _serviceProvider
             };
 
-            Commands = Client.UseCommandsNext(commandsConfig);
+            Commands = _client.UseCommandsNext(commandsConfig);
             Commands.RegisterCommands<BaseCommands>();
             Commands.RegisterCommands<MusicCommands>();
             Commands.RegisterCommands<AdminCommands>();
             Commands.RegisterCommands<AdditionalMusicCommands>();
+            Commands.RegisterCommands<MusicPanel>();
 
-            BaseCommands.CommandService = new BaseCommandService(_serviceProvider);
-            AdminCommands.CommandService = new AdminCommandService(_serviceProvider);
-            MusicCommands.Service = new MusicService(_serviceProvider);
-            AdditionalMusicCommands.Service = new AdditionalMusicService(jsonReader);
+
 
             var endpoint = new ConnectionEndpoint
             {
@@ -111,9 +110,9 @@ namespace Fafikv2.Configuration.BotConfig
                 SocketEndpoint = endpoint
             };
 
-            var lavalink = Client.UseLavalink();
+            var lavalink = _client.UseLavalink();
 
-            await Client.ConnectAsync();
+            await _client.ConnectAsync();
 
             await lavalink.ConnectAsync(lavalinkConfig);
 
@@ -142,10 +141,10 @@ namespace Fafikv2.Configuration.BotConfig
             await Task.Delay(-1);
         }
 
-        private static async Task Client_VoiceStateUpdated(DiscordClient sender, VoiceStateUpdateEventArgs args)
+        private async Task Client_VoiceStateUpdated(DiscordClient sender, VoiceStateUpdateEventArgs args)
         {
             var botVoiceState = args.Guild.CurrentMember?.VoiceState;
-            if (botVoiceState?.Channel != null || botVoiceState==null)
+            if (botVoiceState == null || botVoiceState?.Channel == null )
             {
                 return;
             }
@@ -154,7 +153,7 @@ namespace Fafikv2.Configuration.BotConfig
 
             if (usersInChannel == 0)
             {
-                var lavalink = Client.GetLavalink();
+                var lavalink = _client.GetLavalink();
                 var nodeConnection = lavalink.GetGuildConnection(botChannel.Guild);
                 if (nodeConnection != null)
                 {

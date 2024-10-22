@@ -16,9 +16,11 @@ namespace Fafikv2.Services.CommandService
 
         private readonly string _apiKey;
 
-        public AdditionalMusicService(JsonReader reader)
+        public AdditionalMusicService()
         {
-            _apiKey = reader.GeniusToken;
+            var jsonReader = new JsonReader();
+            _ = jsonReader.ReadJson();
+            _apiKey = jsonReader.GeniusToken;
         }
 
         public async Task FindLyric(CommandContext ctx, string title, string artist)

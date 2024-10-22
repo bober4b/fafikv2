@@ -8,13 +8,16 @@ namespace Fafikv2.Commands
 {
     public class BaseCommands : BaseCommandModule
     {
-        public static BaseCommandService? CommandService { get; set; }
+        private readonly BaseCommandService _commandService;
+
+        public BaseCommands(BaseCommandService commandService)
+        {
+            _commandService=commandService;
+        }
 
 
         [Command("ping")]
-#pragma warning disable CA1822
         public async Task Ping(CommandContext ctx)
-#pragma warning restore CA1822
         {
             string songTitle = "Super Song";
             TimeSpan duration = TimeSpan.FromSeconds(180); // 3 minutes song
@@ -64,13 +67,13 @@ namespace Fafikv2.Commands
         [Command("stats")]
         public async Task Stats(CommandContext ctx)
         {
-            await CommandService!.Stats(ctx);
+            await _commandService.Stats(ctx);
         }
 
         [Command("leaderboard")]
         public async Task Leaderboard(CommandContext ctx)
         {
-            await CommandService!.Leaderboard(ctx);
+            await _commandService.Leaderboard(ctx);
         }
 
     }
