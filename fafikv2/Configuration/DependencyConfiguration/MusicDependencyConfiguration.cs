@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using DSharpPlus;
 using Fafikv2.Commands;
-using Fafikv2.Configuration.ConfigJSON;
 using Fafikv2.Services.CommandService;
 
 namespace Fafikv2.Configuration.DependencyConfiguration
