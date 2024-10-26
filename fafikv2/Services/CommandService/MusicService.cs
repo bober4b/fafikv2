@@ -177,7 +177,7 @@ namespace Fafikv2.Services.CommandService
                 }
                 catch (Exception ex)
                 {
-                    await ctx.RespondAsync("Wystąpił błąd podczas opuszczania pokoju.");
+                    await ctx.RespondAsync("An error occurred while leaving the room.");
                     Console.WriteLine(ex.Message);
                     return;
                 }
@@ -193,11 +193,10 @@ namespace Fafikv2.Services.CommandService
             {
                 await conn.PlayAsync(track);
 
-                //await ctx.RespondAsync($"Now playing {track.Title}!");
             }
             catch (Exception e)
             {
-                await ctx.RespondAsync("Wystąpił błąd podczas odtwarzania piosenki. Spróbuj ponownie później.");
+                await ctx.RespondAsync("An error occurred while playing the song. Please try again later.");
                 Console.WriteLine($"{e.Message}");
             }
         }
@@ -215,7 +214,7 @@ namespace Fafikv2.Services.CommandService
             }
             catch (Exception ex)
             {
-                throw new Exception("Wystąpił błąd podczas pobierania piosenki.", ex);
+                throw new Exception("An error occurred while retrieving the song.", ex);
             }
         }
 
@@ -227,7 +226,18 @@ namespace Fafikv2.Services.CommandService
                 var node = ctx.Client.GetLavalink().ConnectedNodes.Values.First();
 
 
-                var loadResult = await LoadTrack(node, search);
+                LavalinkLoadResult loadResult;
+                try
+                {
+                    loadResult = await LoadTrack(node, search);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    return;
+
+                }
+                
 
                 // node.Rest.GetTracksAsync()
 
@@ -244,7 +254,7 @@ namespace Fafikv2.Services.CommandService
                 }
                 catch (Exception ex)
                 {
-                    await ctx.RespondAsync("Wystąpił błąd podczas pobierania piosenki. Spróbuj ponownie później.");
+                    await ctx.RespondAsync("An error occurred while fetching the song. Please try again later.");
                     Console.WriteLine(ex.Message);
                     return;
                 }
@@ -276,7 +286,7 @@ namespace Fafikv2.Services.CommandService
 
 
                         await ctx.RespondAsync(
-                            $"Utwór {track.Title} zostanie odtworzony za: {timeLeft.Minutes}:{timeLeft.Seconds:D2}.");
+                            $"The track {track.Title} will play in: {timeLeft.Minutes}:{timeLeft.Seconds:D2}.");
                     }
                 }
 
@@ -315,6 +325,10 @@ namespace Fafikv2.Services.CommandService
                             await PlayTrack(ctx, conn, autoNextTrack);
                             dictionary.Queue.Add(autoNextTrack);
                         }
+                    }
+                    else if (dictionary.Queue.Count==0)
+                    {
+                        await conn.StopAsync();
                     }
 
                     var finishedTrackMessage = $"Finished playing: {finishedTrack.Title}";
@@ -355,7 +369,7 @@ namespace Fafikv2.Services.CommandService
                 }
                 catch (Exception e)
                 {
-                    await ctx.RespondAsync("Wystąpił błąd podczas pauzowania piosenki. Spróbuj ponownie później.")
+                    await ctx.RespondAsync("An error occurred while pausing the song. Please try again later.")
                         ;
                     Console.WriteLine($"{e.Message}");
                     return;
@@ -385,7 +399,7 @@ namespace Fafikv2.Services.CommandService
                 }
                 catch (Exception e)
                 {
-                    await ctx.RespondAsync("Wystąpił błąd podczas wznawiania piosenki. Spróbuj ponownie później.")
+                    await ctx.RespondAsync("An error occurred while resuming the song. Please try again later.")
                         ;
                     Console.WriteLine($"{e.Message}");
                     return;
@@ -433,7 +447,7 @@ namespace Fafikv2.Services.CommandService
                 }
                 catch (Exception e)
                 {
-                    await ctx.RespondAsync("Wystąpił błąd podczas ustawiania głośności. Spróbuj ponownie później.")
+                    await ctx.RespondAsync("An error occurred while setting the volume. Please try again later.")
                         ;
                     Console.WriteLine($"{e.Message}");
                     return;
@@ -475,6 +489,7 @@ namespace Fafikv2.Services.CommandService
             return false;
 
         }
+
         private static async Task<LavalinkGuildConnection?> IsConnected(CommandContext ctx)
         {
             var lava = ctx.Client.GetLavalink();
