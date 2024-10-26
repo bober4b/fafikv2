@@ -65,7 +65,7 @@ namespace Fafikv2.Configuration.BotConfig
             _client.GuildMemberAdded += Client_GuildMemberAdded;
             _client.UnknownEvent += Client_UnknownEvent;
             _client.VoiceStateUpdated += Client_VoiceStateUpdated;
-
+            
 
             var commandsConfig = new CommandsNextConfiguration()
             {
@@ -198,54 +198,60 @@ namespace Fafikv2.Configuration.BotConfig
             await _serverConfigService.AddServerConfig(sConfig);
             foreach (var user in users)
             {
-                if (user.IsBot) continue;
-                var value = user.Id;
-                var formatted = $"{value:X32}";
-                var statsId = Guid.NewGuid();
-                var useradd = new User
-                {
-                    Name = user.Username,
-                    Id = Guid.Parse(formatted),
-                    BotInteractionGlobal = 0,
-                    GlobalKarma = 0,
-                    MessagesCountGlobal = 0,
-                    UserLevel = 0
-
-                };
-                await _userService.AddUser(useradd);
-                Console.WriteLine($"dodano: {user.Username} {user.Id} {server.Name}");
-
-
-
-                var serverUser = new ServerUsers
-                {
-                    ServerId = server1.Id,
-                    UserId = useradd.Id,
-                    UserServerStatsId = statsId,
-                    Id = Guid.NewGuid(),
-
-
-                };
-
-
-                var userStats = new UserServerStats
-                {
-                    Id = statsId,
-                    ServerKarma = 0,
-                    MessagesCountServer = 0,
-                    BotInteractionServer = 0,
-                    DisplayName = user.DisplayName,
-                    ServerUsers = serverUser,
-                    ServerUserId = serverUser.Id
-                };
-
-                await _serverUsersService.AddServerUsers(serverUser);
-
-
-                await _userServerStatsService.AddUserServerStats(userStats);
+                await AddUser(user, server1);
             }
 
 
+        }
+
+
+        private async Task AddUser(DiscordMember user, Server server)
+        {
+            if(user.IsBot )return;
+            var value = user.Id;
+            var formatted = $"{value:X32}";
+            var statsId = Guid.NewGuid();
+            var useradd = new User
+            {
+                Name = user.Username,
+                Id = Guid.Parse(formatted),
+                BotInteractionGlobal = 0,
+                GlobalKarma = 0,
+                MessagesCountGlobal = 0,
+                UserLevel = 0
+
+            };
+            await _userService.AddUser(useradd);
+            Console.WriteLine($"dodano: {user.Username} {user.Id} {server.Name}");
+
+
+
+            var serverUser = new ServerUsers
+            {
+                ServerId = server.Id,
+                UserId = useradd.Id,
+                UserServerStatsId = statsId,
+                Id = Guid.NewGuid(),
+
+
+            };
+
+
+            var userStats = new UserServerStats
+            {
+                Id = statsId,
+                ServerKarma = 0,
+                MessagesCountServer = 0,
+                BotInteractionServer = 0,
+                DisplayName = user.DisplayName,
+                ServerUsers = serverUser,
+                ServerUserId = serverUser.Id
+            };
+
+            await _serverUsersService.AddServerUsers(serverUser);
+
+
+            await _userServerStatsService.AddUserServerStats(userStats);
         }
 
         private static Task Client_Ready(DiscordClient sender, ReadyEventArgs args)

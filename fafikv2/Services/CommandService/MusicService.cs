@@ -1,6 +1,7 @@
 ﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using DSharpPlus.Lavalink;
 using DSharpPlus.Lavalink.EventArgs;
 using Fafikv2.Data.Models;
@@ -103,11 +104,11 @@ namespace Fafikv2.Services.CommandService
                 var finishedTrack = dictionary.Queue.First();
                 dictionary.Queue.RemoveAt(0);
 
-                var nextTrackMessage = "";
+                //var nextTrackMessage = "";
                 if (dictionary.Queue.Count > 0)
                 {
                     var nextTrack = dictionary.Queue.First();
-                    nextTrackMessage = $"Next track: {nextTrack.Title}";
+                    //nextTrackMessage = $"Next track: {nextTrack.Title}";
                     try
                     {
                         await node.PlayAsync(nextTrack);
@@ -126,7 +127,7 @@ namespace Fafikv2.Services.CommandService
 
                     var autoNextTrack = await _songCollectionService.AutoPlayByGenre(node, dictionary.Genre);
                     await node.PlayAsync(autoNextTrack);
-                    nextTrackMessage = $"Next track: {autoNextTrack?.Title}";
+                   // nextTrackMessage = $"Next track: {autoNextTrack?.Title}";
                     if (autoNextTrack != null) dictionary.Queue.Add(autoNextTrack);
 
                 }
@@ -137,18 +138,18 @@ namespace Fafikv2.Services.CommandService
                     await node.PlayAsync(autoNextTrack);
                     if (autoNextTrack != null)
                     {
-                        nextTrackMessage = $"Next track: {autoNextTrack.Title}";
+                        //nextTrackMessage = $"Next track: {autoNextTrack.Title}";
                         dictionary.Queue.Add(autoNextTrack);
                     }
 
                 }
 
-                var finishedTrackMessage = $"Finished playing: {finishedTrack.Title}";
-                var message = $"{finishedTrackMessage}\n{nextTrackMessage}";
+                // var finishedTrackMessage = $"Finished playing: {finishedTrack.Title}";
+                //var message = $"{finishedTrackMessage}\n{nextTrackMessage}";
 
 
-                var textChannel = node.Guild.SystemChannel;
-                await textChannel.SendMessageAsync(message);
+                //var textChannel = node.Guild.SystemChannel;
+                //await textChannel.SendMessageAsync(message);    //sending disabled
             }
         }
 
@@ -197,6 +198,19 @@ namespace Fafikv2.Services.CommandService
             catch (Exception e)
             {
                 await ctx.RespondAsync("An error occurred while playing the song. Please try again later.");
+                Console.WriteLine($"{e.Message}");
+            }
+        }
+
+        private static async Task PlayTrack(ComponentInteractionCreateEventArgs args, LavalinkGuildConnection conn, LavalinkTrack track)
+        {
+            try
+            {
+                await conn.PlayAsync(track);
+            }
+            catch (Exception e)
+            {
+                await SendMessage(args, "An error occurred while playing the song. Please try again later.");
                 Console.WriteLine($"{e.Message}");
             }
         }
@@ -489,6 +503,23 @@ namespace Fafikv2.Services.CommandService
             return false;
 
         }
+        private async Task<bool> IsAutoplayEnabled(DiscordClient client, ComponentInteractionCreateEventArgs args)
+        {
+            var guildId = args.Guild.Id;
+            var guildGuid = Guid.Parse($"{guildId:X32}");
+
+            var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
+                await _serverConfigService.IsAutoPlayEnable(guildGuid));
+
+            if (result)
+            {
+                var connection = await IsConnectedPanel(client, args); 
+                return connection != null;
+            }
+
+            await SendMessage(args, "Auto Play is disabled on this server.");
+            return false;
+        }
 
         private static async Task<LavalinkGuildConnection?> IsConnected(CommandContext ctx)
         {
@@ -518,12 +549,196 @@ namespace Fafikv2.Services.CommandService
 
         }
 
+
+        private static async Task<LavalinkGuildConnection?> IsConnectedPanel(DiscordClient client, ComponentInteractionCreateEventArgs args)
+        {
+
+            var guildId = args.Guild.Id;
+            var memberId = args.User.Id;
+            var guild = await client.GetGuildAsync(guildId);
+            var member = await guild.GetMemberAsync(memberId);
+
+
+
+            var lava = client.GetLavalink();
+
+            if (!lava.ConnectedNodes.Any())
+            { 
+                await SendMessage(args,"The Lavalink connection is not established");
+                return null;
+            }
+
+            var node = lava.ConnectedNodes.Values.First();
+
+
+            var voiceState = member.VoiceState;
+            if (voiceState?.Channel == null)
+            {
+                Console.WriteLine($"{member.VoiceState?.Channel}");
+                await SendMessage(args, "You need to be in a voice channel to use this command.");
+                return null;
+            }
+            var conn = node.GetGuildConnection(guild);
+
+            if (conn != null) return conn;
+            await SendMessage(args, "Lavalink is not connected.");
+            return null;
+        }
+
+
+        private static async Task SendMessage(ComponentInteractionCreateEventArgs args, string message)
+        {
+            await args.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource,
+                new DiscordInteractionResponseBuilder()
+                    .WithContent(message)
+                    .AsEphemeral());
+        }
+
         private static async Task ExecuteIfConnected(CommandContext ctx, Func<LavalinkGuildConnection, Task> action)
         {
             var conn = await IsConnected(ctx);
             if (conn == null) return;
 
             await action(conn);
+        }
+
+        public  Task<SongServiceDictionary> GetMusicDictionary(CommandContext ctx)
+        {
+            if (!_songServiceDictionaries.TryGetValue(ctx.Guild.Id, out _))
+            {
+                _songServiceDictionaries[ctx.Guild.Id] = new SongServiceDictionary { Queue = new List<LavalinkTrack>() };
+            }
+            
+            return Task.FromResult(_songServiceDictionaries[ctx.Guild.Id]);
+        }
+
+        public async Task<bool> SkipFromPanel(DiscordClient client, ComponentInteractionCreateEventArgs args)
+        {
+            var guildId = args.Guild.Id;
+            var guild = await client.GetGuildAsync(guildId);
+
+
+            var lava = await IsConnectedPanel(client, args);
+
+            if (lava == null) 
+                return true;
+
+
+            if (_songServiceDictionaries.TryGetValue(guild.Id, out var dictionary) && dictionary.Queue?.Count > 0)
+            {
+                var finishedTrack = dictionary.Queue.First();
+                dictionary.Queue.RemoveAt(0);
+
+                if (dictionary.Queue.Count > 0)
+                {
+                    await PlayTrack(args, lava, dictionary.Queue[0]); // Zmieniamy ctx na args
+                }
+                else if (dictionary.AutoPlayOn && dictionary.Queue.Count == 0)
+                {
+                    var autoNextTrack = await GetAutoNextTrack(lava, dictionary, finishedTrack);
+                    if (autoNextTrack != null)
+                    {
+                        await PlayTrack(args, lava, autoNextTrack); // Zmieniamy ctx na args
+                        dictionary.Queue.Add(autoNextTrack);
+                    }
+                }
+                else if (dictionary.Queue.Count == 0)
+                {
+                    await lava.StopAsync();
+                }
+
+                var finishedTrackMessage = $"Finished playing: {finishedTrack.Title}";
+                var nextTrackMessage = dictionary.Queue.Count > 0 ? $"Next track: {dictionary.Queue.First().Title}" : "No more tracks in queue.";
+                var message = $"{finishedTrackMessage}\n{nextTrackMessage}";
+
+                await SendMessage(args, message);
+            }
+
+            return true;
+        }
+
+        public async Task<bool> ResumeAsyncFromPanel(DiscordClient client,
+            ComponentInteractionCreateEventArgs args)
+        {
+
+
+            var lava = await IsConnectedPanel(client, args);
+
+            if (lava == null)
+                return true;
+
+            if (lava.CurrentState.CurrentTrack == null)
+            {
+                await SendMessage(args,"there are no track loaded.");
+                return true;
+            }
+
+            try
+            {
+                await lava.ResumeAsync();
+            }
+            catch (Exception e)
+            {
+                await SendMessage(args, "An error occurred while resuming the song. Please try again later.");
+                Console.WriteLine($"{e.Message}");
+                return true;
+            }
+
+            await SendMessage(args, "music is playing again.");
+
+
+
+            return true;
+
+
+        }
+
+        public async Task<bool> AutoPlayFromPanel(DiscordClient client, ComponentInteractionCreateEventArgs args)
+        {
+            var guildId = args.Guild.Id;
+
+            if (!await IsAutoplayEnabled(client,args)) return true;
+
+            _songServiceDictionaries[guildId].AutoPlayOn = true;
+            _songServiceDictionaries[guildId].Genre = string.Empty;
+
+
+            await SendMessage(args, "Auto Play is on.");
+            return true;
+        }
+
+        public async Task<bool> PauseFromPanel(DiscordClient client, ComponentInteractionCreateEventArgs args)
+        {
+            var guildId = args.Guild.Id;
+
+
+            var lava = await IsConnectedPanel(client, args);
+
+            if (lava == null)
+                return true;
+
+
+            if (lava.CurrentState.CurrentTrack == null)
+            {
+                await SendMessage(args, "there are no track loaded.");
+                return true;
+            }
+
+            try
+            {
+                await lava.PauseAsync();
+            }
+            catch (Exception e)
+            {
+                await SendMessage(args, "An error occurred while pausing the song. Please try again later.");
+                Console.WriteLine($"{e.Message}");
+                return true;
+            }
+
+            await SendMessage(args, "music is paused.");
+
+            return true;
+
         }
 
     }

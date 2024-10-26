@@ -40,7 +40,7 @@ namespace Fafikv2.Commands
                     j++;
                 }
                 string progressBar = CreateProgressBar(j, totalBars);
-                embed.Description = $"`[{progressBar}] {currentTime:mm\\:ss} / {duration:mm\\:ss}`";
+                embed.Description = $@"`[{progressBar}] {currentTime:mm\:ss} / {duration:mm\:ss}`";
 
                 await message.ModifyAsync(embed: new Optional<DiscordEmbed>(embed));
                 await Task.Delay(1000); // Delay proportional to song duration
