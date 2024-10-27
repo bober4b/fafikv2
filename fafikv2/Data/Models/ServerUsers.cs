@@ -10,7 +10,6 @@ namespace Fafikv2.Data.Models
         public Guid UserId { get; set; }
         public Server? Server { get; set; }
         public Guid ServerId { get; set; }
-
         public Guid? UserServerStatsId { get; set; }
         public UserServerStats? UserServerStats { get; set; }
 

@@ -3,6 +3,7 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using Fafikv2.Commands.MessageCreator;
 using Fafikv2.Services.CommandService;
 
 namespace Fafikv2.Commands
@@ -11,6 +12,7 @@ namespace Fafikv2.Commands
     {
         private readonly DiscordClient _client;
         private readonly MusicService _musicService;
+
 
         // Constructor for the Music Panel class
         public MusicPanel(DiscordClient client, MusicService service)
@@ -35,6 +37,9 @@ namespace Fafikv2.Commands
                     case "Auto_Play":
                         await HandleAutoPlayButton(e);
                         break;
+                    case "Queue":
+                        await HandleQueueButton(e);
+                        break;
                     default:
                         await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource,
                             new DiscordInteractionResponseBuilder()
@@ -43,6 +48,16 @@ namespace Fafikv2.Commands
                         break;
                 }
             };
+        }
+
+        private async Task HandleQueueButton(ComponentInteractionCreateEventArgs e)
+        {
+           var result= await _musicService.QueueFromPanel(e);
+
+           await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource,
+               new DiscordInteractionResponseBuilder()
+                   .AddEmbed(MessagesComposition.EmbedQueueComposition(result))
+                   .AsEphemeral());
         }
 
         private async Task HandleAutoPlayButton(ComponentInteractionCreateEventArgs e)
@@ -57,9 +72,15 @@ namespace Fafikv2.Commands
 
         private async Task HandleSkipButton(ComponentInteractionCreateEventArgs e)
         {
-            if(!await _musicService.SkipFromPanel(_client, e))
-                await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
+            if (await _musicService.SkipFromPanel(_client, e))
+            {
+                
+               await e.Message.ModifyAsync(
+                   MessagesComposition.EmbedPanelComposition(
+                       await _musicService.GetMusicDictionary(e.Guild)));
+            }
             //await _musicService.SkipFromPanel(_client, e);
+
 
         }
 
@@ -68,40 +89,14 @@ namespace Fafikv2.Commands
             await _musicService.ResumeAsyncFromPanel(_client, e);
 
         }
-    
-
+        
         [Command("Panel")]
         public async Task SendPinnedMessageWithButtons(CommandContext ctx)
         {
-            var x = await _musicService.GetMusicDictionary(ctx);
-            var embed = new DiscordEmbedBuilder
-            {
-                Title = "NOW PLAYING: " + (x.Queue?.Count > 0 ? x.Queue[0].Title : "No track playing"),
-                Color = new DiscordColor(2326507)
-            }.Build();
-
-            var messageBuilder = new DiscordMessageBuilder()
-                .WithEmbed(embed)
-                .AddComponents(
-                    new DiscordButtonComponent(ButtonStyle.Primary, "Play", "Play", false,
-                        new DiscordComponentEmoji(DiscordEmoji.FromUnicode("▶️"))),
-                    new DiscordButtonComponent(ButtonStyle.Primary, "Skip", "Skip", false,
-                        new DiscordComponentEmoji(DiscordEmoji.FromUnicode("⏭️"))),
-                    new DiscordButtonComponent(ButtonStyle.Primary, "Pause", "Pause", false,
-                        new DiscordComponentEmoji(DiscordEmoji.FromUnicode("⏸️")))
-
-                ).AddComponents(
-                    new DiscordButtonComponent(ButtonStyle.Primary, "Auto_Play", "Auto Play", false,
-                        new DiscordComponentEmoji(DiscordEmoji.FromUnicode("🔀"))));
-
-            // Sending the message
-            /*var message = */await ctx.Channel.SendMessageAsync(messageBuilder);
-
-            // Pinning the message
-            //await message.PinAsync();
-
+            var x = await _musicService.GetMusicDictionary(ctx.Guild);
             
-        }
+            await ctx.Channel.SendMessageAsync(MessagesComposition.EmbedPanelComposition(x));
 
+        }
     }
 }
