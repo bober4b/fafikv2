@@ -1,5 +1,7 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Entities;
+using Fafikv2.Commands.MessageCreator;
 using Fafikv2.Services.CommandService;
 namespace Fafikv2.Commands
 {
@@ -26,38 +28,50 @@ namespace Fafikv2.Commands
                 }
             }
 
-            await ctx.RespondAsync("zły format!!");
+            await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("lyric","incorrect format"));
         }
 
         [Command("Help")]
 
-        public Task Help(CommandContext ctx)
+        public async Task Help(CommandContext ctx)
         {
-            ctx.RespondAsync(
-                "lyric-słowa piosenki" +
-                "\r\nbanned-dodaj zakazane słowo" +
-                "\r\nrbanned- usuń zakazane słowo" +
-                "\r\nkick_enable- Włącz kicki na serwerze" +
-                "\r\nkick_disable- wyłącz kicki na serwerze" +
-                "\r\nban_enable- włącz bany na serwerze" +
-                "\r\nban_disabled- wyłącz bany na serwerze" +
-                "\r\nauto_moderator_enable-włącz automatycznego moderatora" +
-                "\r\nauto_moderator_disable- wyłącz automatycznego moderatora" +
-                "\r\nauto_play_enable- włącz auto kolejkę na serwerze" +
-                "\r\nauto_play_disable- wyłącz auto kolejkę na serwerze" +
-                "\r\nstats- wyświetl swoje statystyki" +
-                "\r\nleaderboard- pokarz top 3 osoby na serwerze" +
-                "\r\nJoin: Dołącza do wybranego kanału." +
-                "\r\nLeave: Opuść aktualny kanał." +
-                "\r\nPlay: Odtwarza utwór na podstawie wyszukiwania." +
-                "\r\nPause: Pauzuje aktualnie odtwarzany utwór." +
-                "\r\nResume: Wznawia odtwarzanie utworu." +
-                "\r\nSkip: Przechodzi do następnego utworu." +
-                "\r\nQueue: Wyświetla listę odtwarzanych utworów." +
-                "\r\nVolume: Ustawia głośność odtwarzania." +
-                "\r\nAutoPlay: Automatycznie odtwarza muzykę." +
-                "\r\nAutoPlayByGenre: Automatyczne odtwarzanie według gatunku.");
-            return Task.CompletedTask;
+            var embed = new DiscordEmbedBuilder
+            {
+                Title = "Command List",
+                Description = "Here are all the available commands you can use:",
+                Color = DiscordColor.Blurple
+            };
+
+            embed.AddField("🎶 Music",
+                "**Join** - Joins the specified channel\n" +
+                "**Leave** - Leaves the current channel\n" +
+                "**Play** - Plays a song based on your search\n" +
+                "**Pause** - Pauses the currently playing song\n" +
+                "**Resume** - Resumes song playback\n" +
+                "**Skip** - Skips to the next song\n" +
+                "**Queue** - Displays the song queue\n" +
+                "**Volume** - Sets playback volume\n" +
+                "**AutoPlay** - Enables automatic music playback\n" +
+                "**AutoPlayByGenre** - Automatically plays music by genre");
+
+            embed.AddField("🛡️ Moderation",
+                "**kick_enable** - Enables kicks on the server\n" +
+                "**kick_disable** - Disables kicks on the server\n" +
+                "**ban_enable** - Enables bans on the server\n" +
+                "**ban_disable** - Disables bans on the server\n" +
+                "**auto_moderator_enable** - Enables automatic moderator\n" +
+                "**auto_moderator_disable** - Disables automatic moderator\n" +
+                "**banned** - Adds a banned word\n" +
+                "**rbanned** - Removes a banned word\n"+
+                "**auto_play_enable** - Enables auto play queue on the server\n" + 
+                "**auto_play_disable** - Disables auto play queue on the server");
+
+            embed.AddField("📈 Statistics",
+                "**stats** - Displays your statistics\n" +
+                "**leaderboard** - Shows the top 3 users on the server");
+
+            await ctx.RespondAsync(embed: embed);
         }
+
     }
 }

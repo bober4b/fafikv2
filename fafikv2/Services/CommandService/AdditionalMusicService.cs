@@ -4,6 +4,8 @@ using HtmlAgilityPack;
 using Newtonsoft.Json.Linq;
 using System.Net.Http.Headers;
 using System.Web;
+using Fafikv2.Commands.MessageCreator;
+using DSharpPlus.Entities;
 
 namespace Fafikv2.Services.CommandService
 {
@@ -22,7 +24,6 @@ namespace Fafikv2.Services.CommandService
             _ = jsonReader.ReadJson();
             _apiKey = jsonReader.GeniusToken;
         }
-
         public async Task FindLyric(CommandContext ctx, string title, string artist)
         {
             try
@@ -31,31 +32,42 @@ namespace Fafikv2.Services.CommandService
                 if (!string.IsNullOrEmpty(songId))
                 {
                     var lyrics = await GetLyrics(_apiKey, songId);
-                    if (lyrics is { Length: >= 2000 })
+                    var songUrl = $"https://genius.com/songs/{songId}";
+
+                    // Jeśli tekst przekracza 4096 znaków, skracamy go
+                    var truncatedLyrics = lyrics is { Length: > 4096 } ? lyrics[..4093] + "..." : lyrics;
+
+                    // Tworzy embed z tekstem piosenki (maksymalnie 4096 znaków)
+                    var embed = new DiscordEmbedBuilder
                     {
-                        var chunks = Enumerable.Range(0, (int)Math.Ceiling((double)lyrics.Length / 2000))
-                            .Select(i => lyrics.Substring(i * 2000, Math.Min(2000, lyrics.Length - i * 2000)));
-                        foreach (var partial in chunks)
-                        {
-                            await ctx.RespondAsync(partial);
-                        }
-                    }
-                    else
-                    {
-                        if (lyrics != null) await ctx.RespondAsync(lyrics);
-                    }
+                        Title = $"Lyrics for '{title}' by {artist}",
+                        Description = truncatedLyrics,
+                        Color = DiscordColor.Purple,
+                        Url = songUrl
+                    };
+
+                    var messageBuilder = new DiscordMessageBuilder().AddEmbed(embed);
+
+                    await ctx.RespondAsync(messageBuilder);
                 }
                 else
                 {
-                    await ctx.RespondAsync("Nie znaleziono piosenki.");
-                    Console.WriteLine("Nie znaleziono piosenki.");
+                    // Gdy nie znaleziono piosenki
+                    var notFoundEmbed = new DiscordEmbedBuilder
+                    {
+                        Title = "Lyric Not Found",
+                        Description = $"Could not find lyrics for '{title}' by {artist}.",
+                        Color = DiscordColor.Red
+                    };
+                    await ctx.RespondAsync(embed: notFoundEmbed.Build());
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Wystąpił błąd: {ex.Message}");
+                Console.WriteLine($"An error occurred: {ex.Message}");
             }
         }
+
 
         private static async Task<string?> GetSongId(string apiKey, string songTitle, string artist)
         {
