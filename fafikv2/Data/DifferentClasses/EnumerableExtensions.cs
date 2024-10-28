@@ -9,4 +9,9 @@ namespace Fafikv2.Data.DifferentClasses
             return source.OrderBy(_ => Random.Next()).Take(count);
         }
     }
+    public static class GuidExtensions
+    {
+        public static Guid ToGuid(this ulong value) => Guid.Parse($"{value:X32}");
+    }
+
 }

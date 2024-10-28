@@ -5,5 +5,6 @@ namespace Fafikv2.Services.dbServices.Interfaces
     {
         public Task AddServer(Server server);
         public Task UpdateServer(Server server);
+        public Task<Server> GetServer(Guid serverId);
     }
 }

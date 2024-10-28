@@ -33,5 +33,12 @@ namespace Fafikv2.Services.dbServices
         {
             throw new NotImplementedException();
         }
+
+        public  Task<Server> GetServer(Guid serverId)
+        {
+            return Task.FromResult(_serverRepository
+                .GetAll()
+                .FirstOrDefault(x =>  x.Id == serverId)!);
+        }
     }
 }

@@ -2,7 +2,7 @@
 using Fafikv2.Services.OtherServices.Interfaces;
 using System.Text;
 using System.Text.Json;
-
+using Serilog;
 
 namespace Fafikv2.Services.OtherServices
 {
@@ -44,9 +44,10 @@ namespace Fafikv2.Services.OtherServices
 
         private static async Task<JsonDocument> SearchTrack(string query, string? accessToken)
         {
-            var builder = new UriBuilder("https://api.spotify.com/v1/search");
-            var queryParams = $"q={Uri.EscapeDataString(query)}&type=track&limit=1";
-            builder.Query = queryParams;
+            var builder = new UriBuilder("https://api.spotify.com/v1/search")
+            {
+                Query = $"q={Uri.EscapeDataString(query)}&type=track&limit=1"
+            };
 
             var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
@@ -116,14 +117,14 @@ namespace Fafikv2.Services.OtherServices
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error searching track: {ex.Message}");
+                Log.Error(ex, "Error searching track");
                 return Array.Empty<string>();
             }
 
 
             if (searchResult.RootElement.GetProperty("tracks").GetProperty("items").GetArrayLength() == 0)
             {
-                Console.WriteLine("No tracks found matching the query.");
+                Log.Warning("No tracks found matching the query.");
                 return Array.Empty<string>();
             }
 
@@ -138,7 +139,7 @@ namespace Fafikv2.Services.OtherServices
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error extracting track ID: {ex.Message}");
+                Log.Error(ex, "Error extracting track ID");
                 return Array.Empty<string>();
             }
 
@@ -149,7 +150,7 @@ namespace Fafikv2.Services.OtherServices
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error getting track details: {ex.Message}");
+                Log.Error(ex, "Error getting track details");
                 return Array.Empty<string>();
             }
 
@@ -163,7 +164,7 @@ namespace Fafikv2.Services.OtherServices
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error extracting artist ID: {ex.Message}");
+                Log.Error(ex, "Error extracting artist ID");
                 return Array.Empty<string>();
             }
 
@@ -174,7 +175,7 @@ namespace Fafikv2.Services.OtherServices
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error getting artist details: {ex.Message}");
+                Log.Error(ex, "Error getting artist details");
                 return Array.Empty<string>();
             }
 
@@ -187,7 +188,7 @@ namespace Fafikv2.Services.OtherServices
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Log.Error(e, "Error extracting genres");
                 throw;
             }
             return result;
@@ -202,7 +203,7 @@ namespace Fafikv2.Services.OtherServices
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error obtaining access token: {ex.Message}");
+                Log.Error(ex, "Error obtaining access token");
                 return new List<string>();
             }
 
@@ -216,17 +217,17 @@ namespace Fafikv2.Services.OtherServices
                 }
                 catch (HttpRequestException httpEx)
                 {
-                    Console.WriteLine($"HTTP request error: {httpEx.Message}");
+                    Log.Error(httpEx, "HTTP request error");
                     return new List<string>();
                 }
                 catch (JsonException jsonEx)
                 {
-                    Console.WriteLine($"JSON parsing error: {jsonEx.Message}");
+                    Log.Error(jsonEx, "JSON parsing error");
                     return new List<string>();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Unexpected error: {ex.Message}");
+                    Log.Error(ex, "Unexpected error");
                     return new List<string>();
                 }
             }
@@ -257,17 +258,17 @@ namespace Fafikv2.Services.OtherServices
             }
             catch (HttpRequestException httpEx)
             {
-                Console.WriteLine($"HTTP request error: {httpEx.Message}");
+                Log.Error(httpEx, "HTTP request error");
                 return new List<string>();
             }
             catch (JsonException jsonEx)
             {
-                Console.WriteLine($"JSON parsing error: {jsonEx.Message}");
+                Log.Error(jsonEx, "JSON parsing error");
                 return new List<string>();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unexpected error: {ex.Message}");
+                Log.Error(ex, "Unexpected error");
                 return new List<string>();
             }
         }
@@ -281,32 +282,29 @@ namespace Fafikv2.Services.OtherServices
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error obtaining access token: {ex.Message}");
+                Log.Error(ex, "Error obtaining access token");
                 return new List<string>();
             }
 
             try
             {
-                var genre = userInput?.Trim(' '); // Użycie całego inputu jako nazwy gatunku
+                var genre = userInput?.Trim(' '); 
                 var recommendations = await GetRecommendations(string.Empty, string.Empty, genre!, accessToken);
                 return ExtractTrackDetails(recommendations);
             }
             catch (HttpRequestException httpEx)
             {
-                Console.WriteLine($"HTTP request error: {httpEx.Message}");
-
-
+                Log.Error(httpEx, "HTTP request error");
                 return new List<string>();
-
             }
             catch (JsonException jsonEx)
             {
-                Console.WriteLine($"JSON parsing error: {jsonEx.Message}");
+                Log.Error(jsonEx, "JSON parsing error");
                 return new List<string>();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unexpected error: {ex.Message}");
+                Log.Error(ex, "Unexpected error");
                 return new List<string>();
             }
         }

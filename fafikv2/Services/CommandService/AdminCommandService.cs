@@ -2,8 +2,7 @@
 using Fafikv2.Data.Models;
 using Fafikv2.Services.dbServices.Interfaces;
 using Fafikv2.Services.OtherServices.Interfaces;
-using Microsoft.Extensions.DependencyInjection;
-
+using Fafikv2.Data.DifferentClasses;
 namespace Fafikv2.Services.CommandService;
 
 public class AdminCommandService
@@ -19,179 +18,95 @@ public class AdminCommandService
         _databaseContextQueueService = databaseContextQueueService;
         _serverConfigService = serverConfigService;
     }
+
+    private static bool HasPermission(CommandContext ctx) =>
+        ctx.Member != null && ctx.Member.IsOwner;
+
+    private static async Task RespondWithPermissionError(CommandContext ctx) =>
+        await ctx.RespondAsync("Permission denied!!!");
+    private async Task ExecuteDatabaseTaskWithResponse(CommandContext ctx, Func<Task<bool>> databaseTask, string successMessage, string failureMessage)
+    {
+        var result = await _databaseContextQueueService.EnqueueDatabaseTask(databaseTask);
+        await ctx.RespondAsync(result ? successMessage : failureMessage);
+    }
+
     public async Task AddBannedWord(CommandContext ctx, string bannedWord, int time)
     {
-        if (ctx.Member != null && ctx.Member.IsOwner)
+        if (!HasPermission(ctx))
         {
-            var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
-            {
-                var bannedWords = new BannedWords
-                {
-                    ServerConfig = await _serverConfigService.GetServerConfig(Guid.Parse($"{ctx.Guild.Id:X32}"))
-                         ,
-                    BannedWord = bannedWord,
-                    Id = Guid.NewGuid(),
-                    Time = time
-                };
-
-                var result = await _bannedWordsService
-                    .Add(bannedWords);
-                return result;
-
-            });
-
-            if (result)
-                await ctx.RespondAsync("Słowo dodane do bazy.");
-            else
-            {
-                await ctx.RespondAsync("słowo jest już zabronione!!!");
-            }
+            await RespondWithPermissionError(ctx);
+            return;
         }
-        else
+
+        var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
         {
-            await ctx.RespondAsync("Brak uprawnień!!!");
-        }
+            var serverConfig = await _serverConfigService.GetServerConfig(ctx.Guild.Id.ToGuid());
+            var bannedWords = new BannedWords
+            {
+                ServerConfig = serverConfig,
+                BannedWord = bannedWord,
+                Id = Guid.NewGuid(),
+                Time = time
+            };
+
+            return await _bannedWordsService.Add(bannedWords);
+        });
+
+        await ctx.RespondAsync(result ? "Słowo dodane do bazy." : "Słowo jest już zabronione!!!");
+
     }
     public async Task DelBannedWord(CommandContext ctx, string delWord)
     {
-        if (ctx.Member != null && ctx.Member.IsOwner)
+        if (!HasPermission(ctx))
         {
-            var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () => await _bannedWordsService
-                    .Remove(delWord, Guid.Parse($"{ctx.Guild.Id:X32}"))
-                 )
-                 ;
+            await RespondWithPermissionError(ctx);
+            return;
+        }
 
-            if (result)
-                await ctx.RespondAsync("Słowo zostało usunięte");
-            else
-            {
-                await ctx.RespondAsync("Słowo nie jest zabronione!!!");
-            }
+        await ExecuteDatabaseTaskWithResponse(ctx,
+            () => _bannedWordsService.Remove(delWord, ctx.Guild.Id.ToGuid()),
+            "Słowo zostało usunięte",
+            "Słowo nie jest zabronione!!!");
+    }
 
-        }
-        else
-        {
-            await ctx.RespondAsync("Brak uprawnień!!!");
-        }
-    }
-    public async Task BanEnable(CommandContext ctx)
+    private async Task ToggleFeature(CommandContext ctx, Func<Guid, Task> featureAction, string successMessage)
     {
-        if (ctx.Member != null && ctx.Member.IsOwner)
+        if (!HasPermission(ctx))
         {
-            await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
-             {
-                 await _serverConfigService.EnableBans(Guid.Parse($"{ctx.Guild.Id:X32}"));
-             });
-            await ctx.RespondAsync("Bans Enabled");
+            await RespondWithPermissionError(ctx);
+            return;
         }
-        else
+
+        await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
         {
-            await ctx.RespondAsync("Brak uprawnień!!!");
-        }
+            await featureAction(ctx.Guild.Id.ToGuid());
+            return true;
+        });
+
+        await ctx.RespondAsync(successMessage);
     }
-    public async Task BanDisable(CommandContext ctx)
-    {
-        if (ctx.Member != null && ctx.Member.IsOwner)
-        {
-            await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
-            {
-                await _serverConfigService.DisableBans(Guid.Parse($"{ctx.Guild.Id:X32}"));
-            });
-            await ctx.RespondAsync("Bans Disabled");
-        }
-        else
-        {
-            await ctx.RespondAsync("Brak uprawnień!!!");
-        }
-    }
-    public async Task KickEnable(CommandContext ctx)
-    {
-        if (ctx.Member != null && ctx.Member.IsOwner)
-        {
-            await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
-            {
-                await _serverConfigService.EnableKicks(Guid.Parse($"{ctx.Guild.Id:X32}"));
-            });
-            await ctx.RespondAsync("Kicks Enabled");
-        }
-        else
-        {
-            await ctx.RespondAsync("Brak uprawnień!!!");
-        }
-    }
-    public async Task KickDisable(CommandContext ctx)
-    {
-        if (ctx.Member != null && ctx.Member.IsOwner)
-        {
-            await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
-            {
-                await _serverConfigService.DisableKicks(Guid.Parse($"{ctx.Guild.Id:X32}"));
-            });
-            await ctx.RespondAsync("Kicks Disabled");
-        }
-        else
-        {
-            await ctx.RespondAsync("Brak uprawnień!!!");
-        }
-    }
-    public async Task AutoModeratorEnable(CommandContext ctx)
-    {
-        if (ctx.Member != null && ctx.Member.IsOwner)
-        {
-            await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
-            {
-                await _serverConfigService.EnableAutoModerator(Guid.Parse($"{ctx.Guild.Id:X32}"));
-            });
-            await ctx.RespondAsync("AutoModerator Enabled");
-        }
-        else
-        {
-            await ctx.RespondAsync("Brak uprawnień!!!");
-        }
-    }
-    public async Task AutoModeratorDisable(CommandContext ctx)
-    {
-        if (ctx.Member != null && ctx.Member.IsOwner)
-        {
-            await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
-            {
-                await _serverConfigService.DisableAutoModerator(Guid.Parse($"{ctx.Guild.Id:X32}"));
-            });
-            await ctx.RespondAsync("AutoModerator Disabled");
-        }
-        else
-        {
-            await ctx.RespondAsync("Brak uprawnień!!!");
-        }
-    }
-    public async Task AutoPlayEnabled(CommandContext ctx)
-    {
-        if (ctx.Member != null && ctx.Member.IsOwner)
-        {
-            await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
-            {
-                await _serverConfigService.EnableAutoPlay(Guid.Parse($"{ctx.Guild.Id:X32}"));
-            });
-            await ctx.RespondAsync("AutoPlay Enabled");
-        }
-        else
-        {
-            await ctx.RespondAsync("Brak uprawnień!!!");
-        }
-    }
-    public async Task AutoPlayDisabled(CommandContext ctx)
-    {
-        if (ctx.Member != null && ctx.Member.IsOwner)
-        {
-            await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
-            {
-                await _serverConfigService.DisableAutoPlay(Guid.Parse($"{ctx.Guild.Id:X32}"));
-            });
-            await ctx.RespondAsync("AutoPlay Disabled");
-        }
-        else
-        {
-            await ctx.RespondAsync("Brak uprawnień!!!");
-        }
-    }
+    public async Task BanEnable(CommandContext ctx) =>
+        await ToggleFeature(ctx, _serverConfigService.EnableBans, "Bans Enabled");
+
+    public async Task BanDisable(CommandContext ctx) =>
+        await ToggleFeature(ctx, _serverConfigService.DisableBans, "Bans Disabled");
+
+    public async Task KickEnable(CommandContext ctx) =>
+        await ToggleFeature(ctx, _serverConfigService.EnableKicks, "Kicks Enabled");
+
+    public async Task KickDisable(CommandContext ctx) =>
+        await ToggleFeature(ctx, _serverConfigService.DisableKicks, "Kicks Disabled");
+
+    public async Task AutoModeratorEnable(CommandContext ctx) =>
+        await ToggleFeature(ctx, _serverConfigService.EnableAutoModerator, "AutoModerator Enabled");
+
+    public async Task AutoModeratorDisable(CommandContext ctx) =>
+        await ToggleFeature(ctx, _serverConfigService.DisableAutoModerator, "AutoModerator Disabled");
+
+    public async Task AutoPlayEnabled(CommandContext ctx) =>
+        await ToggleFeature(ctx, _serverConfigService.EnableAutoPlay, "AutoPlay Enabled");
+
+    public async Task AutoPlayDisabled(CommandContext ctx) =>
+        await ToggleFeature(ctx, _serverConfigService.DisableAutoPlay, "AutoPlay Disabled");
+
 }

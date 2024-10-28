@@ -6,10 +6,13 @@ using DSharpPlus.Lavalink;
 using DSharpPlus.Net;
 using Fafikv2.Commands;
 using Fafikv2.Configuration.ConfigJSON;
+using Fafikv2.Data.DifferentClasses;
 using Fafikv2.Data.Models;
 using Fafikv2.Services.dbServices.Interfaces;
 using Fafikv2.Services.OtherServices.Interfaces;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 
 namespace Fafikv2.Configuration.BotConfig
@@ -34,19 +37,23 @@ namespace Fafikv2.Configuration.BotConfig
 
         public BotClient(ServiceProvider servicesProvider)
         {
-
-
-            _userService = servicesProvider.GetRequiredService(typeof(IUserService)) as IUserService ?? throw new InvalidOperationException();
-            _serverService = servicesProvider.GetRequiredService(typeof(IServerService)) as IServerService ?? throw new InvalidOperationException();
-            _serverUsersService = servicesProvider.GetRequiredService(typeof(IServerUsersService)) as IServerUsersService ?? throw new InvalidOperationException();
-            _serverConfigService = servicesProvider.GetRequiredService(typeof(IServerConfigService)) as IServerConfigService ?? throw new InvalidOperationException();
-            _userServerStatsService = servicesProvider.GetRequiredService(typeof(IUserServerStatsService)) as IUserServerStatsService ?? throw new InvalidOperationException();
-            _databaseContextQueueService = servicesProvider.GetRequiredService(typeof(IDatabaseContextQueueService)) as IDatabaseContextQueueService ?? throw new InvalidOperationException();
-            _autoModerationService = servicesProvider.GetService<IAutoModerationService>() ?? throw new InvalidOperationException();
+            _userService = servicesProvider.GetRequiredService<IUserService>();
+            _serverService = servicesProvider.GetRequiredService<IServerService>();
+            _serverUsersService = servicesProvider.GetRequiredService<IServerUsersService>();
+            _serverConfigService = servicesProvider.GetRequiredService<IServerConfigService>();
+            _userServerStatsService = servicesProvider.GetRequiredService<IUserServerStatsService>();
+            _databaseContextQueueService = servicesProvider.GetRequiredService<IDatabaseContextQueueService>();
+            _autoModerationService = servicesProvider.GetRequiredService<IAutoModerationService>();
             _serviceProvider = servicesProvider;
 
             _client = _serviceProvider.GetRequiredService<DiscordClient>();
 
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(new ConfigurationBuilder()
+                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("C:\\Users\\bober\\source\\repos\\bober4b\\fafikv2\\fafikv2\\appsettings.json", optional: false, reloadOnChange: true)
+                    .Build())
+                .CreateLogger();
         }
 
 
@@ -137,9 +144,7 @@ namespace Fafikv2.Configuration.BotConfig
                 return;
             }
             var botChannel = botVoiceState.Channel;
-            var usersInChannel = botChannel.Users.Count(user => !user.IsBot);
-
-            if (usersInChannel == 0)
+            if (botChannel.Users.All(user => user.IsBot))
             {
                 var lavalink = _client.GetLavalink();
                 var nodeConnection = lavalink.GetGuildConnection(botChannel.Guild);
@@ -154,14 +159,17 @@ namespace Fafikv2.Configuration.BotConfig
 
         private static Task Client_UnknownEvent(DiscordClient sender, UnknownEventArgs args)
         {
-            Console.WriteLine("xD");
+            Log.Debug("Unknown event received.");
             return Task.CompletedTask;
         }
 
-        private static Task Client_GuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs args)
+        private async Task Client_GuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs args)
         {
-            Console.WriteLine($"{args.Member.Username}");
-            return Task.CompletedTask;
+            Log.Information($"User {args.Member.Username} joined.");
+
+            var server = (await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
+                await _serverService.GetServer(args.Guild.Id.ToGuid())));
+            await AddUser(args.Member, server);
         }
 
         private async Task Client_GuildAvailable(DiscordClient sender, GuildCreateEventArgs args)
@@ -169,43 +177,29 @@ namespace Fafikv2.Configuration.BotConfig
             var users = await args.Guild.GetAllMembersAsync();
             var server = args.Guild;
 
-
-
             await _databaseContextQueueService.EnqueueDatabaseTask(async () => await UpdateDatabaseOnConnect(users, server));
-
-
 
         }
 
         public async Task UpdateDatabaseOnConnect(IReadOnlyCollection<DiscordMember> users, DiscordGuild server)
         {
-            var serverGuidToFormat = server.Id;
-            var toFormatted = $"{serverGuidToFormat:X32}";
-            var sConfig = new ServerConfig
-            {
-                Id = Guid.NewGuid(),
-                ServerId = Guid.Parse(toFormatted)
-            };
+            var serverGuid = server.Id.ToGuid();
+            var sConfig = new ServerConfig { Id = Guid.NewGuid(), ServerId = serverGuid };
+            var serverEntity = new Server { Name = server.Name, Id = serverGuid, ConfigId = sConfig.Id };
 
-            var server1 = new Server
-            {
-                Name = server.Name,
-                Id = Guid.Parse(toFormatted),
-                ConfigId = sConfig.Id
-            };
-
-            await _serverService.AddServer(server1);
+            await _serverService.AddServer(serverEntity);
             await _serverConfigService.AddServerConfig(sConfig);
-            foreach (var user in users)
-            {
-                await AddUser(user, server1);
-            }
 
+            var addUserTasks = users
+                .Where(user => !user.IsBot)
+                .Select(user => AddUser(user, serverEntity))
+                .ToArray();
 
+            await Task.WhenAll(addUserTasks);
         }
 
 
-        private async Task AddUser(DiscordMember user, Server server)
+        private async Task AddUser(DiscordMember user, Server? server)
         {
             if(user.IsBot )return;
             var value = user.Id;
@@ -222,7 +216,8 @@ namespace Fafikv2.Configuration.BotConfig
 
             };
             await _userService.AddUser(useradd);
-            Console.WriteLine($"dodano: {user.Username} {user.Id} {server.Name}");
+            Log.Information($"User added: {user.Username}, ID: {user.Id}, Server: {server!.Name}");
+
 
 
 
@@ -231,9 +226,7 @@ namespace Fafikv2.Configuration.BotConfig
                 ServerId = server.Id,
                 UserId = useradd.Id,
                 UserServerStatsId = statsId,
-                Id = Guid.NewGuid(),
-
-
+                Id = Guid.NewGuid()
             };
 
 
@@ -249,63 +242,39 @@ namespace Fafikv2.Configuration.BotConfig
             };
 
             await _serverUsersService.AddServerUsers(serverUser);
-
-
             await _userServerStatsService.AddUserServerStats(userStats);
         }
 
         private static Task Client_Ready(DiscordClient sender, ReadyEventArgs args)
         {
+            Log.Information("Bot is ready.");
             return Task.CompletedTask;
         }
 
         private async Task Client_MessageCreated(DiscordClient sender, MessageCreateEventArgs args)
         {
-            Console.WriteLine($"[{args.Message.CreationTimestamp}] {args.Message.Author.Username}: {args.Message.Content}");
-            if (args.Channel.IsPrivate) return;
-            if (args.Author.IsBot) return;
-            var result = await _autoModerationService.AutoModerator(args);
-            if (!result) return;
+            Log.Debug($"Message received: [{args.Message.CreationTimestamp}] {args.Message.Author.Username}: {args.Message.Content}");
+            if (args.Channel.IsPrivate || args.Author.IsBot) return;
 
-            await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
-                {
-                    if (args.Message.Content.StartsWith("!"))
-                    {
-                        var userid = args.Author.Id;
-                        var formatted = $"{userid:X32}";
+            if (await _autoModerationService.AutoModerator(args))
+            {
+                await _databaseContextQueueService.EnqueueDatabaseTask(() => UpdateUserStats(args));
+            }
+        }
 
-                        var serverId = args.Guild.Id;
-                        var sformatted = $"{serverId:X32}";
+        private async Task UpdateUserStats(MessageCreateEventArgs args)
+        {
+            var userGuid = args.Author.Id.ToGuid();
+            var serverGuid = args.Guild.Id.ToGuid();
 
-                        await _userService.UpdateUserBotInteractionsCount(Guid.Parse(formatted));
-                        await _userServerStatsService
-                            .UpdateUserMessageServerCount(Guid.Parse(formatted), Guid.Parse(sformatted))
-                             ;
+            await _userService.UpdateUserMessageCount(userGuid);
+            await _userServerStatsService.UpdateUserMessageServerCount(userGuid, serverGuid);
 
-                        await _userService.UpdateUserMessageCount(Guid.Parse(formatted));
-                        await _userServerStatsService.UpdateUserBotInteractionsServerCount(Guid.Parse(formatted),
-                            Guid.Parse(sformatted));
-
-                    }
-                    else
-                    {
-                        var userid = args.Author.Id;
-                        var formatted = $"{userid:X32}";
-
-                        var serverId = args.Guild.Id;
-                        var sformatted = $"{serverId:X32}";
-                        await _userService.UpdateUserMessageCount(Guid.Parse(formatted));
-
-                        await _userServerStatsService
-                            .UpdateUserMessageServerCount(Guid.Parse(formatted), Guid.Parse(sformatted))
-                             ;
-                    }
-
-                });
-
-
-
-
+            if (args.Message.Content.StartsWith("!"))
+            {
+                await _userService.UpdateUserBotInteractionsCount(userGuid);
+                await _userServerStatsService.UpdateUserBotInteractionsServerCount(userGuid, serverGuid);
+            }
         }
     }
 }

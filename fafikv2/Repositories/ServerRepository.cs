@@ -3,7 +3,6 @@ using Fafikv2.Data.Models;
 using Fafikv2.Repositories.Interfaces;
 
 
-
 namespace Fafikv2.Repositories
 {
     public class ServerRepository : IServerRepository
