@@ -93,7 +93,8 @@ namespace Fafikv2.Services.CommandService
 
         private async Task SkipNextInQueueAsync(LavalinkGuildConnection node, TrackFinishEventArgs args)
         {
-            if (!_songServiceDictionaries.TryGetValue(args.Player.Guild.Id, out var dictionary) || dictionary.Queue!.Count == 0)
+            if (!_songServiceDictionaries.TryGetValue(args.Player.Guild.Id, out var dictionary) ||
+                dictionary.Queue!.Count == 0)
                 return;
 
             var finishedTrack = dictionary.Queue.First();
@@ -107,12 +108,20 @@ namespace Fafikv2.Services.CommandService
             else if (dictionary.AutoPlayOn && !string.IsNullOrEmpty(dictionary.Genre))
             {
                 var autoNextTrack = await _songCollectionService.AutoPlayByGenre(node, dictionary.Genre);
-                if (autoNextTrack != null) dictionary.Queue.Add(autoNextTrack);
+                if (autoNextTrack != null)
+                {
+                    dictionary.Queue.Add(autoNextTrack);
+                    await PlayTrackAsync(node, autoNextTrack).ConfigureAwait(false);
+                }
             }
             else if (dictionary.AutoPlayOn)
             {
                 var autoNextTrack = await _songCollectionService.AutoPlay(node, finishedTrack);
-                if (autoNextTrack != null) dictionary.Queue.Add(autoNextTrack);
+                if (autoNextTrack != null)
+                {
+                    dictionary.Queue.Add(autoNextTrack);
+                    await PlayTrackAsync(node, autoNextTrack).ConfigureAwait(false);
+                }
             }
 
             
