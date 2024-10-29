@@ -5,11 +5,12 @@ using DSharpPlus.EventArgs;
 using DSharpPlus.Lavalink;
 using DSharpPlus.Lavalink.EventArgs;
 using Fafikv2.Commands.MessageCreator;
+using Fafikv2.Data.DifferentClasses;
 using Fafikv2.Data.Models;
 using Fafikv2.Services.dbServices.Interfaces;
 using Fafikv2.Services.OtherServices.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
+using Serilog;
 
 
 namespace Fafikv2.Services.CommandService
@@ -22,12 +23,14 @@ namespace Fafikv2.Services.CommandService
         private readonly Dictionary<ulong, SongServiceDictionary> _songServiceDictionaries = new();
 
 
+
         public MusicService(IServiceProvider servicesProvider)
         {
-            _songCollectionService = servicesProvider.GetService<ISongCollectionService>() ?? throw new InvalidOperationException();
-            _serverConfigService = servicesProvider.GetService<IServerConfigService>() ?? throw new InvalidOperationException();
-            _databaseContextQueueService = servicesProvider.GetService<IDatabaseContextQueueService>() ?? throw new InvalidOperationException();
+            _songCollectionService = servicesProvider.GetRequiredService<ISongCollectionService>();
+            _serverConfigService = servicesProvider.GetRequiredService<IServerConfigService>();
+            _databaseContextQueueService = servicesProvider.GetRequiredService<IDatabaseContextQueueService>();
         }
+        
 
 
 
@@ -44,41 +47,33 @@ namespace Fafikv2.Services.CommandService
             }
 
 
-            if (channel == null)
+            channel ??= ctx.Member?.VoiceState?.Channel;
+            if (channel == null || channel.Type != ChannelType.Voice)
             {
-                var voiceState = ctx.Member?.VoiceState;
-                if (voiceState?.Channel == null)
-                {
-                    if (ctx.Member != null) Console.WriteLine($"{ctx.Member.VoiceState?.Channel}");
-                    await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Enter any Channel","You need to be in a voice channel to use this command."));
-                    return;
-                }
-
-                channel = voiceState.Channel;
-
-            }
-
-            if (channel.Type != ChannelType.Voice)
-            {
-
-                await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Invalid","Not a valid voice channel"));
+                await SendEmbedMessage(ctx, "Invalid Channel", "You need to be in a valid voice channel to use this command.");
                 return;
             }
 
             var node = lava.ConnectedNodes.Values.First();
-            if (node != null)
+            node.PlaybackFinished += Node_PlaybackFinished;
+            node.GuildConnectionRemoved += Node_disconnected;
+
+
+
+            await node.ConnectAsync(channel);
+            await SendEmbedMessage(ctx, "Joined", $"Joined {channel.Name}!");
+
+            _songServiceDictionaries[ctx.Guild.Id] = new SongServiceDictionary
             {
-                node.PlaybackFinished += Node_PlaybackFinished;
-                node.GuildConnectionRemoved += Node_disconnected;
-
-
-            }
-
-            if (node != null) await node.ConnectAsync(channel);
-            await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Joined",$"Joined {channel.Name}!"));
-
-            _songServiceDictionaries[ctx.Guild.Id] = new SongServiceDictionary { Queue = new List<LavalinkTrack>(), Genre = string.Empty, AutoPlayOn = false };
-
+                Queue = new List<LavalinkTrack>(),
+                Genre = string.Empty,
+                AutoPlayOn = false
+            };
+        }
+        private async Task SendEmbedMessage(CommandContext ctx, string title, string description)
+        {
+            var embed = MessagesComposition.EmbedMessageComposition(title, description);
+            await ctx.RespondAsync(embed);
         }
 
         private async Task Node_PlaybackFinished(LavalinkGuildConnection sender, TrackFinishEventArgs args)
@@ -98,59 +93,40 @@ namespace Fafikv2.Services.CommandService
 
         private async Task SkipNextInQueueAsync(LavalinkGuildConnection node, TrackFinishEventArgs args)
         {
-            var guildId = args.Player.Guild.Id;
+            if (!_songServiceDictionaries.TryGetValue(args.Player.Guild.Id, out var dictionary) || dictionary.Queue!.Count == 0)
+                return;
 
-            if (_songServiceDictionaries.TryGetValue(guildId, out var dictionary) && dictionary.Queue is { Count: > 0 })
+            var finishedTrack = dictionary.Queue.First();
+            dictionary.Queue.RemoveAt(0);
+
+            if (dictionary.Queue.Count > 0)
             {
-                var finishedTrack = dictionary.Queue.First();
-                dictionary.Queue.RemoveAt(0);
+                var nextTrack = dictionary.Queue.First();
+                await PlayTrackAsync(node, nextTrack);
+            }
+            else if (dictionary.AutoPlayOn && !string.IsNullOrEmpty(dictionary.Genre))
+            {
+                var autoNextTrack = await _songCollectionService.AutoPlayByGenre(node, dictionary.Genre);
+                if (autoNextTrack != null) dictionary.Queue.Add(autoNextTrack);
+            }
+            else if (dictionary.AutoPlayOn)
+            {
+                var autoNextTrack = await _songCollectionService.AutoPlay(node, finishedTrack);
+                if (autoNextTrack != null) dictionary.Queue.Add(autoNextTrack);
+            }
 
-                //var nextTrackMessage = "";
-                if (dictionary.Queue.Count > 0)
-                {
-                    var nextTrack = dictionary.Queue.First();
-                    //nextTrackMessage = $"Next track: {nextTrack.Title}";
-                    try
-                    {
-                        await node.PlayAsync(nextTrack);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                        return;
-                    }
+            
+        }
 
-                }
-
-
-                if (dictionary.AutoPlayOn && dictionary.Queue.Count == 0 && !dictionary.Genre.IsNullOrEmpty())
-                {
-
-                    var autoNextTrack = await _songCollectionService.AutoPlayByGenre(node, dictionary.Genre);
-                    await node.PlayAsync(autoNextTrack);
-                   // nextTrackMessage = $"Next track: {autoNextTrack?.Title}";
-                    if (autoNextTrack != null) dictionary.Queue.Add(autoNextTrack);
-
-                }
-                else if (dictionary.AutoPlayOn && dictionary.Queue.Count == 0)
-                {
-
-                    var autoNextTrack = await _songCollectionService.AutoPlay(node, finishedTrack);
-                    await node.PlayAsync(autoNextTrack);
-                    if (autoNextTrack != null)
-                    {
-                        //nextTrackMessage = $"Next track: {autoNextTrack.Title}";
-                        dictionary.Queue.Add(autoNextTrack);
-                    }
-
-                }
-
-                // var finishedTrackMessage = $"Finished playing: {finishedTrack.Title}";
-                //var message = $"{finishedTrackMessage}\n{nextTrackMessage}";
-
-
-                //var textChannel = node.Guild.SystemChannel;
-                //await textChannel.SendMessageAsync(message);    //sending disabled
+        private async Task PlayTrackAsync(LavalinkGuildConnection node, LavalinkTrack track)
+        {
+            try
+            {
+                await node.PlayAsync(track);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to play track.");
             }
         }
 
@@ -167,7 +143,7 @@ namespace Fafikv2.Services.CommandService
             return Task.CompletedTask;
         }
 
-        public static async Task LeaveAsync(CommandContext ctx)
+        public  async Task LeaveAsync(CommandContext ctx)
         {
 
 
@@ -189,7 +165,7 @@ namespace Fafikv2.Services.CommandService
             });
         }
 
-        private static async Task PlayTrack(CommandContext ctx, LavalinkGuildConnection conn, LavalinkTrack track)
+        private  async Task PlayTrack(CommandContext ctx, LavalinkGuildConnection conn, LavalinkTrack track)
         {
             try
             {
@@ -203,7 +179,7 @@ namespace Fafikv2.Services.CommandService
             }
         }
 
-        private static async Task PlayTrack(ComponentInteractionCreateEventArgs args, LavalinkGuildConnection conn, LavalinkTrack track)
+        private  async Task PlayTrack(ComponentInteractionCreateEventArgs args, LavalinkGuildConnection conn, LavalinkTrack track)
         {
             try
             {
@@ -211,25 +187,8 @@ namespace Fafikv2.Services.CommandService
             }
             catch (Exception e)
             {
-                await SendMessage(args, "An error occurred while playing the song. Please try again later.");
-                Console.WriteLine($"{e.Message}");
-            }
-        }
+                await HandleErrorAsync(args, e, "An error occurred while playing the song. Please try again later");
 
-        private static async Task<LavalinkLoadResult> LoadTrack(LavalinkNodeConnection node, string search)
-        {
-            try
-            {
-                if (Uri.TryCreate(search, UriKind.Absolute, out var uri))
-                {
-                    return await node.Rest.GetTracksAsync(uri);
-                }
-
-                return await node.Rest.GetTracksAsync(search, LavalinkSearchType.SoundCloud);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("An error occurred while retrieving the song.", ex);
             }
         }
 
@@ -241,91 +200,76 @@ namespace Fafikv2.Services.CommandService
                 var node = ctx.Client.GetLavalink().ConnectedNodes.Values.First();
 
 
-                LavalinkLoadResult loadResult;
-                try
-                {
-                    loadResult = await LoadTrack(node, search);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    return;
-
-                }
-                
-
-                // node.Rest.GetTracksAsync()
-
-                if (loadResult.LoadResultType is LavalinkLoadResultType.LoadFailed or LavalinkLoadResultType.NoMatches)
-                {
-                    await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Track search failed",$"Track search failed for {search}."));
-                    return;
-                }
-
-                LavalinkTrack track;
-                try
-                {
-                    track = loadResult.Tracks.First();
-                }
-                catch (Exception ex)
-                {
-                    await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Error", "An error occurred while fetching the song. Please try again later."));
-                    Console.WriteLine(ex.Message);
-                    return;
-                }
+                var loadResult = await TryLoadTrackAsync(node, search);
+                if (loadResult == null) return;
 
 
+                var track = loadResult.Tracks.First();
                 if (!_songServiceDictionaries.TryGetValue(ctx.Guild.Id, out var dictionary))
                 {
-                    _songServiceDictionaries[ctx.Guild.Id] = new SongServiceDictionary { Queue = new List<LavalinkTrack>() };
+                    dictionary = new SongServiceDictionary { Queue = new List<LavalinkTrack>() };
+                    _songServiceDictionaries[ctx.Guild.Id] = dictionary;
                 }
 
 
-                if (dictionary is { Queue.Count: 0 })
+                if (dictionary.Queue!.Count == 0)
                 {
                     await PlayTrack(ctx, conn, track);
                     dictionary.Queue.Add(track);
-
-
-                    await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Play",$"now playing {track.Title}!"));
+                    await SendEmbedMessage(ctx, "Now Playing", $"Now playing {track.Title}!");
                 }
                 else
                 {
-                    if (dictionary?.Queue != null)
-                    {
-                        var timeLeft = TimeSpan.FromMilliseconds(dictionary.Queue.Sum(timeSpan => timeSpan.Length.TotalMilliseconds));
-                        Console.WriteLine($"{track.Title}");
-                        dictionary.Queue.Add(track);
-
-
-
-
-                        await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Added to Queue",
-                            $"The track {track.Title} will play in: {timeLeft.Minutes}:{timeLeft.Seconds:D2}."));
-                    }
+                    dictionary.Queue.Add(track);
+                    var timeLeft = TimeSpan.FromMilliseconds(dictionary.Queue.Sum(t => t.Length.TotalMilliseconds));
+                    await SendEmbedMessage(ctx, "Added to Queue", $"Track {track.Title} added to the queue, playing in {timeLeft:mm\\:ss}.");
                 }
 
-                try
-                {
-                    await _songCollectionService.AddToBase(track, ctx);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.Message);
-                }
+                await AddTrackToCollectionAsync(ctx, track);
             });
+        }
+
+        private async Task<LavalinkLoadResult?> TryLoadTrackAsync(LavalinkNodeConnection node, string search)
+        {
+            try
+            {
+                return Uri.TryCreate(search, UriKind.Absolute, out var uri)
+                    ? await node.Rest.GetTracksAsync(uri)
+                    : await node.Rest.GetTracksAsync(search, LavalinkSearchType.SoundCloud);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error loading track for search: {Search}", search);
+                return null;
+            }
+        }
+
+        private async Task AddTrackToCollectionAsync(CommandContext ctx, LavalinkTrack track)
+        {
+            try
+            {
+                await _songCollectionService.AddToBase(track, ctx);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error adding track to collection.");
+            }
         }
 
         public async Task SkipAsync(CommandContext ctx)
         {
             await ExecuteIfConnected(ctx, async conn =>
             {
-                if (_songServiceDictionaries.TryGetValue(ctx.Channel.Guild.Id, out var dictionary) && dictionary.Queue is
-                    {
-                        Count: > 0
-                    })
+                if (!_songServiceDictionaries.TryGetValue(ctx.Channel.Guild.Id, out var dictionary) ||
+                    dictionary.Queue == null ||
+                    dictionary.Queue.Count == 0)
                 {
-                    var finishedTrack = dictionary.Queue.First();
+                    await SendEmbedMessage(ctx, "Error", "No tracks in the queue to skip.");
+                    return;
+                }
+
+
+                var finishedTrack = dictionary.Queue.First();
                     dictionary.Queue.RemoveAt(0);
 
                     if (dictionary.Queue.Count > 0)
@@ -350,10 +294,22 @@ namespace Fafikv2.Services.CommandService
                     var nextTrackMessage = dictionary.Queue.Count > 0 ? $"Next track: {dictionary.Queue.First().Title}" : "No more tracks in queue.";
                     var message = $"{finishedTrackMessage}\n{nextTrackMessage}";
 
-                    var textChannel = ctx.Guild.SystemChannel;
-                    await textChannel.SendMessageAsync(MessagesComposition.EmbedMessageComposition("Track Finished",message));
-                }
+                    await SendEmbedMessage(ctx, "Track Finished", message);
+
             });
+        }
+
+        private async Task HandleErrorAsync(CommandContext ctx, Exception e, string customMessage)
+        {
+            await SendEmbedMessage(ctx, "Error", customMessage);
+            Log.Error(e.Message);
+        }
+
+        private async Task HandleErrorAsync(ComponentInteractionCreateEventArgs args, Exception e, string customMessage)
+        {
+            await SendMessage(args, customMessage,"Error");
+            Log.Error(e.Message);
+
         }
 
         private async Task<LavalinkTrack?> GetAutoNextTrack(LavalinkGuildConnection conn, SongServiceDictionary dictionary, LavalinkTrack finishedTrack)
@@ -366,7 +322,7 @@ namespace Fafikv2.Services.CommandService
             return await _songCollectionService.AutoPlay(conn, finishedTrack);
         }
 
-        public static async Task PauseAsync(CommandContext ctx)
+        public async Task PauseAsync(CommandContext ctx)
         {
 
             await ExecuteIfConnected(ctx, async conn =>
@@ -374,7 +330,7 @@ namespace Fafikv2.Services.CommandService
 
                 if (conn.CurrentState.CurrentTrack == null)
                 {
-                    await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Pause", "there are no track loaded."));
+                    await SendEmbedMessage(ctx,"Pause", "there are no track loaded.");
                     return;
                 }
 
@@ -384,27 +340,24 @@ namespace Fafikv2.Services.CommandService
                 }
                 catch (Exception e)
                 {
-                    await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Error", "An error occurred while pausing the song. Please try again later."))
-                        ;
-                    Console.WriteLine($"{e.Message}");
+
+                    await HandleErrorAsync(ctx, e, "An error occurred while pausing the song. Please try again later.");
                     return;
                 }
 
-                await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Paused", "music is paused."));
+                await SendEmbedMessage(ctx,"Paused", "music is paused.");
 
             });
         }
 
-        public static async Task ResumeAsync(CommandContext ctx)
+        public async Task ResumeAsync(CommandContext ctx)
         {
-
-
 
             await ExecuteIfConnected(ctx, async conn =>
             {
                 if (conn.CurrentState.CurrentTrack == null)
                 {
-                    await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Resume", "there are no track loaded."));
+                    await SendEmbedMessage(ctx, "Resume", "there are no track loaded.");
                     return;
                 }
 
@@ -414,30 +367,30 @@ namespace Fafikv2.Services.CommandService
                 }
                 catch (Exception e)
                 {
-                    await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Error", "An error occurred while resuming the song. Please try again later."))
-                        ;
-                    Console.WriteLine($"{e.Message}");
+                    await HandleErrorAsync(ctx, e, "An error occurred while resuming the song. Please try again later.");
                     return;
                 }
 
-                await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Resumed", "music is playing again."));
+                await SendEmbedMessage(ctx, "Resumed", "music is playing again.");
             });
         }
 
         public async Task QueueAsync(CommandContext ctx)
         {
-
-
-            if (!_songServiceDictionaries.TryGetValue(ctx.Guild.Id, out var dictionary) || dictionary.Queue == null || dictionary.Queue.Count == 0)
+            if (!_songServiceDictionaries.TryGetValue(ctx.Guild.Id, out var dictionary) ||
+                dictionary.Queue == null ||
+                dictionary.Queue.Count == 0)
             {
                 await ctx.RespondAsync(MessagesComposition.EmbedQueueComposition("Queue is empty"));
                 return;
             }
-            
-            var songTitles = dictionary.Queue.Select((track, index) => $"{index + 1}. {track.Title}").ToList();
 
-            await ctx.RespondAsync(MessagesComposition.EmbedQueueComposition(string.Join("\n", songTitles)));
+            var songTitles = dictionary.Queue
+                .Select((track, index) => $"{index + 1}. {track.Title}")
+                .ToList();
 
+            var message = string.Join("\n", songTitles);
+            await ctx.RespondAsync(MessagesComposition.EmbedQueueComposition(message));
         }
 
         public async Task VolumeAsync(CommandContext ctx, int vol)
@@ -445,7 +398,7 @@ namespace Fafikv2.Services.CommandService
 
             if (vol is < 0 or > 100)
             {
-                await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Volume", "volume must be between 0 and 100"));
+                await SendEmbedMessage(ctx, "Volume", "volume must be between 0 and 100");
                 return;
             }
 
@@ -455,17 +408,13 @@ namespace Fafikv2.Services.CommandService
                 try
                 {
                     await conn.SetVolumeAsync(vol);
+                    _songServiceDictionaries[ctx.Guild.Id].Volume = vol;
+                    await SendEmbedMessage(ctx, "Volume", $"Volume changed to: {vol}");
                 }
                 catch (Exception e)
                 {
-                    await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Error", "An error occurred while setting the volume. Please try again later."))
-                        ;
-                    Console.WriteLine($"{e.Message}");
-                    return;
+                    await HandleErrorAsync(ctx, e, "An error occurred while setting the volume. Please try again later.");
                 }
-
-                await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition( "Volume",$"Volume changed to: {vol}"));
-                _songServiceDictionaries[ctx.Guild.Id].Volume= vol;
             });
         }
 
@@ -477,7 +426,7 @@ namespace Fafikv2.Services.CommandService
             _songServiceDictionaries[ctx.Guild.Id].Genre = string.Empty;
 
 
-            await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Auto Play","Auto Play is on"));
+            await SendEmbedMessage(ctx, "Auto Play", "Auto Play is on");
         }
 
         public async Task StartAutoPlayByGenre(CommandContext ctx, string genre)
@@ -488,26 +437,25 @@ namespace Fafikv2.Services.CommandService
             _songServiceDictionaries[ctx.Guild.Id].Genre = genre;
             _songServiceDictionaries[ctx.Guild.Id].AutoPlayOn = true;
 
-            await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Auto Play","Auto Play by genre is on"));
+            await SendEmbedMessage(ctx, "Auto Play", "Auto Play by genre is on");
         }
 
         private async Task<bool> IsAutoplayEnabled(CommandContext ctx)
         {
             var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
-                await _serverConfigService.IsAutoPlayEnable(Guid.Parse($"{ctx.Guild.Id:X32}")));
+                await _serverConfigService.IsAutoPlayEnable(ctx.Guild.Id.ToGuid()));
 
             if (result) return await IsConnected(ctx) != null;
             await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Auto Play", "Auto Play is disabled on this server."));
             return false;
 
         }
+
         private async Task<bool> IsAutoplayEnabled(DiscordClient client, ComponentInteractionCreateEventArgs args)
         {
-            var guildId = args.Guild.Id;
-            var guildGuid = Guid.Parse($"{guildId:X32}");
 
             var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
-                await _serverConfigService.IsAutoPlayEnable(guildGuid));
+                await _serverConfigService.IsAutoPlayEnable(args.Guild.Id.ToGuid()));
 
             if (result)
             {
@@ -515,17 +463,17 @@ namespace Fafikv2.Services.CommandService
                 return connection != null;
             }
 
-            await SendMessage(args, "Auto Play is disabled on this server.");
+            await SendMessage(args, "Auto Play is disabled on this server.","Auto Play");
             return false;
         }
 
-        private static async Task<LavalinkGuildConnection?> IsConnected(CommandContext ctx)
+        private async Task<LavalinkGuildConnection?> IsConnected(CommandContext ctx)
         {
             var lava = ctx.Client.GetLavalink();
 
             if (!lava.ConnectedNodes.Any())
             {
-                await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Info", "The Lavalink connection is not established"));
+                await SendEmbedMessage(ctx, "Info", "The Lavalink connection is not established");
                 return null;
             }
 
@@ -535,14 +483,13 @@ namespace Fafikv2.Services.CommandService
             var voiceState = ctx.Member?.VoiceState;
             if (voiceState?.Channel == null)
             {
-                Console.WriteLine($"{ctx.Member?.VoiceState?.Channel}");
-                await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Info", "You need to be in a voice channel to use this command."));
+                await SendEmbedMessage(ctx, "Info", "You need to be in a voice channel to use this command.");
                 return null;
             }
             var conn = node.GetGuildConnection(ctx.Member?.VoiceState.Guild);
 
             if (conn != null) return conn;
-            await ctx.RespondAsync(MessagesComposition.EmbedMessageComposition("Info", "Lavalink is not connected."));
+            await SendEmbedMessage(ctx, "Info", "Lavalink is not connected.");
             return null;
 
         }
@@ -561,7 +508,7 @@ namespace Fafikv2.Services.CommandService
 
             if (!lava.ConnectedNodes.Any())
             { 
-                await SendMessage(args,"The Lavalink connection is not established");
+                await SendMessage(args,"The Lavalink connection is not established","Not connected");
                 return null;
             }
 
@@ -571,26 +518,26 @@ namespace Fafikv2.Services.CommandService
             var voiceState = member.VoiceState;
             if (voiceState?.Channel == null)
             {
-                Console.WriteLine($"{member.VoiceState?.Channel}");
-                await SendMessage(args, "You need to be in a voice channel to use this command.");
+                await SendMessage(args, "You need to be in a voice channel to use this command.", "Not connected");
                 return null;
             }
             var conn = node.GetGuildConnection(guild);
 
             if (conn != null) return conn;
-            await SendMessage(args, "Lavalink is not connected.");
+            await SendMessage(args, "Lavalink is not connected.", "Not connected");
             return null;
         }
 
-        private static async Task SendMessage(ComponentInteractionCreateEventArgs args, string message)
+        private static async Task SendMessage(ComponentInteractionCreateEventArgs args, string context,string title)
         {
+            var message=MessagesComposition.EmbedMessageComposition(title,context);
             await args.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource,
                 new DiscordInteractionResponseBuilder()
-                    .WithContent(message)
+                    .AddEmbed(message)
                     .AsEphemeral());
         }
 
-        private static async Task ExecuteIfConnected(CommandContext ctx, Func<LavalinkGuildConnection, Task> action)
+        private async Task ExecuteIfConnected(CommandContext ctx, Func<LavalinkGuildConnection, Task> action)
         {
             var conn = await IsConnected(ctx);
             if (conn == null) return;
@@ -627,14 +574,14 @@ namespace Fafikv2.Services.CommandService
 
                 if (dictionary.Queue.Count > 0)
                 {
-                    await PlayTrack(args, lava, dictionary.Queue[0]); // Zmieniamy ctx na args
+                    await PlayTrack(args, lava, dictionary.Queue[0]);
                 }
                 else if (dictionary.AutoPlayOn && dictionary.Queue.Count == 0)
                 {
                     var autoNextTrack = await GetAutoNextTrack(lava, dictionary, finishedTrack);
                     if (autoNextTrack != null)
                     {
-                        await PlayTrack(args, lava, autoNextTrack); // Zmieniamy ctx na args
+                        await PlayTrack(args, lava, autoNextTrack); 
                         dictionary.Queue.Add(autoNextTrack);
                     }
                 }
@@ -647,7 +594,7 @@ namespace Fafikv2.Services.CommandService
                 var nextTrackMessage = dictionary.Queue.Count > 0 ? $"Next track: {dictionary.Queue.First().Title}" : "No more tracks in queue.";
                 var message = $"{finishedTrackMessage}\n{nextTrackMessage}";
 
-                await SendMessage(args, message);
+                await SendMessage(args, message,"Song");
             }
 
             return true;
@@ -665,7 +612,7 @@ namespace Fafikv2.Services.CommandService
 
             if (lava.CurrentState.CurrentTrack == null)
             {
-                await SendMessage(args,"there are no track loaded.");
+                await SendMessage(args,"there are no track loaded.", "Not connected");
                 return true;
             }
 
@@ -675,12 +622,11 @@ namespace Fafikv2.Services.CommandService
             }
             catch (Exception e)
             {
-                await SendMessage(args, "An error occurred while resuming the song. Please try again later.");
-                Console.WriteLine($"{e.Message}");
+                await HandleErrorAsync(args, e, "An error occurred while resuming the song. Please try again later.");
                 return true;
             }
 
-            await SendMessage(args, "music is playing again.");
+            await SendMessage(args, "music is playing again.","Resumed");
 
 
 
@@ -699,7 +645,7 @@ namespace Fafikv2.Services.CommandService
             _songServiceDictionaries[guildId].Genre = string.Empty;
 
 
-            await SendMessage(args, "Auto Play is on.");
+            await SendMessage(args, "Auto Play is on.", "Auto Play");
             return true;
         }
 
@@ -715,7 +661,7 @@ namespace Fafikv2.Services.CommandService
 
             if (lava.CurrentState.CurrentTrack == null)
             {
-                await SendMessage(args, "there are no track loaded.");
+                await SendMessage(args, "there are no track loaded.", "Pause");
                 return true;
             }
 
@@ -725,12 +671,11 @@ namespace Fafikv2.Services.CommandService
             }
             catch (Exception e)
             {
-                await SendMessage(args, "An error occurred while pausing the song. Please try again later.");
-                Console.WriteLine($"{e.Message}");
+                await HandleErrorAsync(args, e, "An error occurred while pausing the song. Please try again later.");
                 return true;
             }
 
-            await SendMessage(args, "music is paused.");
+            await SendMessage(args, "music is paused.", "Pause");
 
             return true;
 

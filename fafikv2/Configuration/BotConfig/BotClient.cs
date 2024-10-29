@@ -29,13 +29,13 @@ namespace Fafikv2.Configuration.BotConfig
         private readonly IUserServerStatsService _userServerStatsService;
         private readonly IDatabaseContextQueueService _databaseContextQueueService;
         private readonly IAutoModerationService _autoModerationService;
-        private readonly ServiceProvider _serviceProvider;
+        private readonly IServiceProvider _serviceProvider;
 
 
 
 
 
-        public BotClient(ServiceProvider servicesProvider)
+        public BotClient(IServiceProvider servicesProvider)
         {
             _userService = servicesProvider.GetRequiredService<IUserService>();
             _serverService = servicesProvider.GetRequiredService<IServerService>();
@@ -48,12 +48,6 @@ namespace Fafikv2.Configuration.BotConfig
 
             _client = _serviceProvider.GetRequiredService<DiscordClient>();
 
-            Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(new ConfigurationBuilder()
-                    .SetBasePath(Directory.GetCurrentDirectory())
-                    .AddJsonFile("C:\\Users\\bober\\source\\repos\\bober4b\\fafikv2\\fafikv2\\appsettings.json", optional: false, reloadOnChange: true)
-                    .Build())
-                .CreateLogger();
         }
 
 
