@@ -64,5 +64,15 @@ namespace Fafikv2.Commands.MessageCreator
                 Description = description
             }.Build();
         }
+
+        public static DiscordEmbed EmbedAdminMessagesComposition(string description)
+        {
+            return new DiscordEmbedBuilder
+            {
+                Title = "Admin",
+                Color = new DiscordColor(019300),
+                Description = description
+            }.Build();
+        }
     }
 }

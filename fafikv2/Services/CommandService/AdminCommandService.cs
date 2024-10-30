@@ -1,4 +1,5 @@
 ﻿using DSharpPlus.CommandsNext;
+using Fafikv2.Commands.MessageCreator;
 using Fafikv2.Data.Models;
 using Fafikv2.Services.dbServices.Interfaces;
 using Fafikv2.Services.OtherServices.Interfaces;
@@ -23,7 +24,7 @@ public class AdminCommandService
         ctx.Member != null && ctx.Member.IsOwner;
 
     private static async Task RespondWithPermissionError(CommandContext ctx) =>
-        await ctx.RespondAsync("Permission denied!!!");
+        await ctx.RespondAsync(MessagesComposition.EmbedAdminMessagesComposition("Permission denied!!!"));
     private async Task ExecuteDatabaseTaskWithResponse(CommandContext ctx, Func<Task<bool>> databaseTask, string successMessage, string failureMessage)
     {
         var result = await _databaseContextQueueService.EnqueueDatabaseTask(databaseTask);
@@ -83,7 +84,8 @@ public class AdminCommandService
             return true;
         });
 
-        await ctx.RespondAsync(successMessage);
+
+        await ctx.RespondAsync(MessagesComposition.EmbedAdminMessagesComposition(successMessage));
     }
     public async Task BanEnable(CommandContext ctx) =>
         await ToggleFeature(ctx, _serverConfigService.EnableBans, "Bans Enabled");

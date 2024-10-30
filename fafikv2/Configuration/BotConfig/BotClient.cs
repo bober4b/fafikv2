@@ -10,7 +10,6 @@ using Fafikv2.Data.DifferentClasses;
 using Fafikv2.Data.Models;
 using Fafikv2.Services.dbServices.Interfaces;
 using Fafikv2.Services.OtherServices.Interfaces;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
