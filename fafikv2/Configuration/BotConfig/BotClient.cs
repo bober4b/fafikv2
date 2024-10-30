@@ -32,9 +32,6 @@ namespace Fafikv2.Configuration.BotConfig
         private readonly IServiceProvider _serviceProvider;
 
 
-
-
-
         public BotClient(IServiceProvider servicesProvider)
         {
             _userService = servicesProvider.GetRequiredService<IUserService>();
@@ -49,8 +46,6 @@ namespace Fafikv2.Configuration.BotConfig
             _client = _serviceProvider.GetRequiredService<DiscordClient>();
 
         }
-
-
 
 
         public async Task Initialize()
