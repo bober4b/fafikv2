@@ -5,6 +5,7 @@ using DSharpPlus.EventArgs;
 using DSharpPlus.Lavalink;
 using DSharpPlus.Net;
 using Fafikv2.Commands;
+using Fafikv2.Commands.MessageCreator;
 using Fafikv2.Configuration.ConfigJSON;
 using Fafikv2.Data.DifferentClasses;
 using Fafikv2.Data.Models;
@@ -145,7 +146,9 @@ namespace Fafikv2.Configuration.BotConfig
                 {
                     await nodeConnection.DisconnectAsync();
                     var textChannel = args.Guild.SystemChannel;
-                    await textChannel.SendMessageAsync("Bot left the channel due to inactivity.");
+                    await textChannel
+                        .SendMessageAsync(MessagesComposition
+                            .EmbedMessageComposition( "Activity","Bot left the channel due to inactivity."));
                 }
             }
         }
