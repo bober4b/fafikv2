@@ -13,7 +13,7 @@ namespace Fafikv2.Services.dbServices
         {
             _songsRepository = songsRepository;
         }
-        public async Task<bool> Add(Song song)
+        public async Task<bool> Add(Song song, Task<string?[]> genres)
         {
             var added = await _songsRepository.HasBeenAdded(song.Title, song.Artist);
             if (added)
@@ -21,6 +21,8 @@ namespace Fafikv2.Services.dbServices
                 Console.WriteLine("Song already exists in the database.");
                 return false;
             }
+
+            song.Genres = string.Join(", ",  await genres);
 
             await _songsRepository.AddSong(song);
             return true;

@@ -4,7 +4,7 @@ namespace Fafikv2.Services.dbServices.Interfaces
 {
     public interface ISongsService
     {
-        public Task<bool> Add(Song song);
+        public Task<bool> Add(Song song, Task<string?[]> genres);
         public Task<Song?> Get(string? title, string? artist);
         public Task<IEnumerable<Song>> GetSongByGenre(string? genre);
         public Task<IEnumerable<Song>> GetSongsByGenreAndUser(string? genre, Guid userId);
