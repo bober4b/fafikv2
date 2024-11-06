@@ -44,7 +44,7 @@ namespace Fafikv2.Services.OtherServices
             {
                 Log.Information("Track already exists. Retrieving existing song '{TrackTitle}' by '{Artist}'", song.Title, song.Artist);
                 song = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
-                    await _songsService.Get(song.Title, song.Artist)) ?? song; 
+                    await _songsService.Get(song.Title, song.Artist)) ?? song;
             }
 
 
@@ -65,31 +65,29 @@ namespace Fafikv2.Services.OtherServices
 
         }
 
-        public async Task<LavalinkTrack?> AutoPlay(LavalinkGuildConnection node, LavalinkTrack track) =>
-            await AutoPlayBasedOnProbability(
-                () => AutoPlayFromDatabaseSongs(node, track),
-                () => AutoPlayFromSpotifyRecommendation(node, track),
-                40);
-
-        public async Task<LavalinkTrack?> AutoPlayByGenre(LavalinkGuildConnection node, string? genre) =>
-            await AutoPlayBasedOnProbability(
-                () => AutoPlayFromDatabaseSongsByGenre(node, genre),
-                () => AutoPlayFromSpotifyRecommendationByGenre(node, genre),
-                30);
-
-        private static async Task<LavalinkTrack?> AutoPlayBasedOnProbability(
-            Func<Task<LavalinkTrack?>> primarySource,
-            Func<Task<LavalinkTrack?>> fallbackSource,
-            int probability)
+        public async Task<LavalinkTrack?> AutoPlay(LavalinkGuildConnection node, LavalinkTrack track)
         {
-            return new Random().Next(0, 100) < probability ? await primarySource() : await fallbackSource();
+            Log.Information("Attempting to autoplay track '{TrackTitle}'.", track.Title);
+            return new Random().Next(0, 100) < 50
+                ? await AutoPlayFromDatabaseSongs(node, track)
+                : await AutoPlayFromSpotifyRecommendation(node, track);
+        }
+        public async Task<LavalinkTrack?> AutoPlayByGenre(LavalinkGuildConnection node, string? genre)
+        {
+            Log.Information("Attempting to autoplay by genre '{Genre}'.", genre);
+            var random = new Random().Next(0, 6);
+
+            return random switch
+            {
+                < 2 => await AutoPlayFromDatabaseSongsByGenre(node, genre),
+                >= 2 and < 4 => await AutoPlayFromSpotifyRecommendationByGenre(node, genre),
+                _ => await AutoPlayFromDatabaseSongsOnlyByGenre(node, genre)
+            };
         }
 
         private async Task<LavalinkTrack?> AutoPlayFromSpotifyRecommendation(LavalinkGuildConnection node, LavalinkTrack track)
         {
             Log.Information("Fetching Spotify recommendations for track '{TrackTitle}'.", track.Title);
-
-
             var searchQuery = await _spotifyApiService.GetRecommendationsBasedOnInput(track.Title);
             if (searchQuery.IsNullOrEmpty())
             {
@@ -97,69 +95,7 @@ namespace Fafikv2.Services.OtherServices
                 return await AutoPlayFromDatabaseSongs(node, track);
             }
 
-            return await TryGetTrackFromSearchResults(node, searchQuery);
-        }
-        private async Task<LavalinkTrack?> AutoPlayFromDatabaseSongs(LavalinkGuildConnection node, LavalinkTrack track)
-        {
-
-            Log.Information("Autoplay from database songs for track '{TrackTitle}'", track.Title);
-
-            var genres = await _spotifyApiService.GetGenresOfTrack(track.Title);
-            var genre = string.Join(", ", genres);
-            var songs = await GetUserSongsAsync(node.Channel.Users.Select(u => u.Id), genre);
-
-
-            if (!songs.Any())
-            {
-                var genreSongs=await _databaseContextQueueService.EnqueueDatabaseTask(async()=> await _songsService.GetSongByGenre(genre));
-                songs.AddRange(genreSongs.Randomize(2));
-            }
-
-            if (!songs.Any())
-            {
-                var randomSong = await _databaseContextQueueService.EnqueueDatabaseTask(async () => await _songsService.GetRandomSong());
-                if (randomSong != null) songs.Add(randomSong);
-            }
-
-            var nextTrack = songs.Randomize(1).FirstOrDefault();
-            return await TryGetTrackAsync(node, nextTrack?.LinkUri?.ToString());
-        }
-
-        private async Task<LavalinkTrack?> AutoPlayFromSpotifyRecommendationByGenre(LavalinkGuildConnection node, string? genre)
-        {
-            Log.Information("Fetching Spotify recommendations for genre '{Genre}'.", genre);
-
-            var searchQuery = await _spotifyApiService.GetRecommendationBasenOnGenre(genre);
-            if (searchQuery.IsNullOrEmpty())
-            {
-                Log.Warning("No Spotify recommendations found for genre. Falling back to database songs.");
-                return await AutoPlayFromDatabaseSongsOnlyByGenre(node, genre);
-            }
-
-            return await TryGetTrackFromSearchResults(node, searchQuery);
-        }
-
-        private async Task<LavalinkTrack?> AutoPlayFromDatabaseSongsByGenre(LavalinkGuildConnection node, string? genre)
-        {
-            var songs = await GetUserSongsAsync(node.Channel.Users.Select(u => u.Id), genre);
-            return songs.Any()
-                ? await TryGetTrackAsync(node, songs.Randomize(1).FirstOrDefault()?.LinkUri?.ToString())
-                : await AutoPlayFromSpotifyRecommendationByGenre(node, genre);
-        }
-
-        private async Task<LavalinkTrack?> AutoPlayFromDatabaseSongsOnlyByGenre(LavalinkGuildConnection node, string? genre)
-        {
-            Log.Information("Autoplay from database songs only by genre '{Genre}'", genre);
-
-            var songs = (await _databaseContextQueueService.EnqueueDatabaseTask(async () => await _songsService.GetSongByGenre(genre))).Randomize(1).ToList();
-            return songs.Any()
-                ? await TryGetTrackAsync(node, songs.First().LinkUri?.ToString())
-                : await AutoPlayFromSpotifyRecommendationByGenre(node, genre);
-        }
-
-        private static async Task<LavalinkTrack?> TryGetTrackFromSearchResults(LavalinkGuildConnection node, IEnumerable<string> searchResults)
-        {
-            foreach (var nextSong in searchResults)
+            foreach (var nextSong in searchQuery)
             {
                 var nextSongResult = await node.GetTracksAsync(nextSong, LavalinkSearchType.SoundCloud);
                 var recommendedTrack = nextSongResult.Tracks.FirstOrDefault();
@@ -170,30 +106,190 @@ namespace Fafikv2.Services.OtherServices
                 }
             }
 
-            Log.Warning("No valid recommended tracks found.");
+            Log.Warning("No valid recommended tracks found from Spotify.");
             return null;
         }
-        private static async Task<LavalinkTrack?> TryGetTrackAsync(LavalinkGuildConnection node, string? uri)
+        private async Task<LavalinkTrack?> AutoPlayFromDatabaseSongs(LavalinkGuildConnection node, LavalinkTrack track)
         {
-            try
-            {
-                var trackResult = await node.GetTracksAsync(uri);
-                return trackResult.Tracks.FirstOrDefault();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error retrieving track for URI: {Uri}", uri);
-                return null;
-            }
-        }
-        private async Task<List<Song>> GetUserSongsAsync(IEnumerable<ulong> userIds, string? genre)
-        {
-            var tasks = userIds.Select(userId =>
-                string.IsNullOrEmpty(genre)
-                    ? _databaseContextQueueService.EnqueueDatabaseTask(async() => await _songsService.GetSongsByUser(userId.ToGuid()))
-                    : _databaseContextQueueService.EnqueueDatabaseTask(async () => await _songsService.GetSongsByGenreAndUser(genre, userId.ToGuid())));
 
-            return (await Task.WhenAll(tasks)).SelectMany(songs => songs).ToList();
+            Log.Information("Autoplay from database songs for track '{TrackTitle}'", track.Title);
+
+            var voiceChannel = node.Channel;
+            var membersInChannel = voiceChannel.Users;
+            var songs = new List<Song>();
+
+
+
+            var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
+            {
+                string?[] genresResult = _spotifyApiService.GetGenresOfTrack(track.Title).Result;
+
+                string genre = string.Join(", ", genresResult);
+
+                Log.Information("Genres:{Genres}",genre);
+
+                foreach (var user in membersInChannel)
+                {
+                    if (user.IsBot) continue;
+                    IEnumerable<Song> temporary;
+                    if (string.IsNullOrEmpty(genre))
+                        temporary = await _songsService.GetSongsByUser(Guid.Parse($"{user.Id:X32}"));
+                    else
+                    {
+                        temporary = await _songsService.GetSongsByGenreAndUser(genre, Guid.Parse($"{user.Id:X32}"));
+                    }
+                    temporary = temporary.Randomize(5);
+                    var enumerable = temporary.ToList();
+                    if (enumerable.Any())
+                    {
+                        songs.AddRange(enumerable);
+                    }
+
+
+                }
+
+                if (!string.IsNullOrEmpty(genre))
+                {
+                    songs.AddRange((await _songsService.GetSongByGenre(genre)).Randomize(2));
+                }
+
+                if (songs.Count == 0)
+                {
+                    while (true)
+                    {
+                        var temporary = await _songsService.GetRandomSong();
+                        if (temporary == null) continue;
+
+                        if (await node.GetTracksAsync(temporary.LinkUri) == null) continue;
+                        songs.Add(temporary);
+                        break;
+
+                    }
+                }
+
+                return true;
+            });
+
+            if (result)
+            {
+                Log.Information("Songs found for autoplay from database");
+            }
+
+            var nextTrack = songs.Randomize(1).FirstOrDefault();
+
+            Log.Information("Next track selected: '{TrackTitle}'", nextTrack?.Title);
+
+            var nextSongResult = await node.GetTracksAsync(nextTrack?.LinkUri);
+
+            return nextSongResult.Tracks.FirstOrDefault();
         }
+
+        private async Task<LavalinkTrack?> AutoPlayFromSpotifyRecommendationByGenre(LavalinkGuildConnection node, string? genre)
+        {
+            Log.Information("Fetching Spotify recommendations for genre '{Genre}'.", genre);
+            var searchQuery = await _spotifyApiService.GetRecommendationBasenOnGenre(genre);
+            if (searchQuery.IsNullOrEmpty())
+            {
+                Log.Warning("No Spotify recommendations found for genre '{Genre}'. Falling back to database songs.", genre);
+                return await AutoPlayFromDatabaseSongsOnlyByGenre(node, genre);
+            }
+
+            foreach (var nextSong in searchQuery)
+            {
+                var nextSongResult = await node.GetTracksAsync(nextSong, LavalinkSearchType.SoundCloud);
+                var recommendedTrack = nextSongResult.Tracks.FirstOrDefault();
+                if (recommendedTrack != null)
+                {
+                    Log.Information("Recommended track found for genre '{Genre}': '{TrackTitle}' by '{Artist}'.", genre, recommendedTrack.Title, recommendedTrack.Author);
+                    return recommendedTrack;
+                }
+            }
+
+            Log.Warning("No valid recommended tracks found for genre '{Genre}'.", genre);
+            throw new InvalidOperationException("Brak rekomendacji z Spotify.");
+        }
+
+        private async Task<LavalinkTrack?> AutoPlayFromDatabaseSongsByGenre(LavalinkGuildConnection node, string? genre)
+        {
+            var voiceChannel = node.Channel;
+            var membersInChannel = voiceChannel.Users;
+            List<Song> songs = new();
+
+            var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
+            {
+
+                foreach (var user in membersInChannel)
+                {
+                    if (user.IsBot) continue;
+
+                    var temporary = await _songsService.GetSongsByGenreAndUser(genre, Guid.Parse($"{user.Id:X32}"));
+                    if (!temporary.Any()) continue;
+                    var randomizedSongs = temporary.Randomize(5);
+                    songs.AddRange(randomizedSongs);
+                    Log.Information("Found {Count} songs for user '{UserId}'", randomizedSongs.Count(), user.Id);
+
+
+                }
+
+                return true;
+            });
+
+            if (result)
+            {
+                Log.Information("Songs found for genre '{Genre}'", genre);
+            }
+
+            if (songs.Count == 0)
+            {
+                return await AutoPlayFromSpotifyRecommendationByGenre(node, genre);
+
+            }
+
+            var nextTrack = songs.Randomize(1).First();
+            Log.Information("Next track selected: '{TrackTitle}'", nextTrack.Title);
+            var nextSongResult = await node.GetTracksAsync(nextTrack.LinkUri);
+
+            return nextSongResult.Tracks.FirstOrDefault();
+        }
+
+        private async Task<LavalinkTrack?> AutoPlayFromDatabaseSongsOnlyByGenre(LavalinkGuildConnection node, string? genre)
+        {
+            Log.Information("Autoplay from database songs only by genre '{Genre}'", genre);
+
+            List<Song> songs = new();
+
+            var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
+            {
+                var temporary = await _songsService.GetSongByGenre(genre);
+                temporary = temporary.Randomize(1);
+                if (temporary.Any())
+                {
+                    var randomizedSongs = temporary.Randomize(1);
+                    songs.AddRange(randomizedSongs);
+                    Log.Information("Found {Count} songs for genre '{Genre}'", randomizedSongs.Count(), genre);
+                }
+
+                return true;
+            });
+
+            if (result)
+            {
+                Log.Information("Songs found for genre '{Genre}'", genre);
+            }
+
+            if (songs.Count == 0)
+            {
+                Log.Information("No songs found, trying Spotify recommendations for genre '{Genre}'", genre);
+                return await AutoPlayFromSpotifyRecommendationByGenre(node, genre);
+            }
+
+            var nextTrack = songs.Randomize(1).First();
+            Log.Information("Next track selected: '{TrackTitle}'", nextTrack.Title);
+            var nextSongResult = await node.GetTracksAsync(nextTrack.LinkUri);
+
+            return nextSongResult.Tracks.FirstOrDefault();
+        }
+
     }
+
 }

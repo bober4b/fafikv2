@@ -70,7 +70,7 @@ namespace Fafikv2.Services.CommandService
                 AutoPlayOn = false
             };
         }
-        private async Task SendEmbedMessage(CommandContext ctx, string title, string description)
+        private static async Task SendEmbedMessage(CommandContext ctx, string title, string description)
         {
             var embed = MessagesComposition.EmbedMessageComposition(title, description);
             await ctx.RespondAsync(embed);
@@ -127,7 +127,7 @@ namespace Fafikv2.Services.CommandService
             
         }
 
-        private async Task PlayTrackAsync(LavalinkGuildConnection node, LavalinkTrack track)
+        private static async Task PlayTrackAsync(LavalinkGuildConnection node, LavalinkTrack track)
         {
             try
             {
@@ -152,7 +152,7 @@ namespace Fafikv2.Services.CommandService
             return Task.CompletedTask;
         }
 
-        public  async Task LeaveAsync(CommandContext ctx)
+        public static async Task LeaveAsync(CommandContext ctx)
         {
 
 
@@ -174,7 +174,7 @@ namespace Fafikv2.Services.CommandService
             });
         }
 
-        private  async Task PlayTrack(CommandContext ctx, LavalinkGuildConnection conn, LavalinkTrack track)
+        private static async Task PlayTrack(CommandContext ctx, LavalinkGuildConnection conn, LavalinkTrack track)
         {
             try
             {
@@ -188,7 +188,7 @@ namespace Fafikv2.Services.CommandService
             }
         }
 
-        private  async Task PlayTrack(ComponentInteractionCreateEventArgs args, LavalinkGuildConnection conn, LavalinkTrack track)
+        private static async Task PlayTrack(ComponentInteractionCreateEventArgs args, LavalinkGuildConnection conn, LavalinkTrack track)
         {
             try
             {
@@ -238,7 +238,7 @@ namespace Fafikv2.Services.CommandService
             });
         }
 
-        private async Task<LavalinkLoadResult?> TryLoadTrackAsync(LavalinkNodeConnection node, string search)
+        private static async Task<LavalinkLoadResult?> TryLoadTrackAsync(LavalinkNodeConnection node, string search)
         {
             try
             {
@@ -308,13 +308,13 @@ namespace Fafikv2.Services.CommandService
             });
         }
 
-        private async Task HandleErrorAsync(CommandContext ctx, Exception e, string customMessage)
+        private static async Task HandleErrorAsync(CommandContext ctx, Exception e, string customMessage)
         {
             await SendEmbedMessage(ctx, "Error", customMessage);
             Log.Error(e.Message);
         }
 
-        private async Task HandleErrorAsync(ComponentInteractionCreateEventArgs args, Exception e, string customMessage)
+        private static async Task HandleErrorAsync(ComponentInteractionCreateEventArgs args, Exception e, string customMessage)
         {
             await SendMessage(args, customMessage,"Error");
             Log.Error(e.Message);
@@ -331,7 +331,7 @@ namespace Fafikv2.Services.CommandService
             return await _songCollectionService.AutoPlay(conn, finishedTrack);
         }
 
-        public async Task PauseAsync(CommandContext ctx)
+        public static async Task PauseAsync(CommandContext ctx)
         {
 
             await ExecuteIfConnected(ctx, async conn =>
@@ -359,7 +359,7 @@ namespace Fafikv2.Services.CommandService
             });
         }
 
-        public async Task ResumeAsync(CommandContext ctx)
+        public static async Task ResumeAsync(CommandContext ctx)
         {
 
             await ExecuteIfConnected(ctx, async conn =>
@@ -476,7 +476,7 @@ namespace Fafikv2.Services.CommandService
             return false;
         }
 
-        private async Task<LavalinkGuildConnection?> IsConnected(CommandContext ctx)
+        private static async Task<LavalinkGuildConnection?> IsConnected(CommandContext ctx)
         {
             var lava = ctx.Client.GetLavalink();
 
@@ -546,7 +546,7 @@ namespace Fafikv2.Services.CommandService
                     .AsEphemeral());
         }
 
-        private async Task ExecuteIfConnected(CommandContext ctx, Func<LavalinkGuildConnection, Task> action)
+        private static async Task ExecuteIfConnected(CommandContext ctx, Func<LavalinkGuildConnection, Task> action)
         {
             var conn = await IsConnected(ctx);
             if (conn == null) return;
@@ -609,7 +609,7 @@ namespace Fafikv2.Services.CommandService
             return true;
         }
 
-        public async Task<bool> ResumeAsyncFromPanel(DiscordClient client,
+        public static async Task<bool> ResumeAsyncFromPanel(DiscordClient client,
             ComponentInteractionCreateEventArgs args)
         {
 
@@ -658,7 +658,7 @@ namespace Fafikv2.Services.CommandService
             return true;
         }
 
-        public async Task<bool> PauseFromPanel(DiscordClient client, ComponentInteractionCreateEventArgs args)
+        public static async Task<bool> PauseFromPanel(DiscordClient client, ComponentInteractionCreateEventArgs args)
         {
 
 

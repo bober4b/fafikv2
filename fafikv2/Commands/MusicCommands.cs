@@ -26,7 +26,7 @@ namespace Fafikv2.Commands
         [Command]
         public async Task Leave(CommandContext ctx)
         {
-            await _service.LeaveAsync(ctx);
+            await MusicService.LeaveAsync(ctx);
         }
 
         [Command]
@@ -38,13 +38,13 @@ namespace Fafikv2.Commands
         [Command]
         public async Task Pause(CommandContext ctx)
         {
-            await _service.PauseAsync(ctx);
+            await MusicService.PauseAsync(ctx);
         }
 
         [Command]
         public async Task Resume(CommandContext ctx)
         {
-            await _service.ResumeAsync(ctx);
+            await MusicService.ResumeAsync(ctx);
         }
 
         [Command]

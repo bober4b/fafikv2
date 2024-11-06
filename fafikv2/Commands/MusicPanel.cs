@@ -67,7 +67,7 @@ namespace Fafikv2.Commands
 
         private async Task HandlePauseButton(ComponentInteractionCreateEventArgs e)
         {
-            await _musicService.PauseFromPanel(_client, e);
+            await MusicService.PauseFromPanel(_client, e);
         }
 
         private async Task HandleSkipButton(ComponentInteractionCreateEventArgs e)
@@ -86,7 +86,7 @@ namespace Fafikv2.Commands
 
         private async Task HandlePlayButton(ComponentInteractionCreateEventArgs e)
         {
-            await _musicService.ResumeAsyncFromPanel(_client, e);
+            await MusicService.ResumeAsyncFromPanel(_client, e);
 
         }
         
