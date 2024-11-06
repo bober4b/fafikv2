@@ -4,7 +4,6 @@ using Fafikv2.Data.DifferentClasses;
 using Fafikv2.Data.Models;
 using Fafikv2.Services.dbServices.Interfaces;
 using Fafikv2.Services.OtherServices.Interfaces;
-using Serilog;
 
 namespace Fafikv2.Services.OtherServices
 {
@@ -14,7 +13,6 @@ namespace Fafikv2.Services.OtherServices
         private readonly IBannedWordsService _banWordsService;
         private readonly IUserServerStatsService _userServerStatsService;
         private readonly IServerConfigService _serverConfigService;
-
 
         public AutoModerationService(IDatabaseContextQueueService databaseContextQueueService,
             IBannedWordsService bannedWordsService,
@@ -27,23 +25,11 @@ namespace Fafikv2.Services.OtherServices
             _serverConfigService = serverConfigService;
         }
 
-        private static readonly Dictionary<int, Func<MessageCreateEventArgs, Task>> PenaltyActions = new()
-        {
-            { 0, Warning },
-            { 1, msg => Timeout(msg, 1) },
-            { 2, msg => Timeout(msg, 10) },
-            { 3, msg => Timeout(msg, 60) },
-            { 4, Kick }
-        };
-
 
         public async Task<CheckMessagesResult> CheckMessagesAsync(MessageCreateEventArgs message)
         {
             var bannedWords = await GetBannedWordsAsync(message.Guild.Id);
             var matchingWords = bannedWords.Where(word => message.Message.Content.Contains(word.BannedWord!)).ToList();
-
-            Log.Information("Checking message from user {User} for banned words. Found {Count} matching words.",
-                message.Author.Username, matchingWords.Count);
 
             return new CheckMessagesResult
             {
@@ -52,21 +38,19 @@ namespace Fafikv2.Services.OtherServices
             };
 
         }
-        private async Task<IEnumerable<BannedWords>> GetBannedWordsAsync(ulong guildId) =>
-            await _databaseContextQueueService.EnqueueDatabaseTask(async () => await _banWordsService.GetAllByServer(guildId.ToGuid()));
-
+        private async Task<IEnumerable<BannedWords>> GetBannedWordsAsync(ulong guildId)
+        {
+            return await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
+                await _banWordsService.GetAllByServer(guildId.ToGuid()));
+        }
 
         public async Task<bool> AutoModerator(MessageCreateEventArgs message)
         {
-            if (!await IsAutoModeratorEnabledAsync(message.Guild.Id)) return true;
-
-            Log.Information("Auto moderation is enabled for guild {GuildId}. Checking messages.", message.Guild.Id);
+            var isEnabled = await IsAutoModeratorEnabledAsync(message.Guild.Id);
+            if (!isEnabled) return true;
 
             var banned = await CheckMessagesAsync(message);
             if (!banned.Result) return true;
-
-            Log.Warning("Message from user {User} contains banned words. Applying penalties.", message.Author.Username);
-
 
             var highestPenaltyTime = banned.Words.Max(x => x.Time);
 
@@ -84,30 +68,35 @@ namespace Fafikv2.Services.OtherServices
         {
             var userStats = await GetUserStatsAsync(message.Author.Id, message.Guild.Id);
 
-            Log.Information("User {User} has {Penalties} penalties.", message.Author.Username, userStats.Penalties);
-
-
-            await ApplyPenaltyAsync(message, userStats.Penalties);
+            switch (userStats.Penalties)
+            {
+                case 0:
+                    await Warning(message);
+                    break;
+                case 1:
+                    await Timeout(message, 1);
+                    break;
+                case 2:
+                    await Timeout(message, 10);
+                    break;
+                case 3:
+                    await Timeout(message, 60);
+                    break;
+                case 4:
+                    await Kick(message);
+                    break;
+                default:
+                    await TimeoutKickOrBan(message);
+                    break;
+            }
 
             await _userServerStatsService.AddPenalty(message.Author.Id.ToGuid(), message.Guild.Id.ToGuid());
-
         }
-        private async Task ApplyPenaltyAsync(MessageCreateEventArgs message, int penalties)
+        private async Task<UserServerStats> GetUserStatsAsync(ulong userId, ulong guildId)
         {
-            if (PenaltyActions.TryGetValue(penalties, out var action))
-            {
-                await action(message);
-            }
-            else
-            {
-                await TimeoutKickOrBan(message);
-            }
+            return (await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
+                await _userServerStatsService.GetUserStats(userId.ToGuid(), guildId.ToGuid())))!;
         }
-
-
-        private async Task<UserServerStats> GetUserStatsAsync(ulong userId, ulong guildId) =>
-            (await _databaseContextQueueService.EnqueueDatabaseTask(async () => await _userServerStatsService.GetUserStats(userId.ToGuid(), guildId.ToGuid())))!;
-
         private async Task<bool> IsAutoModeratorEnabledAsync(ulong guildId)
         {
             return await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
@@ -117,43 +106,39 @@ namespace Fafikv2.Services.OtherServices
             });
         }
 
-        private static async Task ApplyActionAsync(MessageCreateEventArgs message, DiscordEmbed embed, ActionType actionType)
-        {
-            await message.Message.DeleteAsync();
-            await SendEmbedPrivateMessage(message.Guild, message.Author, embed);
-            LogAction(message, actionType);
-        }
-
         private static async Task Warning(MessageCreateEventArgs message)
         {
-
-            var embed = EmbedFactory.WarningEmbed();
-            await ApplyActionAsync(message, embed, ActionType.Warning);
-
+            await message.Message.DeleteAsync();
+            await SendPrivateMessage(message.Guild, message.Author,
+                "Uwaga! Twoje ostatnie słowo było zabronione. Otrzymujesz ostrzeżenie. Kolejne wykroczenie może skutkować surowszymi konsekwencjami.");
         }
 
         private static async Task Timeout(MessageCreateEventArgs message, int time)
         {
-            var embed = EmbedFactory.TimeoutEmbed(time);
-            await ApplyActionAsync(message, embed, ActionType.Timeout);
+            await message.Message.DeleteAsync();
+            await SendPrivateMessage(message.Guild, message.Author,
+                $"Twoje wykroczenie skutkuje timeoutem na {time} minut.");
         }
 
-        private static async Task Kick(MessageCreateEventArgs message)
+        private async Task Kick(MessageCreateEventArgs message)
         {
+            var config = await GetServerConfigAsync(message.Guild.Id);
+            if (config.KicksEnabled != true) return;
 
-            var embed = EmbedFactory.KickEmbed();
-            await ApplyActionAsync(message, embed, ActionType.Kick);
-
+            await message.Message.DeleteAsync();
+            await SendPrivateMessage(message.Guild, message.Author,
+                "Zostałeś wykopany z serwera. Możesz wrócić, ale uważaj na swoje zachowanie.");
         }
-        private async Task<ServerConfig> GetServerConfigAsync(ulong guildId) =>
-            (await _serverConfigService.GetServerConfig(guildId.ToGuid()))!;
-        
-
-
-    private static async Task Ban(MessageCreateEventArgs message)
+        private async Task<ServerConfig> GetServerConfigAsync(ulong guildId)
         {
-            var embed = EmbedFactory.BanEmbed();
-            await ApplyActionAsync(message, embed, ActionType.Ban);
+            return (await _serverConfigService.GetServerConfig(guildId.ToGuid()))!;
+        }
+
+
+        private static async Task Ban(MessageCreateEventArgs message)
+        {
+            await message.Message.DeleteAsync();
+            await SendPrivateMessage(message.Guild, message.Author, "Zostałeś zbanowany z serwera.");
         }
 
         private async Task TimeoutKickOrBan(MessageCreateEventArgs message)
@@ -172,7 +157,6 @@ namespace Fafikv2.Services.OtherServices
             }
             else if (differenceInDays >= 2 && config.KicksEnabled)
             {
-
                 await Kick(message);
             }
             else if (config.BansEnabled)
@@ -181,51 +165,17 @@ namespace Fafikv2.Services.OtherServices
             }
         }
 
-        private static void LogAction(MessageCreateEventArgs message, ActionType actionType)
+        public static async Task SendPrivateMessage(DiscordGuild guild, DiscordUser user, string message)
         {
-            var actionDescription = actionType switch
-            {
-                ActionType.Warning => "issued warning",
-                ActionType.Timeout => "timed out",
-                ActionType.Kick => "kicked",
-                ActionType.Ban => "banned",
-                _ => "performed action"
-            };
-            Log.Information("User {User} on guild {GuildId} has been {Action}.", message.Author.Username, message.Guild.Id, actionDescription);
+            var member = await guild
+                .GetMemberAsync(user.Id);
+
+            var dmChannel = await member
+                .CreateDmChannelAsync();
+
+            await dmChannel
+                .SendMessageAsync(message);
         }
-
-        private static async Task SendEmbedPrivateMessage(DiscordGuild guild, DiscordUser user, DiscordEmbed embed)
-        {
-            var member = await guild.GetMemberAsync(user.Id);
-            var dmChannel = await member.CreateDmChannelAsync();
-            await dmChannel.SendMessageAsync(embed: embed);
-        }
-    }
-
-    public static class EmbedFactory
-    {
-        public static DiscordEmbed CreateEmbed(string title, string description, DiscordColor color) =>
-            new DiscordEmbedBuilder().WithTitle(title).WithDescription(description).WithColor(color).Build();
-
-        public static DiscordEmbed WarningEmbed() =>
-            CreateEmbed("Ostrzeżenie", "Twoje ostatnie słowo było zabronione. Otrzymujesz ostrzeżenie. Kolejne wykroczenie może skutkować surowszymi konsekwencjami.", DiscordColor.Yellow);
-
-        public static DiscordEmbed TimeoutEmbed(int time) =>
-            CreateEmbed("Timeout", $"Twoje wykroczenie skutkuje timeoutem na {time} minut.", DiscordColor.Orange);
-
-        public static DiscordEmbed KickEmbed() =>
-            CreateEmbed("Wykopany z serwera", "Zostałeś wykopany z serwera. Możesz wrócić, ale uważaj na swoje zachowanie.", DiscordColor.Red);
-
-        public static DiscordEmbed BanEmbed() =>
-            CreateEmbed("Ban", "Zostałeś zbanowany z serwera.", DiscordColor.DarkRed);
-    }
-
-    public enum ActionType
-    {
-        Warning,
-        Timeout,
-        Kick,
-        Ban
     }
 
 }
