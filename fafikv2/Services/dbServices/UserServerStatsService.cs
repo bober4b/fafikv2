@@ -28,8 +28,6 @@ namespace Fafikv2.Services.dbServices
                 await _userServerRepository.AddUserServerStats(userServerStats);
             }
 
-
-
             await Task.CompletedTask;
         }
 
@@ -37,6 +35,10 @@ namespace Fafikv2.Services.dbServices
         {
             throw new NotImplementedException();
         }
+
+        public async Task UpdateUserServerStats(Guid userId, Guid serverId, string newDisplayName)
+        => await _userServerRepository.UpdateUserServer(userId, serverId, newDisplayName);
+        
 
         public async Task UpdateUserMessageServerCount(Guid userId, Guid serverId)
         {
@@ -62,14 +64,16 @@ namespace Fafikv2.Services.dbServices
         }
 
         public async Task<UserServerStats?> GetUserStats(Guid userId, Guid serverId)
-        {
-            return await _userServerRepository.GetUserStatsByUserAndServerId(userId, serverId);
-        }
+        => await _userServerRepository.GetUserStatsByUserAndServerId(userId, serverId);
+        
 
         public async Task AddPenalty(Guid userId, Guid serverId)
         {
             var user = await _userServerRepository
                 .GetUserStatsByUserAndServerId(userId, serverId);
+
+            if(user== null) return;
+
             user.LastPenaltyDate = DateTime.Now;
             user.Penalties++;
             try
@@ -81,12 +85,10 @@ namespace Fafikv2.Services.dbServices
                 Console.WriteLine(e.Message);
                 throw;
             }
-            //await _userServerRepository.SaveChangesAsync() ;
         }
 
         public async Task<IEnumerable<UserServerStats>> GetUsersStatsByServer(Guid serverId)
-        {
-            return await _userServerRepository.GetUsersStatsByServer(serverId);
-        }
+        => await _userServerRepository.GetUsersStatsByServer(serverId);
+        
     }
 }

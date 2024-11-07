@@ -4,13 +4,13 @@ namespace Fafikv2.CountSystem
 {
     public class LevelSys
     {
-        public bool LevelUp(User user)
+        public static bool LevelUp(User user)
         {
             var nextLevel = 10 + user.UserLevel * 1.5;
             return nextLevel <= user.MessagesCountGlobal;
         }
 
-        public string UserInfo(User user, UserServerStats userServerStats)
+        public static string UserInfo(User user, UserServerStats userServerStats)
         {
             var result = $"Wysłane wiadomości na wszystkich serwerach: {user.MessagesCountGlobal}\n" +
                          $"Wysłane wiadomości na serwerze: {userServerStats.MessagesCountServer}\n" +

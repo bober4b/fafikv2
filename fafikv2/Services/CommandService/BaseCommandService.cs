@@ -103,7 +103,7 @@ namespace Fafikv2.Services.CommandService
             return embed;
         }
 
-        private static DiscordEmbed CreateLeaderboardEmbed(
+        private DiscordEmbed CreateLeaderboardEmbed(
             List<UserServerStats> serverUserStats,
             UserServerStats userStats,
             int index)

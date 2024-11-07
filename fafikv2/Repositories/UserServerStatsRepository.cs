@@ -36,28 +36,35 @@ namespace Fafikv2.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public async Task UpdateUserServer(Guid userId, Guid serverId, string newDisplayName)
+        {
+            var userServerStats = await GetUserStatsByUserAndServerId(userId, serverId);
+
+            if (userServerStats == null) return;
+            
+            userServerStats.DisplayName = newDisplayName;
+            await _context.SaveChangesAsync();
+            await _context.Entry(userServerStats).ReloadAsync();
+
+        }
+
         public Task DeleteUserServerStats(UserServerStats userServerStats)
         {
             throw new NotImplementedException();
         }
 
-        public Task<UserServerStats> GetUserStatsByUserAndServerId(Guid userId, Guid serverId)
+        public Task<UserServerStats?> GetUserStatsByUserAndServerId(Guid userId, Guid serverId)
         {
             var serverUsers = _context
                 .ServerUsers
                 .FirstOrDefault(x => x.ServerId == serverId && x.UserId == userId);
 
-            if (serverUsers == null) return Task.FromResult<UserServerStats>(null!);
-            {
-                var result = _context.ServerUsersStats.FirstOrDefault(x => x.ServerUserId == serverUsers.Id);
+            
+            var result = _context.ServerUsersStats.FirstOrDefault(x => x.ServerUserId == serverUsers!.Id);
 
-                if (result != null)
-                {
-                    return Task.FromResult(result);
-                }
-            }
-
-            return Task.FromResult<UserServerStats>(null!);
+                return Task.FromResult(result);
+            
+            
         }
 
         public IEnumerable<UserServerStats> GetAll()

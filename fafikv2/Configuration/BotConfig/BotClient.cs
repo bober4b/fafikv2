@@ -130,25 +130,34 @@ namespace Fafikv2.Configuration.BotConfig
 
         private async Task Client_GuildMemberUpdated(DiscordClient sender, GuildMemberUpdateEventArgs args)
         {
+            if(args.Member.IsBot)return;
+
             var oldGlobalName = args.UsernameBefore; 
             var newGlobalName = args.UsernameAfter;
             var oldNickname = args.NicknameBefore;
             var newNickname = args.NicknameAfter;
 
-            // Sprawdzenie, czy globalna nazwa użytkownika się zmieniła
             if (oldGlobalName != newGlobalName)
             {
 
-                Log.Information($"Globalna nazwa użytkownika zmieniona: {oldGlobalName} -> {newGlobalName}");
-                await _databaseContextQueueService.EnqueueDatabaseTask(async () => await _userService.UpdateUser(args.Member.Id.ToGuid(), newGlobalName));
+                Log.Information($"User's global username changed: {oldGlobalName} -> {newGlobalName}");
+                await _databaseContextQueueService.EnqueueDatabaseTask(async () => 
+                    await _userService.UpdateUser(args.Member.Id.ToGuid(), newGlobalName));
             }
 
-            // Sprawdzenie, czy pseudonim na serwerze się zmienił
             if (oldNickname != newNickname)
             {
-                var oldDisplayName = oldNickname ?? oldGlobalName;  // Jeśli brak pseudonimu, użyj globalnej nazwy
+                var oldDisplayName = oldNickname ?? oldGlobalName;  
                 var newDisplayName = newNickname ?? newGlobalName;
-                Log.Information($"Pseudonim użytkownika na serwerze {args.Guild.Name} zmieniony: {oldDisplayName} -> {newDisplayName}");
+
+
+                Log.Information($"User's nickname on server {args.Guild.Name} changed: {oldDisplayName} -> {newDisplayName}");
+
+                await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
+                    await _userServerStatsService.UpdateUserServerStats(args.Member.Id.ToGuid(), args.Guild.Id.ToGuid(),
+                        newDisplayName));
+
+                //Log. Information ($"Pseudonim użytkownika na serwerze {args.Guild.Name} zmieniony: {oldDisplayName} -> {newDisplayName}");
             }
         }
 
@@ -185,6 +194,7 @@ namespace Fafikv2.Configuration.BotConfig
         {
             Log.Information($"User {args.Member.Username} joined.");
 
+            if(args.Member.IsBot)return;
             var server = (await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
                 await _serverService.GetServer(args.Guild.Id.ToGuid())));
             await AddUser(args.Member, server);
