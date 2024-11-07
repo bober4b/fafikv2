@@ -139,7 +139,7 @@ namespace Fafikv2.Services.OtherServices
         {
             var embed = EmbedFactory.TimeoutEmbed(time);
             await ApplyActionAsync(message, embed, ActionType.Timeout);
-            //await (await message.Guild.GetMemberAsync(message.Author.Id)).TimeoutAsync(DateTimeOffset.Now.AddMinutes(time));
+            await (await message.Guild.GetMemberAsync(message.Author.Id)).TimeoutAsync(DateTimeOffset.Now.AddMinutes(time));
 
         }
 
@@ -148,7 +148,7 @@ namespace Fafikv2.Services.OtherServices
 
             var embed = EmbedFactory.KickEmbed();
             await ApplyActionAsync(message, embed, ActionType.Kick);
-            //await (await message.Guild.GetMemberAsync(message.Author.Id)).RemoveAsync();
+            await (await message.Guild.GetMemberAsync(message.Author.Id)).RemoveAsync();
 
         }
         private async Task<ServerConfig> GetServerConfigAsync(ulong guildId) =>
@@ -161,7 +161,7 @@ namespace Fafikv2.Services.OtherServices
             
             var embed = EmbedFactory.BanEmbed();
             await ApplyActionAsync(message, embed, ActionType.Ban);
-            //await (await message.Guild.GetMemberAsync(message.Author.Id)).BanAsync();
+            await (await message.Guild.GetMemberAsync(message.Author.Id)).BanAsync();
         }
 
         private async Task TimeoutKickOrBan(MessageCreateEventArgs message)
