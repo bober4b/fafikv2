@@ -82,6 +82,5 @@ namespace Fafikv2.Repositories
             await _context.SaveChangesAsync();
         }
 
-
     }
 }

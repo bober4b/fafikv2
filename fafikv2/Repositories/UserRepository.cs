@@ -39,7 +39,7 @@ namespace Fafikv2.Repositories
 
         public async Task UpdateUser(User user)
         {
-            var existingUser = _context.Users.FirstOrDefault(x => x.Id == user.Id) ?? throw new InvalidOperationException("user not found");
+            var existingUser = _context.Users.FirstOrDefault(x => x.Id == user.Id);
 
 
             var properties = typeof(User)
@@ -49,6 +49,18 @@ namespace Fafikv2.Repositories
             foreach (var property in properties)
             {
                 property.SetValue(existingUser, property.GetValue(user));
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateUserName(Guid guid, string userName)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(x=>x.Id==guid);
+
+            if (user != null)
+            {
+                user.Name=userName;
             }
 
             await _context.SaveChangesAsync();

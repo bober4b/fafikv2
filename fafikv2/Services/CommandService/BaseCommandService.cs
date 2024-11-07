@@ -1,6 +1,7 @@
 ﻿using DSharpPlus.CommandsNext;
-using Fafikv2.CountSystem;
+using DSharpPlus.Entities;
 using Fafikv2.Data.DifferentClasses;
+using Fafikv2.Data.Models;
 using Fafikv2.Services.dbServices.Interfaces;
 using Fafikv2.Services.OtherServices.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,29 +13,29 @@ namespace Fafikv2.Services.CommandService
     {
         private readonly IUserService _userService;
         private readonly IUserServerStatsService _userServerStatsService;
-        private readonly LevelSys _levelSys;
         private readonly IDatabaseContextQueueService _databaseContextQueueService;
+
         public BaseCommandService(IServiceProvider serviceProvider)
         {
             _userService = serviceProvider.GetRequiredService<IUserService>();
             _userServerStatsService = serviceProvider.GetRequiredService<IUserServerStatsService>();
             _databaseContextQueueService = serviceProvider.GetRequiredService<IDatabaseContextQueueService>();
-            _levelSys = new LevelSys();
         }
 
         public async Task Stats(CommandContext ctx)
         {
             await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
             {
-
                 try
                 {
                     var user = await _userService.GetUser(ctx.User.Id.ToGuid());
                     var userStats = await _userServerStatsService
                         .GetUserStats(ctx.User.Id.ToGuid(), ctx.Guild.Id.ToGuid());
+
                     if (user != null && userStats != null)
                     {
-                        await ctx.RespondAsync(_levelSys.UserInfo(user, userStats));
+                        var embed = CreateUserInfoEmbed(user, userStats);
+                        await ctx.RespondAsync(embed);
                     }
                     else
                     {
@@ -44,15 +45,13 @@ namespace Fafikv2.Services.CommandService
                 catch (Exception ex)
                 {
                     await ctx.RespondAsync("Wystąpił błąd podczas pobierania statystyk użytkownika.");
-                    Log.Error(ex, "Error in Stats method for user {UserId} on guild {GuildId}"
-                        , ctx.User.Id.ToGuid(), ctx.Guild.Id.ToGuid());
+                    Log.Error(ex, "Error in Stats method for user {UserId} on guild {GuildId}", ctx.User.Id.ToGuid(), ctx.Guild.Id.ToGuid());
                 }
             });
         }
 
         public async Task Leaderboard(CommandContext ctx)
         {
-
             await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
             {
                 try
@@ -67,22 +66,17 @@ namespace Fafikv2.Services.CommandService
 
                     var userId = ctx.User.Id.ToGuid();
                     var userStats = await _userServerStatsService.GetUserStats(userId, ctx.Guild.Id.ToGuid());
-                    var index = serverUserStats.FindIndex(x => x.Id == userStats?.Id);
 
-                    var response = string.Format(
-                        "Najbardziej aktywni użytkownicy:\n" +
-                        "1. {0}: {1}\n" +
-                        "2. {2}: {3}\n" +
-                        "3. {4}: {5}\n\n" +
-                        "Twoja Pozycja: {6}\n" +
-                        "{7}: {8}",
-                        serverUserStats[0].DisplayName, serverUserStats[0].MessagesCountServer,
-                        serverUserStats[1].DisplayName, serverUserStats[1].MessagesCountServer,
-                        serverUserStats[2].DisplayName, serverUserStats[2].MessagesCountServer,
-                        index + 1, userStats?.DisplayName, userStats?.MessagesCountServer
-                    );
+                    if (userStats == null)
+                    {
+                        await ctx.RespondAsync("Nie znaleziono twoich statystyk.");
+                        return;
+                    }
 
-                    await ctx.RespondAsync(response);
+                    var index = serverUserStats.FindIndex(x => x.Id == userStats.Id);
+                    var embed = CreateLeaderboardEmbed(serverUserStats, userStats, index);
+
+                    await ctx.RespondAsync(embed);
                 }
                 catch (Exception ex)
                 {
@@ -90,6 +84,41 @@ namespace Fafikv2.Services.CommandService
                     Log.Error(ex, "Error in Leaderboard method for guild {GuildId}", ctx.Guild.Id.ToGuid());
                 }
             });
+        }
+
+        private static DiscordEmbed CreateUserInfoEmbed(User user, UserServerStats userServerStats)
+        {
+            var embed = new DiscordEmbedBuilder
+            {
+                Title = $"{userServerStats.DisplayName} - Statystyki",
+                Color = DiscordColor.Blurple
+            }
+            .AddField("Wysłane wiadomości (globalnie)", $"`{user.MessagesCountGlobal}`", true)
+            .AddField("Interakcje z botem (globalnie)", $"`{user.BotInteractionGlobal}`",true)
+            .AddField("\u200B", "\u200B", true) 
+            .AddField("Wysłane wiadomości (serwer)", $"`{userServerStats.MessagesCountServer}`",true)
+            .AddField("Interakcje z botem (serwer)", $"`{userServerStats.BotInteractionServer}`", true)
+            .AddField("\u200B", "\u200B", true);
+
+            return embed;
+        }
+
+        private static DiscordEmbed CreateLeaderboardEmbed(
+            List<UserServerStats> serverUserStats,
+            UserServerStats userStats,
+            int index)
+        {
+            var embed = new DiscordEmbedBuilder
+            {
+                Title = "Najbardziej aktywni użytkownicy",
+                Color = DiscordColor.Green
+            }
+            .AddField("1. " + serverUserStats[0].DisplayName, $"`{serverUserStats[0].MessagesCountServer}` wiadomości")
+            .AddField("2. " + serverUserStats[1].DisplayName, $"`{serverUserStats[1].MessagesCountServer}` wiadomości")
+            .AddField("3. " + serverUserStats[2].DisplayName, $"`{serverUserStats[2].MessagesCountServer}` wiadomości")
+            .AddField("Twoja pozycja", $"`{index + 1}.` {userStats.DisplayName}: `{userStats.MessagesCountServer}` wiadomości");
+
+            return embed;
         }
     }
 }

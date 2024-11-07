@@ -15,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
 
+
 namespace Fafikv2.Configuration.BotConfig
 {
     public class BotClient
@@ -61,7 +62,9 @@ namespace Fafikv2.Configuration.BotConfig
             _client.GuildMemberAdded += Client_GuildMemberAdded;
             _client.UnknownEvent += Client_UnknownEvent;
             _client.VoiceStateUpdated += Client_VoiceStateUpdated;
-            
+            _client.GuildMemberUpdated += Client_GuildMemberUpdated;
+                
+
 
             var commandsConfig = new CommandsNextConfiguration()
             {
@@ -123,6 +126,30 @@ namespace Fafikv2.Configuration.BotConfig
 
 
             await Task.Delay(-1);
+        }
+
+        private async Task Client_GuildMemberUpdated(DiscordClient sender, GuildMemberUpdateEventArgs args)
+        {
+            var oldGlobalName = args.UsernameBefore; 
+            var newGlobalName = args.UsernameAfter;
+            var oldNickname = args.NicknameBefore;
+            var newNickname = args.NicknameAfter;
+
+            // Sprawdzenie, czy globalna nazwa użytkownika się zmieniła
+            if (oldGlobalName != newGlobalName)
+            {
+
+                Log.Information($"Globalna nazwa użytkownika zmieniona: {oldGlobalName} -> {newGlobalName}");
+                await _databaseContextQueueService.EnqueueDatabaseTask(async () => await _userService.UpdateUser(args.Member.Id.ToGuid(), newGlobalName));
+            }
+
+            // Sprawdzenie, czy pseudonim na serwerze się zmienił
+            if (oldNickname != newNickname)
+            {
+                var oldDisplayName = oldNickname ?? oldGlobalName;  // Jeśli brak pseudonimu, użyj globalnej nazwy
+                var newDisplayName = newNickname ?? newGlobalName;
+                Log.Information($"Pseudonim użytkownika na serwerze {args.Guild.Name} zmieniony: {oldDisplayName} -> {newDisplayName}");
+            }
         }
 
         private async Task Client_VoiceStateUpdated(DiscordClient sender, VoiceStateUpdateEventArgs args)

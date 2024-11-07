@@ -31,7 +31,14 @@ namespace Fafikv2.Services.dbServices
 
         public Task UpdateUser(User user)
         {
+            _userRepository.UpdateUser(user);
             return Task.CompletedTask;
+        }
+
+        public async Task UpdateUser(Guid guid, string user)
+        {
+            await _userRepository.UpdateUserName(guid, user);
+
         }
 
         public async Task UpdateUserMessageCount(Guid userId)
@@ -43,8 +50,6 @@ namespace Fafikv2.Services.dbServices
             user.MessagesCountGlobal++;
 
             await _userRepository.SaveChangesAsync();
-
-
 
         }
 
