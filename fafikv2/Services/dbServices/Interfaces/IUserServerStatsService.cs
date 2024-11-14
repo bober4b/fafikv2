@@ -10,8 +10,10 @@ namespace Fafikv2.Services.dbServices.Interfaces
         public Task UpdateUserMessageServerCount(Guid userId, Guid serverId);
         public Task UpdateUserBotInteractionsServerCount(Guid userId, Guid serverId);
         public Task<UserServerStats?> GetUserStats(Guid userId, Guid serverId);
+        public Task<UserServerStats?> AsNoTracking(Guid userId, Guid serverId);
         public Task AddPenalty(Guid userId, Guid serverId);
         public Task<IEnumerable<UserServerStats>> GetUsersStatsByServer(Guid serverId);
+        public Task<IEnumerable<UserServerStats>> GetUserStatsByServerOnlyToRead(Guid serverId);
 
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using Serilog;
 
 
 namespace Fafikv2.Configuration.BotConfig
@@ -48,7 +49,7 @@ namespace Fafikv2.Configuration.BotConfig
 
         public void FuncNumberInQueue()
         {
-            Console.WriteLine("Liczba task w kolejce: " + _taskQueue.Count);
+            Log.Information("Liczba task w kolejce: {COUNT}" , _taskQueue.Count);
         }
     }
 }

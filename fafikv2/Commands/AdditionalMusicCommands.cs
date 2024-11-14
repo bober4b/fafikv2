@@ -52,7 +52,8 @@ namespace Fafikv2.Commands
                 "**Queue** - Displays the song queue\n" +
                 "**Volume** - Sets playback volume\n" +
                 "**AutoPlay** - Enables automatic music playback\n" +
-                "**AutoPlayByGenre** - Automatically plays music by genre");
+                "**AutoPlayByGenre** - Automatically plays music by genre\n" +
+                "**lyric** - Gets song lyrics");
 
             embed.AddField("🛡️ Moderation",
                 "**kick_enable** - Enables kicks on the server\n" +

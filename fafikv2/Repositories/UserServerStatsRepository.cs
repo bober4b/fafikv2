@@ -62,9 +62,23 @@ namespace Fafikv2.Repositories
             
             var result = _context.ServerUsersStats.FirstOrDefault(x => x.ServerUserId == serverUsers!.Id);
 
-                return Task.FromResult(result);
+            return Task.FromResult(result);
             
             
+        }
+
+        public Task<UserServerStats?> GetOnlyToRead(Guid userId, Guid serverId)
+        {
+
+            var serverUsers = _context
+                .ServerUsers
+                .FirstOrDefault(x => x.ServerId == serverId && x.UserId == userId);
+
+            var noTracking = _context.ServerUsersStats.AsNoTracking();
+
+             var result =noTracking.FirstOrDefault(x => x.ServerUserId == serverUsers!.Id);
+
+            return Task.FromResult(result);
         }
 
         public IEnumerable<UserServerStats> GetAll()
@@ -81,6 +95,18 @@ namespace Fafikv2.Repositories
                 .Where(uss => serverUsers.Any(su => su.Id == uss.ServerUserId))
                 .OrderByDescending(stats => stats.MessagesCountServer)
                 .ToListAsync();
+            return result;
+        }
+
+        public async Task<IEnumerable<UserServerStats>> GetUserServerStatsToRead(Guid serverId)
+        {
+            var serverUsers = _context.ServerUsers.Where(x => x.ServerId == serverId);
+
+            var noTracking = _context.ServerUsersStats.AsNoTracking();
+            var result =await noTracking.Where(uss => serverUsers.Any(su => su.Id == uss.ServerUserId))
+                .OrderByDescending(stats => stats.MessagesCountServer)
+                .ToListAsync();
+
             return result;
         }
 

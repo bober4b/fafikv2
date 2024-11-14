@@ -39,7 +39,6 @@ namespace Fafikv2.Services.dbServices
         public async Task UpdateUserServerStats(Guid userId, Guid serverId, string newDisplayName)
         => await _userServerRepository.UpdateUserServer(userId, serverId, newDisplayName);
         
-
         public async Task UpdateUserMessageServerCount(Guid userId, Guid serverId)
         {
             var user = await _userServerRepository.GetUserStatsByUserAndServerId(userId, serverId)
@@ -65,7 +64,9 @@ namespace Fafikv2.Services.dbServices
 
         public async Task<UserServerStats?> GetUserStats(Guid userId, Guid serverId)
         => await _userServerRepository.GetUserStatsByUserAndServerId(userId, serverId);
-        
+
+        public async Task<UserServerStats?> AsNoTracking(Guid userId, Guid serverId)
+            => await _userServerRepository.GetOnlyToRead(userId, serverId);
 
         public async Task AddPenalty(Guid userId, Guid serverId)
         {
@@ -89,6 +90,9 @@ namespace Fafikv2.Services.dbServices
 
         public async Task<IEnumerable<UserServerStats>> GetUsersStatsByServer(Guid serverId)
         => await _userServerRepository.GetUsersStatsByServer(serverId);
-        
+
+        public async Task<IEnumerable<UserServerStats>> GetUserStatsByServerOnlyToRead(Guid serverId)
+            => await _userServerRepository.GetUserServerStatsToRead(serverId);
+
     }
 }

@@ -59,5 +59,8 @@ namespace Fafikv2.Services.dbServices
 
             return result!.Randomize(1).FirstOrDefault();
         }
+
+        public async Task<string?> GetSongGenres(Uri uri)
+        => await _songsRepository.GetSongGenre(uri);
     }
 }

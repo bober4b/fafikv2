@@ -122,9 +122,21 @@ namespace Fafikv2.Services.OtherServices
 
             var result = await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
             {
-                string?[] genresResult = _spotifyApiService.GetGenresOfTrack(track.Title).Result;
+                var part = await _songsService.GetSongGenres(track.Uri);
 
-                string genre = string.Join(", ", genresResult);
+                string? genre;
+
+
+                if (!string.IsNullOrEmpty(part))
+                {
+                    genre = string.Join(", ", part);
+                }
+                else
+                {
+                    string?[] genresResult = _spotifyApiService.GetGenresOfTrack(track.Title).Result;
+                    genre = string.Join(", ", genresResult);
+                }
+
 
                 Log.Information("Genres:{Genres}",genre);
 

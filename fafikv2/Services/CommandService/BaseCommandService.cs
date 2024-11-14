@@ -30,7 +30,7 @@ namespace Fafikv2.Services.CommandService
                 {
                     var user = await _userService.GetUser(ctx.User.Id.ToGuid());
                     var userStats = await _userServerStatsService
-                        .GetUserStats(ctx.User.Id.ToGuid(), ctx.Guild.Id.ToGuid());
+                        .AsNoTracking(ctx.User.Id.ToGuid(), ctx.Guild.Id.ToGuid());
 
                     if (user != null && userStats != null)
                     {
@@ -56,7 +56,7 @@ namespace Fafikv2.Services.CommandService
             {
                 try
                 {
-                    var serverUserStats = (await _userServerStatsService.GetUsersStatsByServer(ctx.Guild.Id.ToGuid())).ToList();
+                    var serverUserStats = (await _userServerStatsService.GetUserStatsByServerOnlyToRead(ctx.Guild.Id.ToGuid())).ToList();
 
                     if (serverUserStats.Count < 3)
                     {
@@ -65,7 +65,7 @@ namespace Fafikv2.Services.CommandService
                     }
 
                     var userId = ctx.User.Id.ToGuid();
-                    var userStats = await _userServerStatsService.GetUserStats(userId, ctx.Guild.Id.ToGuid());
+                    var userStats = await _userServerStatsService.AsNoTracking(userId, ctx.Guild.Id.ToGuid());
 
                     if (userStats == null)
                     {

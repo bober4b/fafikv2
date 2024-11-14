@@ -121,6 +121,13 @@ namespace Fafikv2.Repositories
             return result;
         }
 
+        public Task<string?> GetSongGenre(Uri uri)
+        {
+            var song = _context.Songs.FirstOrDefault(x => x.LinkUri == uri);
+
+            return Task.FromResult( song?.Genres);
+        }
+
         public Task<IEnumerable<Song?>> GetSongsByUser(Guid userId)
         {
             var result = _context.UserPlayedSongs
