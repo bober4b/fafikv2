@@ -3,5 +3,6 @@
   "prefix": "!",
   "SpotifyClientId": "token",
   "SpotifyClientToken": "token",
-  "token": "token"
+  "token": "token",
+  "DbConnection": "connectionString" 
 }

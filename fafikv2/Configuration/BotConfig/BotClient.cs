@@ -53,7 +53,7 @@ namespace Fafikv2.Configuration.BotConfig
         {
 
             var jsonReader = new JsonReader();
-            await jsonReader.ReadJson();
+            await jsonReader.ReadJsonAsync();
 
 
             _client.Ready += Client_Ready;
@@ -151,7 +151,8 @@ namespace Fafikv2.Configuration.BotConfig
                 var newDisplayName = newNickname ?? newGlobalName;
 
 
-                Log.Information($"User's nickname on server {args.Guild.Name} changed: {oldDisplayName} -> {newDisplayName}");
+                Log.Information("User's nickname on server {guild} changed: {oldDisplayName} -> {newDisplayName}",
+                    args.Guild.Name,oldDisplayName,newDisplayName);
 
                 await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
                     await _userServerStatsService.UpdateUserServerStats(args.Member.Id.ToGuid(), args.Guild.Id.ToGuid(),
@@ -192,7 +193,7 @@ namespace Fafikv2.Configuration.BotConfig
 
         private async Task Client_GuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs args)
         {
-            Log.Information($"User {args.Member.Username} joined.");
+            Log.Information("User {Username} joined.",args.Member.Username);
 
             if(args.Member.IsBot)return;
             var server = (await _databaseContextQueueService.EnqueueDatabaseTask(async () =>
@@ -244,7 +245,7 @@ namespace Fafikv2.Configuration.BotConfig
 
             };
             await _userService.AddUser(useradd);
-            Log.Information($"User added: {user.Username}, ID: {user.Id}, Server: {server!.Name}");
+            Log.Information("User added: {Username}, ID: {Id}, Server: {Name}",user.Username,user.Id,server!.Name);
 
 
 

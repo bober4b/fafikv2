@@ -1,4 +1,4 @@
-﻿using Fafikv2.Data.Models;
+﻿/*using Fafikv2.Data.Models;
 
 namespace Fafikv2.CountSystem
 {
@@ -29,3 +29,4 @@ namespace Fafikv2.CountSystem
     }
 }
 
+*/

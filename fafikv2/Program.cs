@@ -68,7 +68,7 @@ namespace Fafikv2
                 {
                     // Wczytanie tokenu
                     var jsonReader = new JsonReader();
-                    jsonReader.ReadJson().Wait();
+                    jsonReader.ReadJsonAsync().Wait();
 
                     // Konfiguracja serwisów
                     services

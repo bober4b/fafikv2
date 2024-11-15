@@ -71,7 +71,7 @@ namespace Fafikv2.Commands
                 "**stats** - Displays your statistics\n" +
                 "**leaderboard** - Shows the top 3 users on the server");
 
-            await ctx.RespondAsync(embed: embed);
+            await ctx.RespondAsync(embed);
         }
 
     }

@@ -7,4 +7,5 @@ public sealed class JsonStructure
     public string GeniusToken { get; set; } = null!;
     public string SpotifyClientId { get; set; } = null!;
     public string SpotifyClientToken { get; set; } = null!;
+    public string DbConnection { get; set; } = null!;
 }

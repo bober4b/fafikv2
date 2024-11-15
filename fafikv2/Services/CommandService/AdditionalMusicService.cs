@@ -21,7 +21,7 @@ namespace Fafikv2.Services.CommandService
         public AdditionalMusicService()
         {
             var jsonReader = new JsonReader();
-            _ = jsonReader.ReadJson();
+            _ = jsonReader.ReadJsonAsync();
             _apiKey = jsonReader.GeniusToken;
 
             if (!string.IsNullOrEmpty(_apiKey))

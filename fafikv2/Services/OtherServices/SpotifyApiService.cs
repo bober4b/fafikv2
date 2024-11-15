@@ -14,7 +14,7 @@ namespace Fafikv2.Services.OtherServices
         public SpotifyApiService()
         {
             var jsonReader = new JsonReader();
-            jsonReader.ReadJson().Wait();
+            jsonReader.ReadJsonAsync().Wait();
             _clientId = jsonReader.SpotifyClientId;
             _clientSecret = jsonReader.SpotifyClientToken;
         }
